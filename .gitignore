@@ -1,0 +1,12 @@
+/.idea/
+/.vscode/
+/bin/
+/dist/
+/coverage/
+*.exe
+*.out
+*.test
+.env
+.env.*
+!.env.example
+/docs/magic-cards-zhs-data/
