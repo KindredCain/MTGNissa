@@ -17,8 +17,19 @@
 | 官方 | 字段名称和含义可由对应 API 文档直接确认。 |
 | 映射 | 本地字段由官方字段重命名、单值化或展开得到。 |
 | Schema | 字段可在 MTGCH `components.schemas` 的相关响应对象中确认。 |
+| 对应概念 | 官方文档存在语义相近的输入或展示字段，但没有定义本地导出列。 |
+| 样本确认 | 由用户提供的具体卡牌记录及页面行为确认。 |
+| 部分确认 | 已确认基本类型或主要用途，但枚举、边界或普遍性仍不完整。 |
 | 推定 | 文档没有直接定义原始导出字段，含义根据字段名、样本值和响应对象推定。 |
 | 未确认 | 仅能确认字段和值类型，无法从指定文档确定完整语义或枚举。 |
+
+### 1.2 重新评估原则
+
+- Scryfall Card Object 文档定义的是 Scryfall API 字段，不直接定义 `zhs_*.json`。
+- MTGCH `components.schemas` 定义的是 API 聚合响应，也不直接定义六个 `zhs_*` 导出对象。
+- 只有 Schema 名称、类型和业务位置都一致时才标记为 `Schema`；仅仅出现同名字段不能证明二者相同。
+- `对应概念` 表示可以找到 Scryfall 或 MTGCH 的展示字段，但本地字段仍经过拆分、翻译或重命名。
+- 用户提供的 SOI #209、VOW #344、FIC #334 样本用于确认 `zhs_card.json` 的实际行为，结论不扩展到其他文件的同名字段。
 
 ## 2. 文件关系
 
@@ -26,10 +37,10 @@
 
 | 主文件字段 | 关联文件字段 | 状态 | 用途 |
 | --- | --- | --- | --- |
-| `scryfall_card.face_oracle_id` | `zhs_oracle.face_oracle_id` | Schema | 关联某一个牌面的 Oracle 中文翻译。 |
-| `scryfall_card.flavor_id` | `zhs_flavor.flavor_id` | Schema | 关联特定印刷牌面的背景叙述翻译。 |
-| `scryfall_card.set_id` | `zhs_set.set_id` | 推定 | 关联系列中文名称。 |
-| `scryfall_card.uuid` | `zhs_card.card_id` | 推定 | 关联特定印刷及语言版本的中文印刷文字。 |
+| `scryfall_card.face_oracle_id` | `zhs_oracle.face_oracle_id` | 已确认唯一 | 关联某一个牌面的 Oracle 中文翻译。 |
+| `scryfall_card.flavor_id` | `zhs_flavor.flavor_id` | 已确认唯一 | 关联特定印刷牌面的背景叙述翻译。 |
+| `scryfall_card.set_id` | `zhs_set.set_id` | 已确认唯一 | 关联系列中文名称；分别对应 Scryfall `set_id` 与 MTGCH `SetSchema.id`。 |
+| `scryfall_card.uuid` | `zhs_card.card_id` | 已确认唯一 | 关联特定印刷及语言版本的中文印刷文字。 |
 | `scryfall_card.oracle_id` | `zhs_oracle.oracle_id` | 官方/Schema | 将同一 Oracle 身份的不同印刷版本归组。 |
 | `scryfall_card.multiverse_id` | `zhs_card.multiverse_id` | 映射 | 辅助关联 Gatherer 中文印刷数据。 |
 
@@ -45,11 +56,11 @@
 | --- | --- | --- | --- |
 | `uuid` | UUID | 未确认 | 当前数据集内部的卡牌记录主键；不是 Scryfall 标准 `id` 字段。 |
 | `scryfall_id` | UUID | 映射 | Scryfall Card Object 的 `id`，唯一标识一个具体印刷版本。 |
-| `face_index` | integer | 映射 | 扁平化后的牌面序号；样本中单面牌为 `-1`，其他取值规则仍需用多面牌样本确认。 |
+| `face_index` | integer | 已确认/映射 | 扁平化后的 Scryfall `card_faces` 数组下标：没有 `card_faces` 的普通单面牌为 `-1`，首个牌面为 `0`，第二个牌面为 `1`。图片侧面还需结合 `layout`：`split`、`flip`、`adventure` 的多个牌面都在 `front`；`transform`、`modal_dfc`、`double_faced_token`、`art_series` 及 `reversible_card` 的 `0` 为正面、`1` 为背面。 |
 | `lang` | string | 官方 | 当前印刷版本的语言代码。 |
 | `oracle_id` | UUID? | 官方 | Oracle 身份 ID；同一规则身份的重印版本通常共享此值。 |
 | `layout` | string | 官方 | 卡牌版面类型，例如 `normal`、`split`、`transform`、`modal_dfc`。 |
-| `face_oracle_id` | UUID? | Schema | MTGCH 使用的牌面级 Oracle 关联 ID。 |
+| `face_oracle_id` | UUID? | Schema | MTGCH 使用的牌面级 Oracle 关联 ID；业务仅按等值关联使用，将其视为不透明标识，不依赖生成规则。 |
 | `created_at` | datetime | 未确认 | 当前数据集记录的创建时间，不是 Scryfall Card Object 字段。 |
 | `updated_at` | datetime | 未确认 | 当前数据集记录的更新时间，不是 Scryfall Card Object 字段。 |
 
@@ -161,97 +172,97 @@
 
 ## 4. `zhs_card.json`
 
-该文件保存特定印刷/语言版本的简体中文文字。MTGCH Schemas 没有同名原始对象，API 中相关内容会被合并到 `CardViewSchema` 和 `CardFaceSchema`。
+该文件保存特定印刷/语言版本的简体中文文字。MTGCH Schemas 没有同名原始对象，API 中相关内容会被合并到 `CardViewSchema` 和 `CardFaceSchema`。Scryfall 中最接近的概念是本地化卡牌对象的 `printed_name`、`printed_text`、`printed_type_line`、`flavor_name` 与 `flavor_text`，但字段并非逐项原样复制。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
-| `card_id` | UUID | 推定 | 中文印刷记录所关联的本地卡牌 ID，预计关联 `scryfall_card.uuid`。不是 MTGCH 收藏功能中的 `card_id` 语义。 |
-| `name` | string | 推定 | 当前印刷版本的简体中文牌名。 |
-| `face_name` | string? | 推定 | 当前印刷版本的单独牌面中文名称。 |
-| `flavor_name` | string? | 推定 | 当前印刷版本的中文替代牌名。 |
-| `type_line` | string? | 推定 | 当前印刷版本的中文类别栏。 |
-| `text` | string? | 推定 | 当前印刷版本的中文规则叙述。 |
-| `flavor_text` | string? | 推定 | 当前印刷版本的中文背景叙述。 |
-| `multiverse_id` | integer? | Schema | 中文 Gatherer Multiverse ID；API 输出中另有 `zhs_multiverse_id`。 |
-| `source` | string? | 未确认 | 中文印刷数据来源；样本值为 `Chinese Simplified`，枚举未定义。 |
-| `extra` | unknown? | 未确认 | 扩展信息；MTGCH Schemas 未定义其结构。 |
+| `card_id` | UUID | 已确认唯一 | 中文印刷记录的唯一关联键，关联 `scryfall_card.uuid`。不是 MTGCH 收藏功能中的 `card_id` 语义。 |
+| `name` | string | 样本确认/对应概念 | 标准卡牌身份的简体中文名称；即使印刷版本具有替代牌名，这里仍保存标准牌名。多面牌使用“正面 // 背面”的组合名称。API 聚合后接近 `CardFaceSchema.name_zhs`。 |
+| `face_name` | string? | 样本确认/本地展开 | 当前记录所对应牌面的标准简体中文名称；多面牌的牌面记录使用该字段，单面牌通常为 `null`。Scryfall 和 MTGCH Schemas 均没有这个原始列名。 |
+| `flavor_name` | string? | 样本确认/对应概念 | 当前印刷版本实际展示的简体中文替代牌名，例如 Dracula 系列牌的“约翰西沃德医生”；没有替代牌名时为 `null`。对应 Scryfall `flavor_name` 概念和 `CardFaceSchema.flavor_name_zhs`。 |
+| `type_line` | string? | 样本确认/对应概念 | 当前记录所对应牌面的简体中文印刷类别栏。接近 Scryfall `printed_type_line`，API 聚合后对应 `CardFaceSchema.type_line_zhs`。 |
+| `text` | string? | 样本确认/对应概念 | 当前记录所对应牌面的简体中文印刷规则叙述，不合并多面牌其他牌面的文字。接近 Scryfall `printed_text`，API 聚合后对应 `CardFaceSchema.oracle_text_zhs_html`。 |
+| `flavor_text` | string? | 样本确认/对应概念 | 当前记录所对应牌面的简体中文印刷背景叙述。对应 Scryfall `flavor_text` 概念和 `CardFaceSchema.flavor_text_zhs_html`。 |
+| `multiverse_id` | integer? | 样本确认/映射 | 当前简体中文印刷版本的 Gatherer Multiverse ID；由 Scryfall `multiverse_ids` 单值化，API 聚合后对应 `CardViewSchema.zhs_multiverse_id`。允许为 `null`，缺少该 ID 不代表中文内容不存在。 |
+| `source` | string? | 样本部分确认 | 当前中文印刷数据的可选来源元信息；`Chinese Simplified` 是已观察值。指定文档没有定义此列，它不是可靠的语言字段，也不是各文本字段的翻译者来源；完整语义和枚举仍未确认。 |
+| `extra` | string? | 样本确认/Schema 映射 | 当前中文印刷记录的补充展示文字，例如 `FINAL FANTASY X` 用于标明关联作品；API 聚合后对应 `CardViewSchema.zhs_extra`。允许为 `null`，其他可能内容尚未枚举。 |
 
 ## 5. `zhs_flavor.json`
 
-该文件保存特定印刷版本背景叙述及其中文翻译状态。API 最终主要映射到 `CardFaceSchema.flavor_text_zhs_html`、`flavor_name_zhs` 和翻译来源信息。
+该文件保存特定印刷版本背景叙述及其中文翻译状态。Scryfall Card Object 提供原始 `name`、`flavor_name`、`flavor_text`、`set`、`collector_number` 和 `released_at` 概念；MTGCH API 最终主要映射到 `CardFaceSchema.flavor_text_zhs_html`、`flavor_name_zhs` 和 `TranslationSourceSchema`。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
-| `flavor_id` | UUID | Schema | 背景叙述记录 ID，对应 `CardFaceSchema.flavor_id`。 |
-| `name` | string | 推定 | 英文卡牌名称。 |
-| `flavor_name` | string? | 推定 | 英文替代牌名。 |
-| `flavor_text` | string? | 推定 | 原始背景叙述，可能不是英文，取决于原始印刷语言。 |
-| `set` | string | Schema | 系列代码。 |
-| `collector_number` | string | Schema | 收藏编号。 |
-| `released_at` | date | Schema | 该印刷版本发行日期。 |
-| `translated_flavor_name` | string? | 推定 | 简体中文替代牌名翻译。 |
-| `translated_flavor_text` | string? | 推定 | 简体中文背景叙述翻译。 |
-| `flavor_updated_at` | datetime? | 未确认 | 背景叙述翻译更新时间。 |
-| `extra` | unknown? | 未确认 | 扩展信息，结构未在 Schemas 中定义。 |
-| `name_source` | string? | Schema | 名称翻译来源，对应 `TranslationSourceSchema.name_source`。 |
-| `name_stage` | integer | 未确认 | 名称翻译流程阶段；数值枚举未在 Schemas 中定义。 |
-| `text_source` | string? | Schema | 背景叙述翻译来源；API 组合对象中接近 `flavor_source`。 |
-| `text_stage` | integer | 未确认 | 背景叙述翻译流程阶段；数值枚举未定义。 |
+| `flavor_id` | UUID | 已确认唯一 | 背景叙述记录的唯一关联键，对应 `CardFaceSchema.flavor_id`。 |
+| `name` | string | 已确认/复用规则 | 标准英文卡牌名称；在具有替代牌名的印刷版本中仍保存标准名称。多面牌复用 `zhs_card.name` 的规则，保存“正面 // 背面”的组合名称。 |
+| `flavor_name` | string? | 样本确认/Scryfall 对应概念 | 当前印刷版本的英文替代牌名；例如 `Mothra, Supersonic Queen`。没有替代牌名时允许为 `null`。 |
+| `flavor_text` | string? | 已确认/Scryfall 对应概念 | 具体印刷版本的英文背景叙述原文；没有背景叙述时允许为 `null`。 |
+| `set` | string | Scryfall/Schema 对应概念 | 系列代码。 |
+| `collector_number` | string | Scryfall/Schema 对应概念 | 收藏编号。 |
+| `released_at` | date | Scryfall/Schema 对应概念 | 该印刷版本发行日期。 |
+| `translated_flavor_name` | string? | 样本确认/对应概念 | `flavor_name` 的简体中文翻译；例如“超音速女王摩斯拉”。API 聚合后对应 `CardFaceSchema.flavor_name_zhs`。 |
+| `translated_flavor_text` | string? | 对应概念 | 简体中文背景叙述翻译；API 聚合后对应 `CardFaceSchema.flavor_text_zhs_html`。原始列名未出现在 Schemas 中。 |
+| `flavor_updated_at` | date? | 已明确为非业务字段 | 当前背景叙述/替代牌名翻译记录的更新时间信息。系统只按可空日期读取，不依赖其具体触发条件，也不用于查询、排序或回退判断。 |
+| `extra` | string? | 已确认/复用规则 | 复用 `zhs_card.extra` 的结构和用途，为可空的补充展示文字；不属于牌名、规则叙述或背景叙述正文。 |
+| `name_source` | string? | 样本确认/Schema 对应概念 | `translated_flavor_name` 的翻译来源；样本值包括 `MTGZH`。聚合后对应 `TranslationSourceSchema.name_source`，完整枚举仍未确认。 |
+| `name_stage` | integer | 部分确认 | 替代牌名翻译流程阶段；已观察到有翻译时为 `5`、缺失时可能为 `0`，但完整数值枚举和状态定义仍未确认。 |
+| `text_source` | string? | 样本确认/Schema 映射 | `translated_flavor_text` 的翻译来源；没有对应翻译时可以为 `null`。API 聚合后映射为 `TranslationSourceSchema.flavor_source`。 |
+| `text_stage` | integer | 部分确认 | 背景叙述翻译流程阶段；已观察到缺少原文和翻译时为 `0`，但完整数值枚举和状态定义仍未确认。 |
 
 ## 6. `zhs_oracle.json`
 
-该文件保存牌面级 Oracle 英文内容及简体中文翻译。API 最终主要映射到 `CardFaceSchema` 的 `*_atomic`、`*_zhs` 字段。
+该文件保存牌面级 Oracle 原文及简体中文翻译。Scryfall Card Object 定义 `oracle_id`、`name`、`type_line`、`oracle_text`、`set`、`collector_number` 和 `released_at`；MTGCH API 最终主要映射到 `CardFaceSchema` 的 `*_atomic`、`*_zhs` 字段。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
-| `face_oracle_id` | UUID | Schema | MTGCH 牌面级 Oracle ID，对应 `CardFaceSchema.face_oracle_id`。 |
-| `oracle_id` | UUID? | Schema | Scryfall Oracle 身份 ID，用于跨印刷版本归组。 |
-| `name` | string | 推定 | 英文牌面名称。 |
-| `set` | string | Schema | 用于确定当前翻译记录来源的系列代码。 |
-| `collector_number` | string | Schema | 用于确定当前翻译记录来源的收藏编号。 |
-| `released_at` | date | Schema | 来源印刷版本的发行日期。 |
-| `type_line` | string? | 推定 | 英文 Oracle 类别栏。 |
-| `oracle_text` | string? | 推定 | 英文 Oracle 规则叙述。 |
+| `face_oracle_id` | UUID | 已确认唯一 | MTGCH 牌面级 Oracle 唯一关联键，对应 `CardFaceSchema.face_oracle_id`；业务仅用它关联 `scryfall_card.face_oracle_id`，将其视为不透明标识，不关心生成规则。 |
+| `oracle_id` | UUID? | Scryfall/Schema | Scryfall Oracle 身份 ID，用于跨印刷版本归组。 |
+| `name` | string | Scryfall 对应概念 | 原始牌面名称；导出文件是否只允许英文仍需样本确认。 |
+| `set` | string | Scryfall/Schema 对应概念 | 用于确定当前翻译记录来源的系列代码。 |
+| `collector_number` | string | Scryfall/Schema 对应概念 | 用于确定当前翻译记录来源的收藏编号。 |
+| `released_at` | date | Scryfall/Schema 对应概念 | 来源印刷版本的发行日期。 |
+| `type_line` | string? | Scryfall 对应概念 | 原始 Oracle 类别栏；导出文件是否只允许英文仍需确认。 |
+| `oracle_text` | string? | Scryfall 对应概念 | 原始 Oracle 规则叙述；导出文件是否只允许英文仍需确认。 |
 | `translated_name` | string? | 映射 | 简体中文牌名；API 中对应 `CardFaceSchema.name_zhs`。 |
 | `name_stage` | integer | 未确认 | 牌名翻译流程阶段，数值枚举未定义。 |
-| `name_source` | string? | Schema | 牌名翻译来源。 |
+| `name_source` | string? | Schema 对应概念 | 牌名翻译来源，聚合后对应 `TranslationSourceSchema.name_source`。 |
 | `translated_type` | string? | 映射 | 简体中文类别栏；API 中对应 `CardFaceSchema.type_line_zhs`。 |
 | `type_stage` | integer | 未确认 | 类别栏翻译流程阶段，数值枚举未定义。 |
 | `translated_text` | string? | 映射 | 简体中文规则叙述；API 中对应 `CardFaceSchema.oracle_text_zhs_html` 的文本来源。 |
 | `text_stage` | integer | 未确认 | 规则叙述翻译流程阶段，数值枚举未定义。 |
-| `text_source` | string? | Schema | 规则叙述翻译来源。 |
+| `text_source` | string? | Schema 对应概念 | 规则叙述翻译来源，聚合后对应 `TranslationSourceSchema.text_source`。 |
 | `former_names` | array | Schema | 曾用中文名称列表。 |
 | `extra` | unknown? | 未确认 | 扩展信息，结构未在 Schemas 中定义。 |
 
 ## 7. `zhs_ruling.json`
 
-该文件保存英文裁定及简体中文翻译。MTGCH API 对外输出为 `RulingSchema`。
+该文件保存原始裁定及简体中文翻译。Scryfall Card Object 文档只通过 `rulings_uri` 指向裁定列表，并不在 Card Object 中定义这些原始列；MTGCH API 对外输出为 `RulingSchema`。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
 | `ruling` | UUID | 未确认 | 裁定记录内部 ID；Schemas 未说明它与卡牌或 Oracle ID 的关联方式。 |
-| `comment` | string | Schema | 英文裁定内容。 |
+| `comment` | string | Schema | 原始裁定内容；`RulingSchema.comment` 可直接确认，是否只允许英文仍需样本确认。 |
 | `translation` | string? | Schema | 简体中文裁定翻译。 |
 | `source` | string? | Schema | 裁定来源，例如样本中的 `official`；完整枚举未定义。 |
 | `stage` | integer | 未确认 | 裁定翻译流程阶段，数值枚举未定义。 |
-| `last_published_at` | date? | 映射 | 最近发布日期；API 输出字段名为 `published_at`。 |
+| `last_published_at` | date? | Schema 映射 | 最近发布日期；API 聚合后字段名为 `RulingSchema.published_at`。 |
 | `extra` | unknown? | 未确认 | 扩展信息，结构未在 Schemas 中定义。 |
 
 ## 8. `zhs_set.json`
 
-该文件保存系列简体中文名称。MTGCH API 最终将相关信息合并进 `SetSchema`。
+该文件保存系列简体中文名称。Scryfall Card Object 的印刷字段包含 `set_id`、`set`、`set_name`；MTGCH API 最终将中文名称合并进 `SetSchema.translated_name`。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
-| `set_id` | UUID | 映射 | 系列 ID，预计对应 `SetSchema.id` 以及 `scryfall_card.set_id`。 |
-| `code` | string | Schema | 系列代码。 |
-| `name` | string? | 映射 | 系列简体中文名称；API 中对应 `SetSchema.translated_name`，而非英文 `name`。 |
+| `set_id` | UUID | 已确认唯一 | 系列唯一关联键，对应 Scryfall `set_id`、`scryfall_card.set_id` 与 `SetSchema.id`。 |
+| `code` | string | Scryfall/Schema 映射 | 系列代码，对应 Scryfall `set` 与 `SetSchema.code`。 |
+| `name` | string? | Schema 映射 | 系列简体中文名称；API 中对应 `SetSchema.translated_name`，而非英文 `SetSchema.name`。 |
 | `source` | string? | 未确认 | 系列名称翻译来源，枚举未定义。 |
 | `stage` | integer | 未确认 | 系列名称翻译流程阶段，数值枚举未定义。 |
 
 ## 9. `zhs_type.json`
 
-该文件保存卡牌类别词汇翻译。MTGCH Schemas 没有公开与其对应的原始或响应对象。
+该文件保存卡牌类别词汇翻译。Scryfall Card Object 只提供完成后的 `type_line`，MTGCH Schemas 也没有公开类别词典的原始或响应对象，因此本文件所有字段都无法从指定文档直接确认。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
@@ -271,7 +282,8 @@
 | 系列内定位 | `set_code` + `collector_number`，必要时再加 `lang`。 |
 | 区分实体牌语言 | `lang`，不能用中文翻译是否存在来代替。 |
 | 普通/闪卡可用工艺 | `finishes`、`foil`、`nonfoil`。 |
-| 卡牌中文名称和规则叙述 | 优先 `zhs_oracle`，不存在时回退 `scryfall_card` 英文 Oracle 字段。 |
+| 卡牌中文名称和规则叙述 | 优先使用 `zhs_oracle` 中非空的翻译字段，不检查 `stage`；翻译缺失时回退 `scryfall_card` 英文 Oracle 字段。 |
+| 中文缺失判断 | `null`、空字符串和仅包含空白字符的字符串统一视为缺失。 |
 | 特定印刷中文文字 | `zhs_card`，通过本地卡牌 ID 或 `multiverse_id` 关联。 |
 | 背景叙述中文翻译 | `flavor_id` 关联 `zhs_flavor`。 |
 | 系列中文名称 | `set_id` 关联 `zhs_set`。 |
@@ -280,15 +292,30 @@
 
 ## 11. 尚需确认
 
-在正式设计查询 SQL 前，需要通过针对性样本或上游数据模型继续确认：
+这些文件是只读卡牌元数据，服务不会增删改，也不会生成其中的 ID 或维护翻译流程。因此只需要确认会影响查询结果、关联结果或语言回退的规则。
 
-1. `uuid` 与 `zhs_card.card_id` 是否始终一一对应。
-2. `face_index` 在 transform、modal DFC、split、adventure、meld 等版面中的取值规则。
-3. `multiverse_ids` 被转换为单个 `multiverse_id` 时的选择规则。
-4. `stage`、`name_stage`、`type_stage`、`text_stage` 的枚举含义。
-5. 各文件 `extra` 的实际数据类型和结构。
-6. `zhs_ruling.ruling` 的生成规则以及如何关联卡牌。
-7. `zhs_flavor.flavor_text` 是否允许任意原始语言，而不只英文。
+### 11.1 实现前需要确认
+
+当前没有阻塞只读查询、关联、中文展示或英文回退实现的待确认项。
+
+中文字段的统一处理规则已经确定：先去除首尾空白，结果为空或原值为 `null` 时视为缺失，并回退对应英文内容。
+
+### 11.2 对应功能启用时再确认
+
+- 如果名称搜索需要兼容历史译名，再确认 `zhs_oracle.former_names` 的元素结构和匹配规则。
+- 如果卡牌详情需要展示裁定，再确认 `zhs_ruling.ruling` 如何关联卡牌或 Oracle 身份。
+- 如果需要展示 `extra`，再确认 `zhs_oracle.extra`、`zhs_ruling.extra` 等字段的结构；当前需求可以忽略。
+- 如果需要使用 `zhs_type` 动态翻译类别词汇，再确认 `type_type`、`stage` 和 `is_funny`；当前可以直接使用卡牌记录中已经生成的中文类别栏。
+
+### 11.3 不需要确认
+
+- UUID 的生成算法。
+- `source` 的完整枚举，除非界面要展示翻译来源。
+- `stage` 的完整枚举及具体含义；运行时不读取 `stage`，所有翻译字段非空时直接展示。
+- `created_at`、`updated_at`、`flavor_updated_at` 的触发条件。
+- 单个 `multiverse_id` 从上游数组中的选择算法；服务只把现有值作为可空外部标识读取。
+- `extra` 的完整内容范围，除非产品明确要求展示。
+- 原文字段是否全部来自同一种语言；英文回退可以直接读取 Scryfall 标准字段，不依赖 `zhs_*` 中的原文字段。
 
 ## 12. 参考文档
 
@@ -296,4 +323,3 @@
 - [Scryfall Card Images](https://scryfall.com/docs/api/images)
 - [MTGCH API 文档](https://mtgch.com/api/v1/docs)
 - [MTGCH OpenAPI Schema](https://mtgch.com/api/v1/openapi.json)
-
