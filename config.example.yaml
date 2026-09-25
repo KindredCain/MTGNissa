@@ -1,0 +1,33 @@
+# Copy outside the image and mount read-only in Docker.
+http:
+  addr: ":8080"
+  shutdown_timeout: 10s
+
+log:
+  level: info
+
+card_data:
+  dir: /data/card-data
+  rebuild_enabled: false
+
+databases:
+  card:
+    host: mysql
+    port: 3306
+    name: mtg_cards
+    user: mtgnissa_card
+    password: ""
+    max_open_conns: 5
+    max_idle_conns: 1
+    conn_max_idle_time: 5m
+    conn_max_lifetime: 30m
+  app:
+    host: mysql
+    port: 3306
+    name: mtgnissa
+    user: mtgnissa_app
+    password: ""
+    max_open_conns: 5
+    max_idle_conns: 1
+    conn_max_idle_time: 5m
+    conn_max_lifetime: 30m

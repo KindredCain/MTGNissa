@@ -577,6 +577,9 @@ Commander Atraxa
 - 只重建只读卡牌元数据库，不得修改个人数据数据库。
 - 每次执行均为全量替换，不做增量更新、合并或单条修复。
 - 重建后的卡牌表内容必须完全来自本次读取的 JSON 文件。
+- `scryfall_card` 是卡牌、印刷版本及英文原文的实体数据源；卡牌查询、列表和详情必须以其记录为主体。
+- `zhs_*.json` 是可选的简体中文翻译、本地化及辅助词典数据，只能覆盖或补充 Scryfall 实体的展示字段，不得独立产生卡牌实体。
+- 中文字段缺失、为 `null` 或仅含空白时，必须回退使用 `scryfall_card` 的对应字段。
 
 ### 15.2 数据目录
 
@@ -617,6 +620,7 @@ CARD_DATA_DIR=/data/card-data
 - 每行包含该对象的必需字段。
 - 记录文件大小、总行数和 SHA-256。
 - 已确认唯一的关联字段不存在重复值。
+- `zhs_*.json` 只将各文件的关联键或组合唯一键视为非空必需字段；翻译、名称、评论及其他业务内容字段允许为 `null`。
 
 只有全部七个文件都完成预检后，才能进入数据库重建阶段。
 
@@ -647,18 +651,42 @@ CARD_DATA_DIR=/data/card-data
 - `zhs_ruling`
 - `zhs_set`
 - `zhs_type`
+- `scryfall_card_keyword`
+- `scryfall_card_mana_symbol`
+- `scryfall_card_type`
+- `scryfall_card_artist`
+- `scryfall_card_frame_effect`
+- `scryfall_card_promo_type`
+- `zhs_oracle_former_name`
+- `scryfall_set`
+- `scryfall_color`
+- `scryfall_language`
+- `scryfall_layout`
+- `scryfall_frame`
+- `scryfall_frame_effect`
+- `scryfall_finish`
+- `scryfall_game`
 
 禁止枚举数据库中的所有表后直接删除。执行前必须确认当前连接的数据库名称等于配置的卡牌数据库名称，防止误操作个人数据数据库。
 
 ### 15.7 导入要求
 
 - NDJSON 必须逐行流式读取，不能将整个文件加载到内存。
+- 标量 JSON 字段使用 MySQL 对应标量类型存入主表或字典表，不得将整行记录保存为单个 `document` JSON 列。
+- 颜色、颜色标识、颜色指示符、可产法术力、工艺、游戏平台和 Attraction 灯号为取值受限的多值属性，在 `scryfall_card` 中使用可索引位掩码列保存。
+- 关键词、法术力符号、类型词、画师、牌框效果、推广类型和曾用名仍通过多对多关联表保存。
+- `preview` 不参与检索，以规范 JSON 文本存入 `scryfall_card.preview` 的可空 `LONGTEXT` 列，不单独建表。
+- 颜色、语言、布局、卡框、卡框效果、工艺和游戏平台的代码与说明由 Scryfall 官方元数据生成小型只读字典；卡牌主表保存代码或位掩码。
+- 系列信息从 `scryfall_card` 的 `set_id`、`set_code`、`set_name`和 `set_type` 动态汇总到 `scryfall_set`，卡牌主表仅保留 `set_id` 关联。
+- `cmc`、`mana_cost`、`type_line`、牌名、稀有度和发行日期保留在 `scryfall_card` 主表并建立索引。
+- 主键、翻译关联键和常用查询字段必须建立索引。全量原子换表不建立跨表外键约束，关联完整性由预检和业务查询保证。
 - JSON 的 `null` 原样写入 MySQL `NULL`。
-- 卡牌原始字段不做业务转换。
+- 除上述明确的位掩码、字典关联和检索派生字段外，卡牌原始标量值不做业务转换。
 - 普通、闪卡和蚀刻闪的计数归类只发生在业务查询层，不写回卡牌库。
 - 使用批量插入，并记录每个文件的读取行数和插入行数。
 - 解析或插入失败时需要记录文件名和行号，但不得记录完整卡牌 JSON。
 - 同一服务实例同一时间只允许执行一个重建任务。
+- 重建任务必须在开始、阶段切换、逐文件校验完成、逐文件导入完成、行数核对、原子切换和最终结果时输出结构化日志；任务运行期间每 30 秒输出一次包含任务 ID、当前阶段和累计耗时的心跳日志，大文件导入每 10,000 行额外输出一次写入进度，避免长时间静默。
 
 ### 15.8 接口行为
 
