@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"mtgnissa/internal/appdata"
 	"mtgnissa/internal/carddata"
 	"mtgnissa/internal/config"
 	"mtgnissa/internal/database"
@@ -48,6 +49,10 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 	dbs, err := database.Open(ctx, cfg.CardDB, cfg.AppDB)
 	if err != nil {
+		return nil, err
+	}
+	if err := appdata.Migrate(ctx, dbs.App); err != nil {
+		dbs.Close()
 		return nil, err
 	}
 	manager := carddata.NewManager(ctx, dbs.Card, cfg.CardDB.Name, cfg.CardDataDir, log)

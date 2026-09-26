@@ -216,7 +216,9 @@ operation_log
 
 ## 8. 迁移落地顺序
 
-首个 Goose migration 应按以下顺序建表：`card_print_ref`、`collection_item`、`wishlist_item`、`deck`、`deck_card`、`operation_log`、`operation_card_detail`、`operation_deck_detail`。回滚时反序删除。
+首批 Goose migration 按以下顺序各自创建一张表：`card_print_ref`、`collection_item`、`wishlist_item`、`deck`、`deck_card`、`operation_log`、`operation_card_detail`、`operation_deck_detail`。MySQL DDL 会隐式提交，因此不把多张表放进同一个版本；失败后可以从尚未完成的版本继续重试。回滚时按版本反序删除。
+
+迁移 SQL 统一位于 `migrations/app`，由 `migrations/embed.go` 内嵌到可执行文件。服务连接 Card DB 和 App DB 后、启动 HTTP 服务前自动升级 App DB；迁移失败时关闭数据库连接并终止启动。Goose 使用 App DB 中的 `goose_db_version` 表记录已执行版本。Card DB 不由 Goose 管理。
 
 迁移中只对 App DB 内部关系使用具名外键，不使用 `CHECK`。数量总和、分区代码、动作代码、工艺代码以及操作明细与动作类型的匹配关系均由应用层集中校验；数值列继续使用 `UNSIGNED`、`NOT NULL` 和事务作为数据库层保护。
 
