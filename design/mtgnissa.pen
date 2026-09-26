@@ -362,9 +362,9 @@
                     {
                       "type": "text",
                       "id": "Bdvq9",
-                      "name": "Search Placeholder",
+                      "name": "Global Card and Syntax Search Placeholder",
                       "fill": "$muted",
-                      "content": "搜索卡牌…",
+                      "content": "搜索卡牌或输入语法…",
                       "fontFamily": "$font",
                       "fontSize": 13,
                       "fontWeight": "normal"
@@ -11583,6 +11583,3567 @@
                   "fontFamily": "$font",
                   "fontSize": 12,
                   "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "v9gFv",
+      "x": 3300,
+      "y": -746,
+      "name": "Screen / Card Detail — Official Rulings",
+      "clip": true,
+      "width": 1440,
+      "height": 1080,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "Ak9Nd",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "Card Detail Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "NFBnw": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "ibPUo",
+          "name": "Breadcrumb",
+          "width": "fill_container",
+          "gap": 8,
+          "padding": [
+            18,
+            34
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "O0s7W",
+              "name": "Breadcrumb Set and Language",
+              "fill": "#247650",
+              "content": "卡拉德许（日文）",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "650"
+            },
+            {
+              "type": "text",
+              "id": "YxTT6",
+              "name": "Breadcrumb Chevron",
+              "fill": "#9BA49F",
+              "content": "›",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "tgxSr",
+              "name": "Breadcrumb 妮莎，生命之力",
+              "fill": "#18201D",
+              "content": "妮莎，生命之力",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "650"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "H42ERF",
+          "name": "Card Detail Hero",
+          "width": "fill_container",
+          "gap": 34,
+          "padding": [
+            8,
+            34,
+            28,
+            34
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "ZmppZ",
+              "name": "Card Visual Column",
+              "width": 350,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "U3Saw",
+                  "name": "Japanese Card Image",
+                  "width": 350,
+                  "height": 488,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "assets/card-samples/nissa-kld-163-ja.jpg",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 18,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#14201933",
+                    "offset": {
+                      "x": 0,
+                      "y": 10
+                    },
+                    "blur": 24
+                  },
+                  "layout": "vertical"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "y4Ozcl",
+              "name": "Fixed Chinese Card Information",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mskVz",
+                  "name": "Card Title Block",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "o38Bi",
+                      "name": "Card Titles",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "As86a",
+                          "name": "Localized Card Name",
+                          "fill": "#18201D",
+                          "content": "妮莎，生命之力",
+                          "fontFamily": "$font",
+                          "fontSize": 34,
+                          "fontWeight": "750"
+                        },
+                        {
+                          "type": "text",
+                          "id": "VQGIF",
+                          "name": "English Card Name",
+                          "fill": "#68736E",
+                          "content": "Nissa, Vital Force",
+                          "fontFamily": "$font",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "geQoD",
+                      "name": "Mana Cost Badge",
+                      "fill": "#DFE9DE",
+                      "cornerRadius": 9,
+                      "gap": 6,
+                      "padding": [
+                        9,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iTerc",
+                          "name": "Mana Cost",
+                          "fill": "#315942",
+                          "content": "{3}{G}{G}",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yqEyN",
+                  "name": "Printing Metadata",
+                  "width": "fill_container",
+                  "gap": 9,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Lnq1z",
+                      "name": "系列",
+                      "width": "fill_container",
+                      "fill": "#E6E9E3",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k8Cjt",
+                          "name": "系列 Label",
+                          "fill": "#7A8580",
+                          "content": "系列",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "d5gue",
+                          "name": "系列 Value",
+                          "fill": "#18201D",
+                          "content": "卡拉德许 · KLD",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vrCWd",
+                      "name": "收藏编号",
+                      "width": "fill_container",
+                      "fill": "#E6E9E3",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ILriW",
+                          "name": "收藏编号 Label",
+                          "fill": "#7A8580",
+                          "content": "收藏编号",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HWjIs",
+                          "name": "收藏编号 Value",
+                          "fill": "#18201D",
+                          "content": "#163",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EEey7",
+                      "name": "稀有度",
+                      "width": "fill_container",
+                      "fill": "#E6E9E3",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "smgz4",
+                          "name": "稀有度 Label",
+                          "fill": "#7A8580",
+                          "content": "稀有度",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ihID4",
+                          "name": "稀有度 Value",
+                          "fill": "#18201D",
+                          "content": "秘稀",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vG9z2",
+                  "name": "Card Detail Tabs",
+                  "width": "fill_container",
+                  "stroke": "#CAD0CB",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "X21MBj",
+                      "name": "卡牌详情 Tab",
+                      "stroke": "#00000000",
+                      "strokeWidth": {
+                        "bottom": 2
+                      },
+                      "padding": [
+                        10,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tV4QI",
+                          "name": "卡牌详情 Tab Label",
+                          "fill": "#7A8580",
+                          "content": "卡牌详情",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XfdLN",
+                      "name": "官方释疑 Tab",
+                      "stroke": "#247650",
+                      "strokeWidth": {
+                        "bottom": 2
+                      },
+                      "padding": [
+                        10,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "sujUQ",
+                          "name": "官方释疑 Tab Label",
+                          "fill": "#18201D",
+                          "content": "官方释疑",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wf4ei",
+                      "name": "功能标签 Tab",
+                      "stroke": "#00000000",
+                      "strokeWidth": {
+                        "bottom": 2
+                      },
+                      "padding": [
+                        10,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "OWx5C",
+                          "name": "功能标签 Tab Label",
+                          "fill": "#7A8580",
+                          "content": "功能标签",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z1FWu",
+                  "name": "Official Rulings Content",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "tS2Qx",
+                      "name": "Official Rulings Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Eo9G4",
+                          "name": "Official Rulings Heading",
+                          "fill": "#18201D",
+                          "content": "官方释疑",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TJten",
+                          "name": "Official Rulings Count",
+                          "fill": "#7A8580",
+                          "content": "3 条",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nZLo9",
+                      "name": "Official Ruling 01",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 10,
+                      "stroke": "#D7DBD6",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 7,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Y2R9P",
+                          "name": "Official Ruling 01 Metadata",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UML1F",
+                              "name": "Official Ruling 01 Date",
+                              "fill": "#7A8580",
+                              "content": "2016-09-20",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "x9WiR",
+                              "name": "Official Ruling 01 Source Badge",
+                              "fill": "#E0F1E9",
+                              "cornerRadius": 5,
+                              "padding": [
+                                3,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "MXU3b",
+                                  "name": "Official Ruling 01 Source",
+                                  "fill": "#247650",
+                                  "content": "WotC",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Y7vZWU",
+                          "name": "Official Ruling 01 Chinese",
+                          "fill": "#18201D",
+                          "content": "永久物牌包括神器、生物、结界、地以及鹏洛客牌。",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "GdRZe",
+                          "name": "Official Ruling 01 English",
+                          "fill": "#7A8580",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "A permanent card is an artifact, creature, enchantment, land, or planeswalker card.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aAVFA",
+                      "name": "Official Ruling 02",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 10,
+                      "stroke": "#D7DBD6",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 7,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "c4BooE",
+                          "name": "Official Ruling 02 Metadata",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "HNeOO",
+                              "name": "Official Ruling 02 Date",
+                              "fill": "#7A8580",
+                              "content": "2016-09-20",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "L9paT",
+                              "name": "Official Ruling 02 Source Badge",
+                              "fill": "#E0F1E9",
+                              "cornerRadius": 5,
+                              "padding": [
+                                3,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "PbAVX",
+                                  "name": "Official Ruling 02 Source",
+                                  "fill": "#247650",
+                                  "content": "WotC",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "T9ry2i",
+                          "name": "Official Ruling 02 Chinese",
+                          "fill": "#18201D",
+                          "content": "你能以某个未横置的地为目标起动妮莎的第一个异能。",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Y2kZfB",
+                          "name": "Official Ruling 02 English",
+                          "fill": "#7A8580",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "You can activate Nissa's first ability targeting a land that's already untapped.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "W8wtb",
+                      "name": "Official Ruling 03",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 10,
+                      "stroke": "#D7DBD6",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 7,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "MHjON",
+                          "name": "Official Ruling 03 Metadata",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "J1u0wx",
+                              "name": "Official Ruling 03 Date",
+                              "fill": "#7A8580",
+                              "content": "2016-09-20",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "IgeT4",
+                              "name": "Official Ruling 03 Source Badge",
+                              "fill": "#E0F1E9",
+                              "cornerRadius": 5,
+                              "padding": [
+                                3,
+                                7
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "KEnyb",
+                                  "name": "Official Ruling 03 Source",
+                                  "fill": "#247650",
+                                  "content": "WotC",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "fpuTo",
+                          "name": "Official Ruling 03 Chinese",
+                          "fill": "#18201D",
+                          "content": "妮莎的第一个异能结算后，该目标地依旧会具有它在成为生物前具有之所有异能及其他类别。",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "AogYM",
+                          "name": "Official Ruling 03 English",
+                          "fill": "#7A8580",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "After resolving Nissa's first ability, the target land still has its previous abilities and other types.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "q2cHAU",
+              "name": "Ownership and Printings",
+              "width": 318,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "bqM2R",
+                  "name": "Collection Controls",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 12,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 14,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "vcueb",
+                      "name": "Collection Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bhHFb",
+                          "name": "My Cards List Link",
+                          "fill": "#247650",
+                          "content": "我的收藏  ↗",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JBlBK",
+                          "name": "Wishlist Active",
+                          "fill": "#FFF1D8",
+                          "cornerRadius": 7,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "x5yADm",
+                              "name": "Wishlist Icon",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "star",
+                              "library": "lucide",
+                              "fill": "#C47A00"
+                            },
+                            {
+                              "type": "text",
+                              "id": "a0fP1D",
+                              "name": "Wishlist Label",
+                              "fill": "#945B00",
+                              "content": "愿望单",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WRNgM",
+                      "name": "普通卡 Quantity",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G1OTbw",
+                          "name": "普通卡 Label",
+                          "fill": "#4E5A54",
+                          "content": "普通卡",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "esUvA",
+                          "name": "普通卡 Stepper",
+                          "fill": "#F0F2EE",
+                          "cornerRadius": 8,
+                          "gap": 12,
+                          "padding": [
+                            7,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "S0tzp",
+                              "name": "普通卡 Minus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "minus",
+                              "library": "lucide",
+                              "fill": "#52605A"
+                            },
+                            {
+                              "type": "text",
+                              "id": "uYVp4",
+                              "name": "普通卡 Value",
+                              "fill": "#18201D",
+                              "content": "3",
+                              "fontFamily": "$font",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "WxYyh",
+                              "name": "普通卡 Plus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "plus",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jjzrh",
+                      "name": "闪卡 Quantity",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G2GqXj",
+                          "name": "闪卡 Label",
+                          "fill": "#4E5A54",
+                          "content": "闪卡",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "a3dx9x",
+                          "name": "闪卡 Stepper",
+                          "fill": "#F0F2EE",
+                          "cornerRadius": 8,
+                          "gap": 12,
+                          "padding": [
+                            7,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "edPqf",
+                              "name": "闪卡 Minus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "minus",
+                              "library": "lucide",
+                              "fill": "#52605A"
+                            },
+                            {
+                              "type": "text",
+                              "id": "X2TS5",
+                              "name": "闪卡 Value",
+                              "fill": "#18201D",
+                              "content": "1",
+                              "fontFamily": "$font",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "wJfgP",
+                              "name": "闪卡 Plus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "plus",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MLvVP",
+                      "name": "Quantity Summary",
+                      "width": "fill_container",
+                      "fill": "#18201D",
+                      "cornerRadius": 8,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ss9xP",
+                          "name": "Quantity Summary Label",
+                          "fill": "#B7C1BC",
+                          "content": "当前版本拥有",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "YOiBY",
+                          "name": "Quantity Summary Value",
+                          "fill": "#FFFFFF",
+                          "content": "3:1*",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "v0j5Q",
+                      "name": "Card Total Collection",
+                      "width": "fill_container",
+                      "fill": "#E0F1E9",
+                      "cornerRadius": 8,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "sY5Sr",
+                          "name": "Card Total Labels",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "l5hfa",
+                              "name": "Card Total Collection Label",
+                              "fill": "#24523E",
+                              "content": "该卡收藏数量",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "C5ReV",
+                              "name": "Card Total Breakdown",
+                              "fill": "#5B7669",
+                              "content": "普通 9 · 闪 2",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "v6qDnR",
+                          "name": "Card Total Value",
+                          "fill": "#18201D",
+                          "content": "共 11 张",
+                          "fontFamily": "$font",
+                          "fontSize": 15,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zhY0R",
+                  "name": "Current Set Languages",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 12,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "fBpEI",
+                      "name": "Current Set Languages Title",
+                      "fill": "#18201D",
+                      "content": "当前系列语言",
+                      "fontFamily": "$font",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "m7hS4W",
+                      "name": "Current Set Printing",
+                      "fill": "#7A8580",
+                      "content": "卡拉德许 · KLD · #163",
+                      "fontFamily": "$font",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "F8aUrV",
+                      "name": "Current Language Select",
+                      "width": "fill_container",
+                      "fill": "#F0F2EE",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "padding": [
+                        9,
+                        11
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "T8Ki2",
+                          "name": "Selected Language",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "k67tV3",
+                              "name": "Language Icon",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "languages",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "feIws",
+                              "name": "Selected Language Label",
+                              "fill": "#18201D",
+                              "content": "日文",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "R9Z4F",
+                          "name": "Language Select Meta",
+                          "gap": 7,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "g5fu3",
+                              "name": "Available Language Count",
+                              "fill": "#7A8580",
+                              "content": "3 种可选",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "AAEqj",
+                              "name": "Language Select Chevron",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "chevron-down",
+                              "library": "lucide",
+                              "fill": "#53605A"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "h488rH",
+                  "name": "Other Set Printings",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 213,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 12,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "WZ55X",
+                      "name": "Other Set Printings Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "uDO6J",
+                          "name": "Other Set Printings Title",
+                          "fill": "#18201D",
+                          "content": "其他系列版本",
+                          "fontFamily": "$font",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TeKBt",
+                          "name": "Other Set Printings Count",
+                          "fill": "#7A8580",
+                          "content": "共 12 个版本",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Nu1Ck",
+                      "name": "Other Set Printings Scroll Viewport",
+                      "clip": true,
+                      "width": "fill_container",
+                      "height": 151,
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "M0ajQp",
+                          "name": "Other Set Printings Compact List",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 5,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Hvrzj",
+                              "name": "Commander Masters · CMM Printing",
+                              "width": "fill_container",
+                              "fill": "#F3F4F1",
+                              "cornerRadius": 7,
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "s5Cmt",
+                                  "name": "Commander Masters · CMM Header",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "VTljq",
+                                      "name": "Commander Masters · CMM Name",
+                                      "fill": "#18201D",
+                                      "content": "Commander Masters · CMM",
+                                      "fontFamily": "$font",
+                                      "fontSize": 11,
+                                      "fontWeight": "650"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "EPZjg",
+                                      "name": "Commander Masters · CMM Total Owned",
+                                      "fill": "#247650",
+                                      "content": "拥有 2",
+                                      "fontFamily": "$font",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Fxp1I",
+                                  "name": "Commander Masters · CMM Available Languages",
+                                  "gap": 5,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "xI5ae",
+                                      "name": "Commander Masters · CMM Language 简中",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "W0Q3v",
+                                          "name": "Commander Masters · CMM Language 简中 Label",
+                                          "fill": "#53605A",
+                                          "content": "简中",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "X8FC2m",
+                                      "name": "Commander Masters · CMM Language 英文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "QSo2Q",
+                                          "name": "Commander Masters · CMM Language 英文 Label",
+                                          "fill": "#53605A",
+                                          "content": "英文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "C7I0BI",
+                                      "name": "Commander Masters · CMM Language 日文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "G0Y2Co",
+                                          "name": "Commander Masters · CMM Language 日文 Label",
+                                          "fill": "#53605A",
+                                          "content": "日文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "tI2nX",
+                              "name": "Jumpstart 2022 · J22 Printing",
+                              "width": "fill_container",
+                              "fill": "#F3F4F1",
+                              "cornerRadius": 7,
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "vLvrD",
+                                  "name": "Jumpstart 2022 · J22 Header",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "d7TjWR",
+                                      "name": "Jumpstart 2022 · J22 Name",
+                                      "fill": "#18201D",
+                                      "content": "Jumpstart 2022 · J22",
+                                      "fontFamily": "$font",
+                                      "fontSize": 11,
+                                      "fontWeight": "650"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Y9FgNp",
+                                      "name": "Jumpstart 2022 · J22 Total Owned",
+                                      "fill": "#247650",
+                                      "content": "拥有 2",
+                                      "fontFamily": "$font",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "NTkkC",
+                                  "name": "Jumpstart 2022 · J22 Available Languages",
+                                  "gap": 5,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "mruAx",
+                                      "name": "Jumpstart 2022 · J22 Language 英文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "wqGvn",
+                                          "name": "Jumpstart 2022 · J22 Language 英文 Label",
+                                          "fill": "#53605A",
+                                          "content": "英文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "T9WEbX",
+                                      "name": "Jumpstart 2022 · J22 Language 日文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "W7ceB",
+                                          "name": "Jumpstart 2022 · J22 Language 日文 Label",
+                                          "fill": "#53605A",
+                                          "content": "日文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ReEct",
+                              "name": "Kaladesh Remastered · KLR Printing",
+                              "width": "fill_container",
+                              "fill": "#F3F4F1",
+                              "cornerRadius": 7,
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "BKIkK",
+                                  "name": "Kaladesh Remastered · KLR Header",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "J2lE9q",
+                                      "name": "Kaladesh Remastered · KLR Name",
+                                      "fill": "#18201D",
+                                      "content": "Kaladesh Remastered · KLR",
+                                      "fontFamily": "$font",
+                                      "fontSize": 11,
+                                      "fontWeight": "650"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "LNAGb",
+                                      "name": "Kaladesh Remastered · KLR Total Owned",
+                                      "fill": "#87918C",
+                                      "content": "拥有 0",
+                                      "fontFamily": "$font",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "hLGwz",
+                                  "name": "Kaladesh Remastered · KLR Available Languages",
+                                  "gap": 5,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "S6X1C",
+                                      "name": "Kaladesh Remastered · KLR Language 英文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "NwjH3",
+                                          "name": "Kaladesh Remastered · KLR Language 英文 Label",
+                                          "fill": "#53605A",
+                                          "content": "英文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WyzTw",
+                          "name": "Other Set Printings Scrollbar Track",
+                          "width": 4,
+                          "height": "fill_container",
+                          "fill": "#E4E8E4",
+                          "cornerRadius": 2,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "rectangle",
+                              "cornerRadius": 2,
+                              "id": "XcStM",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Other Set Printings Scrollbar Thumb",
+                              "fill": "#9CA8A2",
+                              "width": 4,
+                              "height": 46
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "L0OcRG",
+                  "name": "Deck Usage",
+                  "width": "fill_container",
+                  "fill": "#18201D",
+                  "cornerRadius": 12,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MM4x3",
+                      "name": "Deck Usage Title",
+                      "fill": "#FFFFFF",
+                      "content": "卡组使用情况",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "igolw",
+                      "name": "Deck Usage Summary",
+                      "fill": "#B7C1BC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "出现在 2 个卡组 · 总需求 4 · 跨卡组缺口 0",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MP4uW",
+                      "name": "苔影复苏 Usage",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ag35j",
+                          "name": "苔影复苏 Deck Detail Link",
+                          "fill": "#E7F4EC",
+                          "content": "苔影复苏  ↗",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "lCNou",
+                          "name": "苔影复苏 Deck Quantity",
+                          "fill": "$green",
+                          "content": "1",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L8RUPQ",
+                      "name": "元素回响 Usage",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iFIEB",
+                          "name": "元素回响 Deck Detail Link",
+                          "fill": "#E7F4EC",
+                          "content": "元素回响  ↗",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "jsJYA",
+                          "name": "元素回响 Deck Quantity",
+                          "fill": "$green",
+                          "content": "3",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "RgLLd",
+      "x": 4820,
+      "y": -746,
+      "name": "Screen / Card Detail — Function Tags",
+      "clip": true,
+      "width": 1440,
+      "height": 1080,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "FT3P0",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "Card Detail Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "NFBnw": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "LYfG6",
+          "name": "Breadcrumb",
+          "width": "fill_container",
+          "gap": 8,
+          "padding": [
+            18,
+            34
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Cj7ru",
+              "name": "Breadcrumb Set and Language",
+              "fill": "#247650",
+              "content": "卡拉德许（日文）",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "650"
+            },
+            {
+              "type": "text",
+              "id": "YafnI",
+              "name": "Breadcrumb Chevron",
+              "fill": "#9BA49F",
+              "content": "›",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "PNDrs",
+              "name": "Breadcrumb 妮莎，生命之力",
+              "fill": "#18201D",
+              "content": "妮莎，生命之力",
+              "fontFamily": "$font",
+              "fontSize": 13,
+              "fontWeight": "650"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "P7aiL",
+          "name": "Card Detail Hero",
+          "width": "fill_container",
+          "gap": 34,
+          "padding": [
+            8,
+            34,
+            28,
+            34
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "Ygpp2",
+              "name": "Card Visual Column",
+              "width": 350,
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "B6OnFA",
+                  "name": "Japanese Card Image",
+                  "width": 350,
+                  "height": 488,
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "assets/card-samples/nissa-kld-163-ja.jpg",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 18,
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#14201933",
+                    "offset": {
+                      "x": 0,
+                      "y": 10
+                    },
+                    "blur": 24
+                  },
+                  "layout": "vertical"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "QbhcM",
+              "name": "Fixed Chinese Card Information",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "lG5CT",
+                  "name": "Card Title Block",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "OzLk2",
+                      "name": "Card Titles",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "uFFog",
+                          "name": "Localized Card Name",
+                          "fill": "#18201D",
+                          "content": "妮莎，生命之力",
+                          "fontFamily": "$font",
+                          "fontSize": 34,
+                          "fontWeight": "750"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I7qhts",
+                          "name": "English Card Name",
+                          "fill": "#68736E",
+                          "content": "Nissa, Vital Force",
+                          "fontFamily": "$font",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pytOk",
+                      "name": "Mana Cost Badge",
+                      "fill": "#DFE9DE",
+                      "cornerRadius": 9,
+                      "gap": 6,
+                      "padding": [
+                        9,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jl9gO",
+                          "name": "Mana Cost",
+                          "fill": "#315942",
+                          "content": "{3}{G}{G}",
+                          "fontFamily": "$font",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zXSlx",
+                  "name": "Printing Metadata",
+                  "width": "fill_container",
+                  "gap": 9,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "yYC2h",
+                      "name": "系列",
+                      "width": "fill_container",
+                      "fill": "#E6E9E3",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kEO3f",
+                          "name": "系列 Label",
+                          "fill": "#7A8580",
+                          "content": "系列",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "m6Tdo",
+                          "name": "系列 Value",
+                          "fill": "#18201D",
+                          "content": "卡拉德许 · KLD",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WGERG",
+                      "name": "收藏编号",
+                      "width": "fill_container",
+                      "fill": "#E6E9E3",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ktHaY",
+                          "name": "收藏编号 Label",
+                          "fill": "#7A8580",
+                          "content": "收藏编号",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "dhqR4",
+                          "name": "收藏编号 Value",
+                          "fill": "#18201D",
+                          "content": "#163",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D99ep",
+                      "name": "稀有度",
+                      "width": "fill_container",
+                      "fill": "#E6E9E3",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iyRv2",
+                          "name": "稀有度 Label",
+                          "fill": "#7A8580",
+                          "content": "稀有度",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "oZegi",
+                          "name": "稀有度 Value",
+                          "fill": "#18201D",
+                          "content": "秘稀",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mJF3w",
+                  "name": "Card Detail Tabs",
+                  "width": "fill_container",
+                  "stroke": "#CAD0CB",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "d7OahI",
+                      "name": "卡牌详情 Tab",
+                      "stroke": "#00000000",
+                      "strokeWidth": {
+                        "bottom": 2
+                      },
+                      "padding": [
+                        10,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IjV49",
+                          "name": "卡牌详情 Tab Label",
+                          "fill": "#7A8580",
+                          "content": "卡牌详情",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "y7Awh",
+                      "name": "官方释疑 Tab",
+                      "stroke": "#00000000",
+                      "strokeWidth": {
+                        "bottom": 2
+                      },
+                      "padding": [
+                        10,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "v6agcY",
+                          "name": "官方释疑 Tab Label",
+                          "fill": "#7A8580",
+                          "content": "官方释疑",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "A1esm5",
+                      "name": "功能标签 Tab",
+                      "stroke": "#247650",
+                      "strokeWidth": {
+                        "bottom": 2
+                      },
+                      "padding": [
+                        10,
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JyyUl",
+                          "name": "功能标签 Tab Label",
+                          "fill": "#18201D",
+                          "content": "功能标签",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EBVoo",
+                  "name": "Function Tags Content",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 9,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "nisaj",
+                      "name": "Function Tags Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IWlN0",
+                          "name": "Function Tags Heading",
+                          "fill": "#18201D",
+                          "content": "功能标签",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fAiYe",
+                          "name": "Function Tags Count",
+                          "fill": "#7A8580",
+                          "content": "10 个标签",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tpU0W",
+                      "name": "Function Tags Row 1",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "d48IhE",
+                          "name": "Function Tag untapper-land",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "wEYb8",
+                              "name": "Function Tag untapper-land Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "H7unP",
+                                  "name": "Function Tag untapper-land Label",
+                                  "fill": "#1F5E43",
+                                  "content": "untapper-land",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Ywx5r",
+                                  "name": "Function Tag untapper-land Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:untapper-land",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "Koqxd",
+                              "name": "Function Tag untapper-land Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JG1cH",
+                          "name": "Function Tag draw engine",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "yL1Dk",
+                              "name": "Function Tag draw engine Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Q8b4U",
+                                  "name": "Function Tag draw engine Label",
+                                  "fill": "#1F5E43",
+                                  "content": "draw engine",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "pHetV",
+                                  "name": "Function Tag draw engine Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:\"draw engine\"",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "fP7GM",
+                              "name": "Function Tag draw engine Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rtzp4",
+                      "name": "Function Tags Row 2",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "EuC0N",
+                          "name": "Function Tag ramp",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "H3zXT",
+                              "name": "Function Tag ramp Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "H0mmD",
+                                  "name": "Function Tag ramp Label",
+                                  "fill": "#1F5E43",
+                                  "content": "ramp",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "g6imCc",
+                                  "name": "Function Tag ramp Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:ramp",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "XZbxA",
+                              "name": "Function Tag ramp Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "HWMvA",
+                          "name": "Function Tag triggered ability",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "kCpCJ",
+                              "name": "Function Tag triggered ability Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "qdDjA",
+                                  "name": "Function Tag triggered ability Label",
+                                  "fill": "#1F5E43",
+                                  "content": "triggered ability",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "DDeIc",
+                                  "name": "Function Tag triggered ability Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:\"triggered ability\"",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "BpMy2",
+                              "name": "Function Tag triggered ability Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ejYXO",
+                      "name": "Function Tags Row 3",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "azRzW",
+                          "name": "Function Tag repeatable pure draw",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "vNvwc",
+                              "name": "Function Tag repeatable pure draw Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "otPrV",
+                                  "name": "Function Tag repeatable pure draw Label",
+                                  "fill": "#1F5E43",
+                                  "content": "repeatable pure draw",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "aayvs",
+                                  "name": "Function Tag repeatable pure draw Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:\"repeatable pure draw\"",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "cGzd9",
+                              "name": "Function Tag repeatable pure draw Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "nbsJr",
+                          "name": "Function Tag mini refund",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "MbG3I",
+                              "name": "Function Tag mini refund Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jiZXF",
+                                  "name": "Function Tag mini refund Label",
+                                  "fill": "#1F5E43",
+                                  "content": "mini refund",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "PYw3a",
+                                  "name": "Function Tag mini refund Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:\"mini refund\"",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "Z7vVHm",
+                              "name": "Function Tag mini refund Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NFKgQ",
+                      "name": "Function Tags Row 4",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "zPERI",
+                          "name": "Function Tag regrowth-permanent",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "pgGHt",
+                              "name": "Function Tag regrowth-permanent Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "F8w2x",
+                                  "name": "Function Tag regrowth-permanent Label",
+                                  "fill": "#1F5E43",
+                                  "content": "regrowth-permanent",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ofTJA",
+                                  "name": "Function Tag regrowth-permanent Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:regrowth-permanent",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "QTbAh",
+                              "name": "Function Tag regrowth-permanent Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mAesC",
+                          "name": "Function Tag activated ability",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "vHxry",
+                              "name": "Function Tag activated ability Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "hghzC",
+                                  "name": "Function Tag activated ability Label",
+                                  "fill": "#1F5E43",
+                                  "content": "activated ability",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "i9s9cl",
+                                  "name": "Function Tag activated ability Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:\"activated ability\"",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "RF3tt",
+                              "name": "Function Tag activated ability Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tMgQm",
+                      "name": "Function Tags Row 5",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "lKOmE",
+                          "name": "Function Tag animate land",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Uwu92",
+                              "name": "Function Tag animate land Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "IB9rj",
+                                  "name": "Function Tag animate land Label",
+                                  "fill": "#1F5E43",
+                                  "content": "animate land",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "mkA2v",
+                                  "name": "Function Tag animate land Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:\"animate land\"",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "e7tGzw",
+                              "name": "Function Tag animate land Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PYK5M",
+                          "name": "Function Tag landfall",
+                          "width": "fill_container",
+                          "fill": "#E8F2EC",
+                          "cornerRadius": 8,
+                          "stroke": "#C9DDD2",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Taayl",
+                              "name": "Function Tag landfall Text",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VMJyO",
+                                  "name": "Function Tag landfall Label",
+                                  "fill": "#1F5E43",
+                                  "content": "landfall",
+                                  "fontFamily": "$font",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "dclVK",
+                                  "name": "Function Tag landfall Query",
+                                  "fill": "#6B7E74",
+                                  "content": "otag:landfall",
+                                  "fontFamily": "$font",
+                                  "fontSize": 9,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon",
+                              "id": "M5PuJB",
+                              "name": "Function Tag landfall Link Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "yHKvo",
+                      "name": "Function Tags Community Note",
+                      "fill": "#7A8580",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "标签来自 Scryfall Tagger 社区数据；点击具体标签进入对应语法搜索结果。",
+                      "fontFamily": "$font",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "l9kuwF",
+              "name": "Ownership and Printings",
+              "width": 318,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "la39s",
+                  "name": "Collection Controls",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 12,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 14,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Yumju",
+                      "name": "Collection Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "z8mhG",
+                          "name": "My Cards List Link",
+                          "fill": "#247650",
+                          "content": "我的收藏  ↗",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Qz6EB",
+                          "name": "Wishlist Active",
+                          "fill": "#FFF1D8",
+                          "cornerRadius": 7,
+                          "gap": 6,
+                          "padding": [
+                            6,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "dHk7a",
+                              "name": "Wishlist Icon",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "star",
+                              "library": "lucide",
+                              "fill": "#C47A00"
+                            },
+                            {
+                              "type": "text",
+                              "id": "GwTKK",
+                              "name": "Wishlist Label",
+                              "fill": "#945B00",
+                              "content": "愿望单",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "z77M8",
+                      "name": "普通卡 Quantity",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fGvg3",
+                          "name": "普通卡 Label",
+                          "fill": "#4E5A54",
+                          "content": "普通卡",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Oo6F4",
+                          "name": "普通卡 Stepper",
+                          "fill": "#F0F2EE",
+                          "cornerRadius": 8,
+                          "gap": 12,
+                          "padding": [
+                            7,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "a7jY1D",
+                              "name": "普通卡 Minus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "minus",
+                              "library": "lucide",
+                              "fill": "#52605A"
+                            },
+                            {
+                              "type": "text",
+                              "id": "g7pKU",
+                              "name": "普通卡 Value",
+                              "fill": "#18201D",
+                              "content": "3",
+                              "fontFamily": "$font",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "rTgDo",
+                              "name": "普通卡 Plus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "plus",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UIRtA",
+                      "name": "闪卡 Quantity",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Qk7ak",
+                          "name": "闪卡 Label",
+                          "fill": "#4E5A54",
+                          "content": "闪卡",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hd2la",
+                          "name": "闪卡 Stepper",
+                          "fill": "#F0F2EE",
+                          "cornerRadius": 8,
+                          "gap": 12,
+                          "padding": [
+                            7,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "A7tgGw",
+                              "name": "闪卡 Minus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "minus",
+                              "library": "lucide",
+                              "fill": "#52605A"
+                            },
+                            {
+                              "type": "text",
+                              "id": "NYRGa",
+                              "name": "闪卡 Value",
+                              "fill": "#18201D",
+                              "content": "1",
+                              "fontFamily": "$font",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "I27nly",
+                              "name": "闪卡 Plus",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "plus",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Uiw7G",
+                      "name": "Quantity Summary",
+                      "width": "fill_container",
+                      "fill": "#18201D",
+                      "cornerRadius": 8,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GPOTq",
+                          "name": "Quantity Summary Label",
+                          "fill": "#B7C1BC",
+                          "content": "当前版本拥有",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "lqWtM",
+                          "name": "Quantity Summary Value",
+                          "fill": "#FFFFFF",
+                          "content": "3:1*",
+                          "fontFamily": "$font",
+                          "fontSize": 16,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p3V5q",
+                      "name": "Card Total Collection",
+                      "width": "fill_container",
+                      "fill": "#E0F1E9",
+                      "cornerRadius": 8,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "yXi0Y",
+                          "name": "Card Total Labels",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lQIoF",
+                              "name": "Card Total Collection Label",
+                              "fill": "#24523E",
+                              "content": "该卡收藏数量",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "SScyI",
+                              "name": "Card Total Breakdown",
+                              "fill": "#5B7669",
+                              "content": "普通 9 · 闪 2",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "s4QaUy",
+                          "name": "Card Total Value",
+                          "fill": "#18201D",
+                          "content": "共 11 张",
+                          "fontFamily": "$font",
+                          "fontSize": 15,
+                          "fontWeight": "750"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qQexI",
+                  "name": "Current Set Languages",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 12,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Oma5Q",
+                      "name": "Current Set Languages Title",
+                      "fill": "#18201D",
+                      "content": "当前系列语言",
+                      "fontFamily": "$font",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wAbTG",
+                      "name": "Current Set Printing",
+                      "fill": "#7A8580",
+                      "content": "卡拉德许 · KLD · #163",
+                      "fontFamily": "$font",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JDH21",
+                      "name": "Current Language Select",
+                      "width": "fill_container",
+                      "fill": "#F0F2EE",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "padding": [
+                        9,
+                        11
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "QmYRS",
+                          "name": "Selected Language",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "GwYGn",
+                              "name": "Language Icon",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "languages",
+                              "library": "lucide",
+                              "fill": "#247650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "u1TYc",
+                              "name": "Selected Language Label",
+                              "fill": "#18201D",
+                              "content": "日文",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "S4UTz",
+                          "name": "Language Select Meta",
+                          "gap": 7,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JQSdg",
+                              "name": "Available Language Count",
+                              "fill": "#7A8580",
+                              "content": "3 种可选",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "ZAgLY",
+                              "name": "Language Select Chevron",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "chevron-down",
+                              "library": "lucide",
+                              "fill": "#53605A"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "l1tty",
+                  "name": "Other Set Printings",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 213,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 12,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "n1LzoN",
+                      "name": "Other Set Printings Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "S8HQn",
+                          "name": "Other Set Printings Title",
+                          "fill": "#18201D",
+                          "content": "其他系列版本",
+                          "fontFamily": "$font",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "hjcoX",
+                          "name": "Other Set Printings Count",
+                          "fill": "#7A8580",
+                          "content": "共 12 个版本",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VJ5Sc",
+                      "name": "Other Set Printings Scroll Viewport",
+                      "clip": true,
+                      "width": "fill_container",
+                      "height": 151,
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "gIl4u",
+                          "name": "Other Set Printings Compact List",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 5,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "KqaFI",
+                              "name": "Commander Masters · CMM Printing",
+                              "width": "fill_container",
+                              "fill": "#F3F4F1",
+                              "cornerRadius": 7,
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "VXhPT",
+                                  "name": "Commander Masters · CMM Header",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "nZkqB",
+                                      "name": "Commander Masters · CMM Name",
+                                      "fill": "#18201D",
+                                      "content": "Commander Masters · CMM",
+                                      "fontFamily": "$font",
+                                      "fontSize": 11,
+                                      "fontWeight": "650"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "npibv",
+                                      "name": "Commander Masters · CMM Total Owned",
+                                      "fill": "#247650",
+                                      "content": "拥有 2",
+                                      "fontFamily": "$font",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "tMP1V",
+                                  "name": "Commander Masters · CMM Available Languages",
+                                  "gap": 5,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "H5Ihs2",
+                                      "name": "Commander Masters · CMM Language 简中",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "E51YuF",
+                                          "name": "Commander Masters · CMM Language 简中 Label",
+                                          "fill": "#53605A",
+                                          "content": "简中",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "sZOWF",
+                                      "name": "Commander Masters · CMM Language 英文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "twiVI",
+                                          "name": "Commander Masters · CMM Language 英文 Label",
+                                          "fill": "#53605A",
+                                          "content": "英文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "FBb7F",
+                                      "name": "Commander Masters · CMM Language 日文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "vLTMb",
+                                          "name": "Commander Masters · CMM Language 日文 Label",
+                                          "fill": "#53605A",
+                                          "content": "日文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "A2uink",
+                              "name": "Jumpstart 2022 · J22 Printing",
+                              "width": "fill_container",
+                              "fill": "#F3F4F1",
+                              "cornerRadius": 7,
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "ttzuV",
+                                  "name": "Jumpstart 2022 · J22 Header",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "h7uqG",
+                                      "name": "Jumpstart 2022 · J22 Name",
+                                      "fill": "#18201D",
+                                      "content": "Jumpstart 2022 · J22",
+                                      "fontFamily": "$font",
+                                      "fontSize": 11,
+                                      "fontWeight": "650"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "jnC2d",
+                                      "name": "Jumpstart 2022 · J22 Total Owned",
+                                      "fill": "#247650",
+                                      "content": "拥有 2",
+                                      "fontFamily": "$font",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "nuxDq",
+                                  "name": "Jumpstart 2022 · J22 Available Languages",
+                                  "gap": 5,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "NjwFh",
+                                      "name": "Jumpstart 2022 · J22 Language 英文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "GKLtU",
+                                          "name": "Jumpstart 2022 · J22 Language 英文 Label",
+                                          "fill": "#53605A",
+                                          "content": "英文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "M6tpFA",
+                                      "name": "Jumpstart 2022 · J22 Language 日文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "jfm9H",
+                                          "name": "Jumpstart 2022 · J22 Language 日文 Label",
+                                          "fill": "#53605A",
+                                          "content": "日文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Y3ZKJ",
+                              "name": "Kaladesh Remastered · KLR Printing",
+                              "width": "fill_container",
+                              "fill": "#F3F4F1",
+                              "cornerRadius": 7,
+                              "layout": "vertical",
+                              "gap": 4,
+                              "padding": [
+                                5,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "imCaA",
+                                  "name": "Kaladesh Remastered · KLR Header",
+                                  "width": "fill_container",
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "W1NmB",
+                                      "name": "Kaladesh Remastered · KLR Name",
+                                      "fill": "#18201D",
+                                      "content": "Kaladesh Remastered · KLR",
+                                      "fontFamily": "$font",
+                                      "fontSize": 11,
+                                      "fontWeight": "650"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "xPIzI",
+                                      "name": "Kaladesh Remastered · KLR Total Owned",
+                                      "fill": "#87918C",
+                                      "content": "拥有 0",
+                                      "fontFamily": "$font",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "a5YEo",
+                                  "name": "Kaladesh Remastered · KLR Available Languages",
+                                  "gap": 5,
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "S4zM9a",
+                                      "name": "Kaladesh Remastered · KLR Language 英文",
+                                      "fill": "#E3EAE5",
+                                      "cornerRadius": 4,
+                                      "padding": [
+                                        2,
+                                        6
+                                      ],
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "fBll0",
+                                          "name": "Kaladesh Remastered · KLR Language 英文 Label",
+                                          "fill": "#53605A",
+                                          "content": "英文",
+                                          "fontFamily": "$font",
+                                          "fontSize": 9,
+                                          "fontWeight": "650"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EYcdT",
+                          "name": "Other Set Printings Scrollbar Track",
+                          "width": 4,
+                          "height": "fill_container",
+                          "fill": "#E4E8E4",
+                          "cornerRadius": 2,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "rectangle",
+                              "cornerRadius": 2,
+                              "id": "JZzQa",
+                              "x": 0,
+                              "y": 0,
+                              "name": "Other Set Printings Scrollbar Thumb",
+                              "fill": "#9CA8A2",
+                              "width": 4,
+                              "height": 46
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "RJiKP",
+                  "name": "Deck Usage",
+                  "width": "fill_container",
+                  "fill": "#18201D",
+                  "cornerRadius": 12,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "LbAZ5",
+                      "name": "Deck Usage Title",
+                      "fill": "#FFFFFF",
+                      "content": "卡组使用情况",
+                      "fontFamily": "$font",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RqcmL",
+                      "name": "Deck Usage Summary",
+                      "fill": "#B7C1BC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "出现在 2 个卡组 · 总需求 4 · 跨卡组缺口 0",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oxWCa",
+                      "name": "苔影复苏 Usage",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "LgrHo",
+                          "name": "苔影复苏 Deck Detail Link",
+                          "fill": "#E7F4EC",
+                          "content": "苔影复苏  ↗",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "eIlUq",
+                          "name": "苔影复苏 Deck Quantity",
+                          "fill": "$green",
+                          "content": "1",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "daFgt",
+                      "name": "元素回响 Usage",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "dt6GX",
+                          "name": "元素回响 Deck Detail Link",
+                          "fill": "#E7F4EC",
+                          "content": "元素回响  ↗",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "L8Xl1H",
+                          "name": "元素回响 Deck Quantity",
+                          "fill": "$green",
+                          "content": "3",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
             }
