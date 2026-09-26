@@ -232,6 +232,8 @@ scryfall_card.set_id
 
 上表的 `card_uuid` 均逻辑关联 `scryfall_card.uuid`。这些表只保存集合成员或派生检索项；用于展示的原始 `mana_cost`、`type_line` 和 `artist` 仍保留在主表。
 
+关键词、卡框效果、推广类型和类别词等派生字符串集合会先去除首尾空白，再按 Unicode 不区分大小写比较去重，并保留第一次出现的文本。例如 `Family gathering` 与 `Family Gathering` 只生成一条关系，以匹配表的 `utf8mb4_unicode_ci` 唯一键语义。
+
 `oracle_tag` 主表定义如下：
 
 | 列 | MySQL 类型 | 用途 |

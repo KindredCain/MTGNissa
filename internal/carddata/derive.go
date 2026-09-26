@@ -218,13 +218,24 @@ func stringArrayField(obj map[string]json.RawMessage, field string) ([]string, e
 }
 
 func uniqueStrings(values []string) []string {
-	seen := make(map[string]struct{}, len(values))
+	seen := make([]string, 0, len(values))
 	result := make([]string, 0, len(values))
 	for _, value := range values {
-		if _, exists := seen[value]; exists {
+		value = strings.TrimSpace(value)
+		if value == "" {
 			continue
 		}
-		seen[value] = struct{}{}
+		duplicate := false
+		for _, previous := range seen {
+			if strings.EqualFold(previous, value) {
+				duplicate = true
+				break
+			}
+		}
+		if duplicate {
+			continue
+		}
+		seen = append(seen, value)
 		result = append(result, value)
 	}
 	return result
