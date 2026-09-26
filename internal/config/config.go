@@ -17,6 +17,7 @@ type DB struct {
 }
 
 type Config struct {
+	DisplayName     string
 	HTTPAddr        string
 	LogLevel        string
 	ShutdownTimeout time.Duration
@@ -27,6 +28,9 @@ type Config struct {
 }
 
 type fileConfig struct {
+	App struct {
+		DisplayName string `yaml:"display_name"`
+	} `yaml:"app"`
 	HTTP struct {
 		Addr            string `yaml:"addr"`
 		ShutdownTimeout string `yaml:"shutdown_timeout"`
@@ -112,6 +116,9 @@ func applyFile(c *Config, path string) error {
 	if err := decoder.Decode(&raw); err != nil {
 		return fmt.Errorf("decode config file %q: %w", path, err)
 	}
+	if raw.App.DisplayName != "" {
+		c.DisplayName = raw.App.DisplayName
+	}
 	if raw.HTTP.Addr != "" {
 		c.HTTPAddr = raw.HTTP.Addr
 	}
@@ -180,6 +187,7 @@ func applyFileDB(db *DB, raw fileDB, prefix string) error {
 }
 
 func applyEnvironment(c *Config) error {
+	setString("APP_DISPLAY_NAME", &c.DisplayName)
 	setString("HTTP_ADDR", &c.HTTPAddr)
 	setString("LOG_LEVEL", &c.LogLevel)
 	setString("CARD_DATA_DIR", &c.CardDataDir)

@@ -98,7 +98,7 @@ SQL 工具根据实际查询形态选择：
 - 由 Goose 管理结构迁移
 - 保存当前实例所有者的数据
 
-个人数据库的表结构和一致性规则见 [个人数据库设计](app-data-schema.md)。当前单实例单用户，不创建占位 `users` 表或固定用户记录。
+个人数据库的表结构和一致性规则见 [个人数据库设计](app-data-schema.md)。当前单实例单用户，不创建 `users` 或 `app_profile` 表，业务表不保存 `user_id`；页面可通过配置文件中的可选 `app.display_name` 标识当前部署。
 
 ## 连接池设计
 
@@ -240,6 +240,7 @@ HTTP Server 停止接收新请求
 ```text
 HTTP_ADDR
 LOG_LEVEL
+APP_DISPLAY_NAME
 
 CARD_DB_HOST
 CARD_DB_PORT

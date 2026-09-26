@@ -17,7 +17,7 @@ docker run \
 
 也可以设置 `CONFIG_FILE=/config/mtgnissa.yaml`，此时不需要传 `-config`。命令行参数优先于 `CONFIG_FILE`。
 
-加载顺序为：内置默认值 → YAML 文件 → 环境变量。数据库密码等敏感值可以不写入文件，而通过 `CARD_DB_PASSWORD`、`APP_DB_PASSWORD` 或 Docker Secret 注入。原有的 `HTTP_ADDR`、`CARD_DB_*`、`APP_DB_*`、`CARD_DATA_*` 环境变量仍然可用。
+加载顺序为：内置默认值 → YAML 文件 → 环境变量。可选的 `app.display_name` 用于页面标识当前是谁的卡牌库，默认是空字符串，也可由 `APP_DISPLAY_NAME` 覆盖。数据库密码等敏感值可以不写入文件，而通过 `CARD_DB_PASSWORD`、`APP_DB_PASSWORD` 或 Docker Secret 注入。原有的 `HTTP_ADDR`、`CARD_DB_*`、`APP_DB_*`、`CARD_DATA_*` 环境变量仍然可用。
 
 健康检查：
 
@@ -56,3 +56,4 @@ GET /api/v1/card-data/load/{task-id}
 - [技术架构设计](docs/architecture.md)
 - [功能需求](docs/requirements.md)
 - [卡牌数据字典](docs/card-data-dictionary.md)
+- [个人数据库设计](docs/app-data-schema.md)
