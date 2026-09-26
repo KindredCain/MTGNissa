@@ -2,7 +2,7 @@
 
 MTGNissa 是一个面向个人部署的万智牌管理 Web 服务。
 
-当前后端已提供 Go HTTP 服务骨架，以及从固定目录全量重建卡牌数据库的维护接口。
+当前后端已提供 Go HTTP 服务骨架，以及从固定目录全量加载卡牌数据的维护接口。
 
 ## 运行
 
@@ -26,29 +26,29 @@ GET /health/live
 GET /health/ready
 ```
 
-## 卡牌数据重建
+## 加载卡牌数据
 
 该能力默认关闭，可在 YAML 中启用：
 
 ```yaml
 card_data:
   dir: /data/card-data
-  rebuild_enabled: true
+  load_enabled: true
 ```
 
-`CARD_DATA_DIR` 必须包含需求文档约定的七个 NDJSON 文件。启动任务：
+`CARD_DATA_DIR` 必须包含需求文档约定的九个 NDJSON/JSONL 文件（包括 `rulings.jsonl` 和 `oracle-tags.jsonl`）。启动任务：
 
 ```http
-POST /api/v1/card-data/rebuild
+POST /api/v1/card-data/load
 Content-Type: application/json
 
-{"confirmation":"REBUILD_CARD_DATABASE"}
+{"confirmation":"LOAD_CARD_DATA"}
 ```
 
 成功返回 `202` 和任务 ID；同一时间已有任务时返回 `409`。任务状态可通过以下接口查询：
 
 ```http
-GET /api/v1/card-data/rebuild/{task-id}
+GET /api/v1/card-data/load/{task-id}
 ```
 
 项目文档：

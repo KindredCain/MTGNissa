@@ -2,6 +2,7 @@ package carddata
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -22,7 +23,10 @@ const (
 	kindFinishMask
 	kindGameMask
 	kindAttractionLightMask
+	kindStringArray
 	kindRawJSONText
+	kindRulingKey
+	kindAutoIncrement
 )
 
 type columnSpec struct {
@@ -38,12 +42,15 @@ type indexSpec struct {
 }
 
 type spec struct {
-	table, file     string
-	required, key   []string
-	columns         []columnSpec
-	derivedFields   []string
-	indexes         []indexSpec
-	fulltextIndexes []indexSpec
+	table, file      string
+	required, key    []string
+	columns          []columnSpec
+	derivedFields    []string
+	indexes          []indexSpec
+	fulltextIndexes  []indexSpec
+	standardJSON     bool
+	allowExtraRows   bool
+	autoIncrementKey bool
 }
 
 func col(name, ddl string, kind columnKind) columnSpec {
@@ -83,7 +90,7 @@ var specs = []spec{
 			derivedCol("colors_mask", "colors", "TINYINT UNSIGNED NOT NULL", kindColorMask),
 			derivedCol("color_identity_mask", "color_identity", "TINYINT UNSIGNED NOT NULL", kindColorMask),
 			derivedCol("color_indicator_mask", "color_indicator", "TINYINT UNSIGNED NOT NULL", kindColorMask),
-			derivedCol("produced_mana_mask", "produced_mana", "TINYINT UNSIGNED NOT NULL", kindColorMask),
+			col("produced_mana", "VARCHAR(64) NULL", kindStringArray),
 			col("defense", "VARCHAR(32) NULL", kindString),
 			col("game_changer", "BOOLEAN NOT NULL", kindBoolean),
 			col("hand_modifier", "VARCHAR(32) NULL", kindString),
@@ -97,6 +104,7 @@ var specs = []spec{
 			col("toughness", "VARCHAR(32) NULL", kindString),
 			col("type_line", "VARCHAR(512) NOT NULL", kindString),
 			col("artist", "VARCHAR(255) NULL", kindString),
+			col("artist_ids", "VARCHAR(2048) NULL", kindStringArray),
 			col("booster", "BOOLEAN NOT NULL", kindBoolean),
 			col("border_color", "VARCHAR(32) NOT NULL", kindString),
 			col("card_back_id", "CHAR(36) NULL", kindString),
@@ -138,7 +146,7 @@ var specs = []spec{
 			col("updated_at", "DATETIME(6) NOT NULL", kindDateTime),
 		},
 		derivedFields: []string{
-			"keywords", "artist_ids", "frame_effects", "promo_types",
+			"keywords", "frame_effects", "promo_types",
 			"set_code", "set_name", "set_type",
 		},
 		indexes: []indexSpec{
@@ -221,24 +229,59 @@ var specs = []spec{
 			col("text_stage", "INT NULL", kindInteger),
 			col("text_source", "VARCHAR(128) NULL", kindString),
 			col("extra", "LONGTEXT NULL", kindString),
+			col("former_names", "LONGTEXT NULL", kindRawJSONText),
 		},
-		derivedFields: []string{"former_names"},
 		indexes: []indexSpec{
 			idx("idx_zhs_oracle_oracle_id", "oracle_id"),
 			idx("idx_zhs_oracle_print", "set", "collector_number"),
 		},
 	},
 	{
-		table: "zhs_ruling", file: "zhs_ruling.json", required: []string{"ruling"}, key: []string{"ruling"},
+		table: "zhs_ruling", file: "zhs_ruling.json", required: []string{"ruling", "comment"}, key: []string{"ruling_key"}, allowExtraRows: true,
 		columns: []columnSpec{
-			col("ruling", "CHAR(36) NOT NULL", kindString),
-			col("comment", "LONGTEXT NULL", kindString),
+			derivedCol("ruling_key", "comment", "CHAR(64) NOT NULL", kindRulingKey),
+			derivedCol("ruling_id", "ruling", "CHAR(36) NULL", kindString),
+			col("comment", "LONGTEXT NOT NULL", kindString),
 			col("translation", "LONGTEXT NULL", kindString),
-			col("source", "VARCHAR(128) NULL", kindString),
-			col("stage", "INT NULL", kindInteger),
+			derivedCol("translation_source", "source", "VARCHAR(128) NULL", kindString),
+			derivedCol("translation_stage", "stage", "INT NULL", kindInteger),
 			col("last_published_at", "DATE NULL", kindDate),
-			col("extra", "LONGTEXT NULL", kindString),
+			col("extra", "LONGTEXT NULL", kindRawJSONText),
 		},
+		indexes: []indexSpec{idx("idx_zhs_ruling_source_id", "ruling_id")},
+	},
+	{
+		table: "scryfall_oracle_ruling", file: "rulings.jsonl",
+		required: []string{"object", "oracle_id", "source", "published_at", "comment"},
+		key:      []string{"id"},
+		columns: []columnSpec{
+			col("id", "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT", kindAutoIncrement),
+			col("oracle_id", "CHAR(36) NOT NULL", kindString),
+			derivedCol("ruling_key", "comment", "CHAR(64) NOT NULL", kindRulingKey),
+			col("source", "VARCHAR(32) NOT NULL", kindString),
+			col("published_at", "DATE NOT NULL", kindDate),
+		},
+		derivedFields: []string{"object"},
+		indexes: []indexSpec{
+			idx("idx_scryfall_oracle_ruling_oracle", "oracle_id", "published_at"),
+			idx("idx_scryfall_oracle_ruling_rule", "ruling_key", "oracle_id"),
+		},
+		standardJSON:     true,
+		autoIncrementKey: true,
+	},
+	{
+		table: "oracle_tag", file: "oracle-tags.jsonl",
+		required: []string{"object", "id", "label", "type", "parent_ids", "child_ids", "aliases", "taggings"},
+		key:      []string{"tag_id"},
+		columns: []columnSpec{
+			derivedCol("tag_id", "id", "CHAR(36) NOT NULL", kindString),
+			col("label", "VARCHAR(255) NOT NULL", kindString),
+			col("description", "LONGTEXT NULL", kindString),
+			col("aliases", "VARCHAR(1024) NULL", kindStringArray),
+		},
+		derivedFields: []string{"object", "slug", "type", "uri", "parent_ids", "child_ids", "taggings"},
+		indexes:       []indexSpec{idx("idx_oracle_tag_label", "label")},
+		standardJSON:  true,
 	},
 	{
 		table: "zhs_set", file: "zhs_set.json", required: []string{"set_id"}, key: []string{"set_id"},
@@ -274,15 +317,6 @@ var derivedSpecs = []spec{
 		indexes: []indexSpec{idx("idx_scryfall_card_keyword_lookup", "keyword", "card_uuid")},
 	},
 	{
-		table: "scryfall_card_mana_symbol", key: []string{"card_uuid", "symbol"},
-		columns: []columnSpec{
-			col("card_uuid", "CHAR(36) NOT NULL", kindString),
-			col("symbol", "VARCHAR(32) NOT NULL", kindString),
-			col("quantity", "SMALLINT UNSIGNED NOT NULL", kindInteger),
-		},
-		indexes: []indexSpec{idx("idx_scryfall_card_mana_symbol_lookup", "symbol", "card_uuid")},
-	},
-	{
 		table: "scryfall_card_type", key: []string{"card_uuid", "type_group", "type_name"},
 		columns: []columnSpec{
 			col("card_uuid", "CHAR(36) NOT NULL", kindString),
@@ -290,14 +324,6 @@ var derivedSpecs = []spec{
 			col("type_name", "VARCHAR(128) NOT NULL", kindString),
 		},
 		indexes: []indexSpec{idx("idx_scryfall_card_type_lookup", "type_group", "type_name", "card_uuid")},
-	},
-	{
-		table: "scryfall_card_artist", key: []string{"card_uuid", "artist_id"},
-		columns: []columnSpec{
-			col("card_uuid", "CHAR(36) NOT NULL", kindString),
-			col("artist_id", "CHAR(36) NOT NULL", kindString),
-		},
-		indexes: []indexSpec{idx("idx_scryfall_card_artist_lookup", "artist_id", "card_uuid")},
 	},
 	{
 		table: "scryfall_card_frame_effect", key: []string{"card_uuid", "frame_effect"},
@@ -316,15 +342,6 @@ var derivedSpecs = []spec{
 		indexes: []indexSpec{idx("idx_scryfall_card_promo_type_lookup", "promo_type", "card_uuid")},
 	},
 	{
-		table: "zhs_oracle_former_name", key: []string{"face_oracle_id", "position"},
-		columns: []columnSpec{
-			col("face_oracle_id", "CHAR(36) NOT NULL", kindString),
-			col("position", "SMALLINT UNSIGNED NOT NULL", kindInteger),
-			col("former_name", "VARCHAR(512) NOT NULL", kindString),
-		},
-		indexes: []indexSpec{idx("idx_zhs_oracle_former_name_lookup", "former_name")},
-	},
-	{
 		table: "scryfall_set", key: []string{"set_id"},
 		columns: []columnSpec{
 			col("set_id", "CHAR(36) NOT NULL", kindString),
@@ -336,6 +353,23 @@ var derivedSpecs = []spec{
 			idx("idx_scryfall_set_code", "code"),
 			idx("idx_scryfall_set_type", "set_type"),
 		},
+	},
+	{
+		table: "oracle_tag_relation", key: []string{"parent_tag_id", "child_tag_id"},
+		columns: []columnSpec{
+			col("parent_tag_id", "CHAR(36) NOT NULL", kindString),
+			col("child_tag_id", "CHAR(36) NOT NULL", kindString),
+		},
+		indexes: []indexSpec{idx("idx_oracle_tag_relation_child", "child_tag_id", "parent_tag_id")},
+	},
+	{
+		table: "oracle_tagging", key: []string{"oracle_id", "tag_id"},
+		columns: []columnSpec{
+			col("oracle_id", "CHAR(36) NOT NULL", kindString),
+			col("tag_id", "CHAR(36) NOT NULL", kindString),
+			col("weight", "VARCHAR(16) NOT NULL", kindString),
+		},
+		indexes: []indexSpec{idx("idx_oracle_tagging_tag", "tag_id", "weight", "oracle_id")},
 	},
 }
 
@@ -434,6 +468,10 @@ func rowValues(obj map[string]json.RawMessage, s spec) ([]any, error) {
 	known := make(map[string]struct{}, len(s.columns)+len(s.derivedFields))
 	values := make([]any, len(s.columns))
 	for i, column := range s.columns {
+		if column.kind == kindAutoIncrement {
+			values[i] = nil
+			continue
+		}
 		source := column.name
 		if column.source != "" {
 			source = column.source
@@ -523,6 +561,12 @@ func columnValue(raw json.RawMessage, column columnSpec) (any, error) {
 			mask |= 1 << (light - 1)
 		}
 		return mask, nil
+	case kindStringArray:
+		var values []string
+		if err := json.Unmarshal(raw, &values); err != nil {
+			return nil, err
+		}
+		return strings.Join(values, ","), nil
 	case kindRawJSONText:
 		if !json.Valid(raw) {
 			return nil, fmt.Errorf("invalid JSON value")
@@ -532,9 +576,33 @@ func columnValue(raw json.RawMessage, column columnSpec) (any, error) {
 			return nil, err
 		}
 		return compact.String(), nil
+	case kindRulingKey:
+		var value string
+		if err := json.Unmarshal(raw, &value); err != nil {
+			return nil, err
+		}
+		return rulingKey(value), nil
+	case kindAutoIncrement:
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("unsupported column kind %d", column.kind)
 	}
+}
+
+func rulingKey(comment string) string {
+	normalized := normalizeRulingComment(comment)
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(normalized)))
+}
+
+func normalizeRulingComment(comment string) string {
+	comment = strings.ReplaceAll(comment, "\r\n", "\n")
+	comment = strings.ReplaceAll(comment, "\r", "\n")
+	replacer := strings.NewReplacer(
+		"’", "'", "‘", "'",
+		"“", "\"", "”", "\"",
+		"\u00a0", " ",
+	)
+	return strings.TrimSpace(replacer.Replace(comment))
 }
 
 func zeroOnNull(kind columnKind) bool {

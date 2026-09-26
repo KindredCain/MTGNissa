@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-const Confirmation = "REBUILD_CARD_DATABASE"
+const Confirmation = "LOAD_CARD_DATA"
 
 type Stage string
 
@@ -65,7 +65,7 @@ type importRow struct {
 	line   int64
 }
 
-var ErrRunning = errors.New("a rebuild task is already running")
+var ErrRunning = errors.New("a card data load task is already running")
 
 type Manager struct {
 	ctx               context.Context
@@ -111,13 +111,13 @@ func (m *Manager) run(id string) {
 	startedAt := time.Now()
 	heartbeatDone := make(chan struct{})
 	m.setProgress("", 0, 0)
-	m.log.Info("card data rebuild started", "task_id", id, "data_dir", m.dir)
+	m.log.Info("card data loading started", "task_id", id, "data_dir", m.dir)
 	go m.logHeartbeat(id, startedAt, heartbeatDone)
 	defer close(heartbeatDone)
 
 	files, taskErr := m.validateAll(id)
 	if taskErr == nil {
-		taskErr = m.rebuild(id, files)
+		taskErr = m.load(id, files)
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -128,10 +128,10 @@ func (m *Manager) run(id string) {
 	if taskErr != nil {
 		t.Stage = StageFailed
 		t.Error = taskErr
-		m.log.Error("card data rebuild failed", "task_id", id, "stage", taskErr.Stage, "file", taskErr.File, "line", taskErr.Line, "duration", time.Since(startedAt), "error", taskErr.Message)
+		m.log.Error("card data loading failed", "task_id", id, "stage", taskErr.Stage, "file", taskErr.File, "line", taskErr.Line, "duration", time.Since(startedAt), "error", taskErr.Message)
 	} else {
 		t.Stage = StageCompleted
-		m.log.Info("card data rebuild completed", "task_id", id, "duration", time.Since(startedAt))
+		m.log.Info("card data loading completed", "task_id", id, "duration", time.Since(startedAt))
 	}
 }
 
@@ -150,7 +150,7 @@ func (m *Manager) logHeartbeat(id string, startedAt time.Time, done <-chan struc
 			file, rows, total := m.progressFile, m.progressRows, m.progressTotal
 			m.mu.RUnlock()
 			if ok {
-				m.log.Info("card data rebuild still running", "task_id", id, "stage", stage, "file", file, "processed_rows", rows, "total_rows", total, "elapsed", time.Since(startedAt))
+				m.log.Info("card data loading still running", "task_id", id, "stage", stage, "file", file, "processed_rows", rows, "total_rows", total, "elapsed", time.Since(startedAt))
 			}
 		case <-done:
 			return
@@ -212,7 +212,8 @@ func validateFile(ctx context.Context, dir string, s spec, progress func(int64))
 		if err != nil {
 			return FileResult{}, fail(s.file, line, err)
 		}
-		if _, err := rowValues(obj, s); err != nil {
+		values, err := rowValues(obj, s)
+		if err != nil {
 			return FileResult{}, fail(s.file, line, err)
 		}
 		if _, err := deriveRows(s, obj, line); err != nil {
@@ -221,14 +222,16 @@ func validateFile(ctx context.Context, dir string, s spec, progress func(int64))
 		if normalized {
 			normalizedRows++
 		}
-		key, err := objectKey(obj, s.key)
-		if err != nil {
-			return FileResult{}, fail(s.file, line, err)
+		if !s.autoIncrementKey {
+			key, err := relationalKey(values, s)
+			if err != nil {
+				return FileResult{}, fail(s.file, line, err)
+			}
+			if _, exists := seen[key]; exists {
+				return FileResult{}, fail(s.file, line, fmt.Errorf("duplicate unique key %q", key))
+			}
+			seen[key] = struct{}{}
 		}
-		if _, exists := seen[key]; exists {
-			return FileResult{}, fail(s.file, line, fmt.Errorf("duplicate unique key %q", key))
-		}
-		seen[key] = struct{}{}
 	}
 	if err := scanner.Err(); err != nil {
 		return FileResult{}, fail(s.file, line+1, err)
@@ -239,7 +242,7 @@ func validateFile(ctx context.Context, dir string, s spec, progress func(int64))
 	return FileResult{File: s.file, Size: info.Size(), SHA256: hex.EncodeToString(h.Sum(nil)), ReadRows: line, NormalizedRows: normalizedRows}, nil
 }
 
-func (m *Manager) rebuild(id string, results []FileResult) *TaskError {
+func (m *Manager) load(id string, results []FileResult) *TaskError {
 	ctx := m.ctx
 	var selected string
 	if err := m.db.QueryRowContext(ctx, "SELECT DATABASE()").Scan(&selected); err != nil {
@@ -287,7 +290,7 @@ func (m *Manager) rebuild(id string, results []FileResult) *TaskError {
 		startedAt := time.Now()
 		m.setProgress(s.file, 0, results[i].ReadRows)
 		m.log.Info("card data file import started", "task_id", id, "file", s.file, "expected_rows", results[i].ReadRows, "size_bytes", results[i].Size)
-		inserted, taskErr := m.importFile(ctx, id, s, tempNames, results[i])
+		inserted, taskErr := m.importFile(ctx, s, tempNames, results[i])
 		if taskErr != nil {
 			taskErr.Stage = StageImporting
 			return taskErr
@@ -303,7 +306,7 @@ func (m *Manager) rebuild(id string, results []FileResult) *TaskError {
 		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tempNames[s.table])).Scan(&count); err != nil {
 			return stageFail(StageVerifying, s.file, 0, err)
 		}
-		if count != results[i].ReadRows {
+		if (!s.allowExtraRows && count != results[i].ReadRows) || (s.allowExtraRows && count < results[i].ReadRows) {
 			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: read %d, inserted %d", results[i].ReadRows, count))
 		}
 		m.setProgress(s.file, count, results[i].ReadRows)
@@ -339,7 +342,7 @@ func (m *Manager) rebuild(id string, results []FileResult) *TaskError {
 	return nil
 }
 
-func (m *Manager) importFile(ctx context.Context, taskID string, s spec, tableNames map[string]string, expected FileResult) (int64, *TaskError) {
+func (m *Manager) importFile(ctx context.Context, s spec, tableNames map[string]string, expected FileResult) (int64, *TaskError) {
 	f, err := os.Open(filepath.Join(m.dir, s.file))
 	if err != nil {
 		return 0, fail(s.file, 0, err)
@@ -351,12 +354,12 @@ func (m *Manager) importFile(ctx context.Context, taskID string, s spec, tableNa
 	rows := make([]importRow, 0, batchSize)
 	derivedRowsByTable := make(map[string][]importRow)
 	seenSets := make(map[string]string)
-	tableSpecs := make(map[string]spec, len(derivedSpecs))
-	for _, table := range derivedSpecs {
+	seenTagRelations := make(map[string]struct{})
+	tableSpecs := make(map[string]spec, len(allTableSpecs()))
+	for _, table := range allTableSpecs() {
 		tableSpecs[table.table] = table
 	}
 	var line, inserted int64
-	nextProgressLog := int64(10000)
 	flush := func() *TaskError {
 		if len(rows) == 0 {
 			return nil
@@ -368,7 +371,13 @@ func (m *Manager) importFile(ctx context.Context, taskID string, s spec, tableNa
 			if len(derivedRows) == 0 {
 				continue
 			}
-			if err := insertRows(ctx, m.db, tableNames[table], tableSpecs[table], derivedRows); err != nil {
+			var err error
+			if s.table == "scryfall_oracle_ruling" && table == "zhs_ruling" {
+				err = upsertEnglishRulings(ctx, m.db, tableNames[table], tableSpecs[table], derivedRows)
+			} else {
+				err = insertRows(ctx, m.db, tableNames[table], tableSpecs[table], derivedRows)
+			}
+			if err != nil {
 				return fail(s.file, derivedRows[0].line, fmt.Errorf("insert derived table %s: %w", table, err))
 			}
 		}
@@ -376,12 +385,6 @@ func (m *Manager) importFile(ctx context.Context, taskID string, s spec, tableNa
 		rows = rows[:0]
 		clear(derivedRowsByTable)
 		m.setProgress(s.file, inserted, expected.ReadRows)
-		if inserted >= nextProgressLog {
-			m.log.Info("card data file import progress", "task_id", taskID, "file", s.file, "inserted_rows", inserted, "expected_rows", expected.ReadRows)
-			for nextProgressLog <= inserted {
-				nextProgressLog += 10000
-			}
-		}
 		return nil
 	}
 	for scanner.Scan() {
@@ -404,6 +407,13 @@ func (m *Manager) importFile(ctx context.Context, taskID string, s spec, tableNa
 		}
 		for table, derivedRows := range derived {
 			for _, derivedRow := range derivedRows {
+				if table == "oracle_tag_relation" {
+					relationKey := fmt.Sprint(derivedRow.values[0]) + "\x1f" + fmt.Sprint(derivedRow.values[1])
+					if _, exists := seenTagRelations[relationKey]; exists {
+						continue
+					}
+					seenTagRelations[relationKey] = struct{}{}
+				}
 				if table == "scryfall_set" {
 					setID := fmt.Sprint(derivedRow.values[0])
 					signatureJSON, _ := json.Marshal(derivedRow.values[1:])
@@ -442,6 +452,32 @@ func insertRows(ctx context.Context, db *sql.DB, table string, s spec, rows []im
 	if len(rows) == 0 {
 		return nil
 	}
+	columnIndexes := make([]int, 0, len(s.columns))
+	columns := make([]string, 0, len(s.columns))
+	for i, column := range s.columns {
+		if column.kind == kindAutoIncrement {
+			continue
+		}
+		columnIndexes = append(columnIndexes, i)
+		columns = append(columns, column.name)
+	}
+	args := make([]any, 0, len(rows)*len(columnIndexes))
+	values := make([]string, len(rows))
+	placeholder := "(" + strings.TrimSuffix(strings.Repeat("?,", len(columnIndexes)), ",") + ")"
+	for i, row := range rows {
+		values[i] = placeholder
+		for _, columnIndex := range columnIndexes {
+			args = append(args, row.values[columnIndex])
+		}
+	}
+	_, err := db.ExecContext(ctx, "INSERT INTO "+quote(table)+" ("+quotedList(columns)+") VALUES "+strings.Join(values, ","), args...)
+	return err
+}
+
+func upsertEnglishRulings(ctx context.Context, db *sql.DB, table string, s spec, rows []importRow) error {
+	if len(rows) == 0 {
+		return nil
+	}
 	args := make([]any, 0, len(rows)*len(s.columns))
 	values := make([]string, len(rows))
 	placeholder := "(" + strings.TrimSuffix(strings.Repeat("?,", len(s.columns)), ",") + ")"
@@ -453,7 +489,12 @@ func insertRows(ctx context.Context, db *sql.DB, table string, s spec, rows []im
 	for i, column := range s.columns {
 		columns[i] = column.name
 	}
-	_, err := db.ExecContext(ctx, "INSERT INTO "+quote(table)+" ("+quotedList(columns)+") VALUES "+strings.Join(values, ","), args...)
+	query := "INSERT INTO " + quote(table) + " (" + quotedList(columns) + ") VALUES " + strings.Join(values, ",") +
+		" ON DUPLICATE KEY UPDATE `last_published_at` = CASE" +
+		" WHEN `last_published_at` IS NULL THEN VALUES(`last_published_at`)" +
+		" WHEN VALUES(`last_published_at`) IS NULL THEN `last_published_at`" +
+		" ELSE GREATEST(`last_published_at`, VALUES(`last_published_at`)) END"
+	_, err := db.ExecContext(ctx, query, args...)
 	return err
 }
 
@@ -462,7 +503,10 @@ func parseObject(line []byte, s spec) (map[string]json.RawMessage, bool, error) 
 	if len(strings.TrimSpace(string(line))) == 0 {
 		return nil, false, errors.New("empty line")
 	}
-	normalized, changed := normalizeJSONEscapes(line)
+	normalized, changed := line, false
+	if !s.standardJSON {
+		normalized, changed = normalizeJSONEscapes(line)
+	}
 	if err := json.Unmarshal(normalized, &obj); err != nil {
 		return nil, changed, fmt.Errorf("invalid JSON object after escape normalization: %w", err)
 	}
@@ -519,16 +563,27 @@ func normalizeJSONEscapes(line []byte) ([]byte, bool) {
 	return out, true
 }
 
-func objectKey(obj map[string]json.RawMessage, fields []string) (string, error) {
-	parts := make([]string, len(fields))
-	for i, field := range fields {
-		raw, ok := obj[field]
-		if !ok || string(raw) == "null" {
-			return "", fmt.Errorf("unique field %q is missing or null", field)
-		}
-		parts[i] = string(raw)
+func relationalKey(values []any, s spec) (string, error) {
+	columnIndexes := make(map[string]int, len(s.columns))
+	for i, column := range s.columns {
+		columnIndexes[column.name] = i
 	}
-	return strings.Join(parts, "\x1f"), nil
+	parts := make([]any, len(s.key))
+	for i, field := range s.key {
+		columnIndex, ok := columnIndexes[field]
+		if !ok {
+			return "", fmt.Errorf("primary key column %q is not defined", field)
+		}
+		if values[columnIndex] == nil {
+			return "", fmt.Errorf("primary key column %q is null", field)
+		}
+		parts[i] = values[columnIndex]
+	}
+	encoded, err := json.Marshal(parts)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
 }
 
 func scannerFor(r io.Reader) *bufio.Scanner {
@@ -559,7 +614,7 @@ func (m *Manager) stage(id string, s Stage) {
 	m.progressRows = 0
 	m.progressTotal = 0
 	m.mu.Unlock()
-	m.log.Info("card data rebuild stage started", "task_id", id, "stage", s)
+	m.log.Info("card data loading stage started", "task_id", id, "stage", s)
 }
 
 func (m *Manager) setProgress(file string, rows, total int64) {

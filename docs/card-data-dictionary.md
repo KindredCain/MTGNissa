@@ -2,9 +2,11 @@
 
 ## 1. 文档范围
 
-本文描述 `docs/magic-cards-zhs-data` 下七个 NDJSON 文件的字段。
+本文描述当前导入器使用的九个 NDJSON/JSONL 文件字段，其中包含 Scryfall 官方 `rulings.jsonl` 和 `oracle-tags.jsonl`。
 
 - `scryfall_card.json`：以 Scryfall Card Object 文档为主要依据。
+- `rulings.jsonl`：以 Scryfall Ruling Object 为依据。
+- `oracle-tags.jsonl`：以 Scryfall Tags API 文档为依据。
 - 其余 `zhs_*.json`：以 MTGCH OpenAPI 的 `components.schemas` 为主要依据。
 - 字段清单仅来自每个文件的第一条记录，没有扫描全部数据。
 - `类型` 中的 `?` 表示字段可能为 `null`。
@@ -12,7 +14,9 @@
 
 ### 1.1 反斜杠导入与展示规则
 
-- 七个 NDJSON 文件都存在同一层导出问题：每个反斜杠被额外复制一次。导入器在 JSON 校验和解析前统一撤销这一层，不区分 `scryfall_card.json` 与 `zhs_*.json`。
+- 原有七个 `scryfall_card.json`/`zhs_*.json` 文件存在同一层导出问题：每个反斜杠被额外复制一次，导入器会在 JSON 校验和解析前撤销这一层。
+- Scryfall 官方 `rulings.jsonl` 是标准 JSONL，不执行上述兼容性反斜杠处理。
+- Scryfall 官方 `oracle-tags.jsonl` 同样是标准 JSONL，不执行兼容性反斜杠处理。
 - 撤销导出层后，标准 JSON 解析器继续处理 JSON 转义并将解析结果按原义入库；不再对整个字符串做通用反转义。
 - 展示 `zhs_*` 文本时，只将字面量 `\n` 转换为实际换行符。不额外处理字面量 `\r\n`，不删除单独的反斜杠，也不对引号或其他反斜杠序列做二次转义。
 - 例如 `USG/163s` 在入库后的逻辑值为“一个字面量反斜杠 + 实际 CRLF”；展示层必须保留该反斜杠。
@@ -48,7 +52,7 @@
 
 | 字典表 | 卡牌表关联 |
 | --- | --- |
-| `scryfall_color` | `colors_mask`、`color_identity_mask`、`color_indicator_mask`、`produced_mana_mask` 使用字典中的 `bit_value`。 |
+| `scryfall_color` | `colors_mask`、`color_identity_mask`、`color_indicator_mask` 使用字典中的 `bit_value`。 |
 | `scryfall_language` | `scryfall_card.lang` 保存语言代码。 |
 | `scryfall_layout` | `scryfall_card.layout` 保存布局代码。 |
 | `scryfall_frame` | `scryfall_card.frame` 保存卡框代码。 |
@@ -58,19 +62,24 @@
 
 位掩码定义为：颜色 `W=1`、`U=2`、`B=4`、`R=8`、`G=16`、`C=32`；工艺 `nonfoil=1`、`foil=2`、`etched=4`；平台 `paper=1`、`arena=2`、`mtgo=4`、`astral=8`、`sega=16`。其中 `astral` 和 `sega` 是 Scryfall 卡牌记录中实际存在的历史数字游戏平台，分别用于 Astral Cards 和 Sega Dreamcast Cards。Attraction 灯号 1–6 分别使用第 0–5 位。
 
+`produced_mana` 不属于颜色字典关联，也不建立关联表。导入时仅校验源值为字符串数组，随后保持数组顺序并以逗号连接，直接保存到主表的可空 `VARCHAR(64)` 列。例如 `["W","U","B","R","G"]` 保存为 `W,U,B,R,G`，`["T"]` 保存为 `T`；不限制元素值域。
+
 取值范围较大或需要保留数量/顺序的属性仍使用关联表：
 
 | 关联表 | 来源字段 | 用途 |
 | --- | --- | --- |
-| `scryfall_card_mana_symbol` | `mana_cost` | 提取 `{...}` 费用符号及 `quantity`；`cmc` 仍用于法术力值范围检索。 |
 | `scryfall_card_type` | `type_line` | 按长破折号分为 `main` 和 `subtype` 类型词。 |
 | `scryfall_card_keyword` | `keywords` | 按关键字异能检索。 |
-| `scryfall_card_artist` | `artist_ids` | 按 Scryfall 画师 ID 检索。 |
 | `scryfall_card_frame_effect` | `frame_effects` | 按卡框效果检索。 |
 | `scryfall_card_promo_type` | `promo_types` | 按推广版本类型检索。 |
-| `zhs_oracle_former_name` | `zhs_oracle.former_names` | 保存曾用中文名称及顺序。 |
+| `scryfall_oracle_ruling` | `rulings.jsonl` | 保存 Oracle 身份与规则内容之间的多对多关联、来源和发布日期。 |
+| `oracle_tagging` | `oracle-tags.jsonl` | 保存 Oracle 身份与功能标签之间的多对多关联及关联强度。 |
 
-`scryfall_set` 从卡牌文件中的 `set_id`、`set_code`、`set_name` 和 `set_type` 动态汇总，卡牌主表仅保留 `set_id`。`preview` 不参与检索，以规范 JSON 文本存入主表的可空 `LONGTEXT` 列。当前七个源文件不含 Scryfall Tag 数据，因此本次不创建虚假标签关联；后续引入 Oracle/Illustration Tag 数据源时再建标签字典与关联表。
+`scryfall_set` 从卡牌文件中的 `set_id`、`set_code`、`set_name` 和 `set_type` 动态汇总，卡牌主表仅保留 `set_id`。`preview` 不参与检索，以规范 JSON 文本存入主表的可空 `LONGTEXT` 列。Oracle Tag 只导入本系统需要的名称、说明、别名、层级与卡牌关联，不保留 Tagger URI 等外部站点展示信息。
+
+`artist_ids` 不用于当前检索，按源顺序以逗号连接保存在 `scryfall_card`；`former_names` 可能包含逗号，以压缩 JSON 数组文本保存在 `zhs_oracle`。两者只作为元数据保留，不拆关联表、不建立索引。
+
+系统不提供单个费用符号查询，因此不从 `mana_cost` 派生费用符号表。完整费用展示和精确值保留在 `mana_cost`，费用高低及范围查询使用 `cmc`，卡牌颜色和颜色标识查询使用对应位掩码。
 
 主表为 `cmc`、`mana_cost`、牌名、稀有度、发行日期、语言、布局、卡框、位掩码和印刷版本关联字段建立 B-tree 索引，并为英文牌名、单面牌名、`type_line` 和 `oracle_text` 建立全文索引。
 
@@ -85,8 +94,11 @@
 | `scryfall_card.uuid` | `zhs_card.card_id` | 已确认唯一 | 关联特定印刷及语言版本的中文印刷文字。 |
 | `scryfall_card.oracle_id` | `zhs_oracle.oracle_id` | 官方/Schema | 将同一 Oracle 身份的不同印刷版本归组。 |
 | `scryfall_card.multiverse_id` | `zhs_card.multiverse_id` | 映射 | 辅助关联 Gatherer 中文印刷数据。 |
+| `scryfall_card.oracle_id` | `scryfall_oracle_ruling.oracle_id` | 官方 | 查找同一 Oracle 身份的全部单卡释疑。 |
+| `scryfall_oracle_ruling.ruling_key` | `zhs_ruling.ruling_key` | 导入派生 | 查找规则英文内容及可选中文翻译。 |
+| `scryfall_card.oracle_id` | `oracle_tagging.oracle_id` | 官方 | 查找逻辑卡牌的功能、机制及主题标签。 |
 
-`zhs_ruling.ruling` 的外部关联规则没有出现在 MTGCH Schemas 中，目前不能据此确定关联键。
+`zhs_ruling.json` 自带的 `ruling` 仅作为来源记录 ID 保存为 `ruling_id`，不再承担卡牌关联。跨数据源关联使用英文规则正文规范化后计算的 `ruling_key`。
 
 ### 2.2 数据库物理模型
 
@@ -118,7 +130,7 @@
 | `colors_mask` | `TINYINT UNSIGNED` | 由 `colors` 生成的颜色位掩码。 |
 | `color_identity_mask` | `TINYINT UNSIGNED` | 由 `color_identity` 生成的颜色标识位掩码。 |
 | `color_indicator_mask` | `TINYINT UNSIGNED` | 由 `color_indicator` 生成的颜色指示位掩码。 |
-| `produced_mana_mask` | `TINYINT UNSIGNED` | 由 `produced_mana` 生成的可产法术力位掩码。 |
+| `produced_mana` | `VARCHAR(64) NULL` | 可产法术力或特殊资源代码；源字符串数组按原顺序以逗号连接，不使用字典或关联表。 |
 | `defense` | `VARCHAR(32) NULL` | 战役牌防御力。 |
 | `game_changer` | `BOOLEAN` | 是否为 Game Changer。 |
 | `hand_modifier` | `VARCHAR(32) NULL` | Vanguard 手牌修正。 |
@@ -132,6 +144,7 @@
 | `toughness` | `VARCHAR(32) NULL` | 防御力，保留 `*` 等表达。 |
 | `type_line` | `VARCHAR(512)` | 完整英文类别栏。 |
 | `artist` | `VARCHAR(255) NULL` | 展示用画师名称。 |
+| `artist_ids` | `VARCHAR(2048) NULL` | Scryfall 画师 UUID 数组按源顺序以逗号连接；不参与检索。 |
 | `booster` | `BOOLEAN` | 是否可能出现在补充包中。 |
 | `border_color` | `VARCHAR(32)` | 边框颜色。 |
 | `card_back_id` | `CHAR(36) NULL` | 卡背 ID。 |
@@ -166,7 +179,7 @@
 | `nonfoil` | `BOOLEAN` | 上游兼容字段：是否存在普通不闪。 |
 | `attraction_lights_mask` | `TINYINT UNSIGNED` | 由 `attraction_lights` 生成的灯号位掩码。 |
 | `preview` | `LONGTEXT NULL` | 不参与检索的 `preview` 对象；以压缩后的合法 JSON 文本保存。 |
-| `mana_cost` | `VARCHAR(255) NULL` | 完整法术力费用；同时派生费用符号关联表。 |
+| `mana_cost` | `VARCHAR(255) NULL` | 完整法术力费用；不拆分符号，直接用于展示或完整值查询。 |
 | `flavor_id` | `CHAR(36) NULL` | 逻辑关联 `zhs_flavor.flavor_id`。 |
 | `face_oracle_id` | `CHAR(36) NULL` | 逻辑关联 `zhs_oracle.face_oracle_id`。 |
 | `created_at` | `DATETIME(6)` | 上游创建时间。 |
@@ -199,31 +212,40 @@ scryfall_card.set_id
 | --- | --- | --- | --- |
 | `zhs_card` | `card_id CHAR(36) NOT NULL`、`name VARCHAR(512) NULL`、`face_name VARCHAR(512) NULL`、`flavor_name VARCHAR(512) NULL`、`type_line VARCHAR(512) NULL`、`text LONGTEXT NULL`、`flavor_text LONGTEXT NULL`、`multiverse_id BIGINT NULL`、`source VARCHAR(128) NULL`、`extra LONGTEXT NULL` | `card_id` | 索引 `multiverse_id`；`card_id` 逻辑关联 `scryfall_card.uuid`。 |
 | `zhs_flavor` | `flavor_id CHAR(36) NOT NULL`、`name VARCHAR(512) NULL`、`flavor_name VARCHAR(512) NULL`、`flavor_text LONGTEXT NULL`、`set VARCHAR(32) NULL`、`collector_number VARCHAR(64) NULL`、`released_at DATE NULL`、`translated_flavor_name VARCHAR(512) NULL`、`translated_flavor_text LONGTEXT NULL`、`flavor_updated_at DATE NULL`、`extra LONGTEXT NULL`、`name_source VARCHAR(128) NULL`、`name_stage INT NULL`、`text_source VARCHAR(128) NULL`、`text_stage INT NULL` | `flavor_id` | 组合索引 `(set, collector_number)`；由 `scryfall_card.flavor_id` 关联。 |
-| `zhs_oracle` | `face_oracle_id CHAR(36) NOT NULL`、`oracle_id CHAR(36) NULL`、`name VARCHAR(512) NULL`、`set VARCHAR(32) NULL`、`collector_number VARCHAR(64) NULL`、`released_at DATE NULL`、`type_line VARCHAR(512) NULL`、`oracle_text LONGTEXT NULL`、`translated_name VARCHAR(512) NULL`、`name_stage INT NULL`、`name_source VARCHAR(128) NULL`、`translated_type VARCHAR(512) NULL`、`type_stage INT NULL`、`translated_text LONGTEXT NULL`、`text_stage INT NULL`、`text_source VARCHAR(128) NULL`、`extra LONGTEXT NULL` | `face_oracle_id` | 索引 `oracle_id`、`(set, collector_number)`；由 `scryfall_card.face_oracle_id` 关联。 |
-| `zhs_ruling` | `ruling CHAR(36) NOT NULL`、`comment LONGTEXT NULL`、`translation LONGTEXT NULL`、`source VARCHAR(128) NULL`、`stage INT NULL`、`last_published_at DATE NULL`、`extra LONGTEXT NULL` | `ruling` | 当前源数据未提供已确认的卡牌关联键。 |
+| `zhs_oracle` | `face_oracle_id CHAR(36) NOT NULL`、`oracle_id CHAR(36) NULL`、`name VARCHAR(512) NULL`、`set VARCHAR(32) NULL`、`collector_number VARCHAR(64) NULL`、`released_at DATE NULL`、`type_line VARCHAR(512) NULL`、`oracle_text LONGTEXT NULL`、`translated_name VARCHAR(512) NULL`、`name_stage INT NULL`、`name_source VARCHAR(128) NULL`、`translated_type VARCHAR(512) NULL`、`type_stage INT NULL`、`translated_text LONGTEXT NULL`、`text_stage INT NULL`、`text_source VARCHAR(128) NULL`、`extra LONGTEXT NULL`、`former_names LONGTEXT NULL` | `face_oracle_id` | 索引 `oracle_id`、`(set, collector_number)`；由 `scryfall_card.face_oracle_id` 关联。`former_names` 保存压缩 JSON 数组文本。 |
+| `zhs_ruling` | `ruling_key CHAR(64) NOT NULL`、`ruling_id CHAR(36) NULL`、`comment LONGTEXT NOT NULL`、`translation LONGTEXT NULL`、`translation_source VARCHAR(128) NULL`、`translation_stage INT NULL`、`last_published_at DATE NULL`、`extra LONGTEXT NULL` | `ruling_key` | 索引 `ruling_id`；保存去重后的规则正文和可选中文翻译。 |
+| `scryfall_oracle_ruling` | `id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT`、`oracle_id CHAR(36) NOT NULL`、`ruling_key CHAR(64) NOT NULL`、`source VARCHAR(32) NOT NULL`、`published_at DATE NOT NULL` | `id` | 索引 `(oracle_id, published_at)`、`(ruling_key, oracle_id)`；每条 Scryfall 源记录独立保存。 |
 | `zhs_type` | `type_name VARCHAR(255) NOT NULL`、`type_type VARCHAR(64) NOT NULL`、`translation VARCHAR(512) NULL`、`stage INT NULL`、`created_at DATETIME(6) NULL`、`is_funny BOOLEAN NULL` | `(type_name, type_type)` | 中文类别词翻译数据，不定义卡牌实体。 |
 
-`extra` 当前按照源文件中的字符串或 `null` 保存为普通 `LONGTEXT`，不把它解释成嵌套 JSON，也不参与检索。
+`zhs_ruling.extra` 接受对象、数组、字符串、数字、布尔值或 `null`；非空值压缩为合法 JSON 文本保存到普通 `LONGTEXT`，不拆分子表且不参与检索。其他本地化表的 `extra` 仍按各自既有标量定义保存。
 
 #### 2.2.4 多值属性和检索派生表
 
 | 表 | 列定义 | 主键 | 检索索引 | 来源与逻辑关联 |
 | --- | --- | --- | --- | --- |
 | `scryfall_card_keyword` | `card_uuid CHAR(36) NOT NULL`、`keyword VARCHAR(255) NOT NULL` | `(card_uuid, keyword)` | `(keyword, card_uuid)` | `keywords[]`；`card_uuid -> scryfall_card.uuid`。 |
-| `scryfall_card_mana_symbol` | `card_uuid CHAR(36) NOT NULL`、`symbol VARCHAR(32) NOT NULL`、`quantity SMALLINT UNSIGNED NOT NULL` | `(card_uuid, symbol)` | `(symbol, card_uuid)` | 从 `mana_cost` 的 `{...}` 标记提取；同一符号合并并记录出现次数。 |
 | `scryfall_card_type` | `card_uuid CHAR(36) NOT NULL`、`type_group VARCHAR(16) NOT NULL`、`type_name VARCHAR(128) NOT NULL` | `(card_uuid, type_group, type_name)` | `(type_group, type_name, card_uuid)` | 从 `type_line` 派生；`type_group` 当前为 `main` 或 `subtype`。 |
-| `scryfall_card_artist` | `card_uuid CHAR(36) NOT NULL`、`artist_id CHAR(36) NOT NULL` | `(card_uuid, artist_id)` | `(artist_id, card_uuid)` | `artist_ids[]`。 |
 | `scryfall_card_frame_effect` | `card_uuid CHAR(36) NOT NULL`、`frame_effect VARCHAR(64) NOT NULL` | `(card_uuid, frame_effect)` | `(frame_effect, card_uuid)` | `frame_effects[]`；效果代码逻辑关联 `scryfall_frame_effect.code`。 |
 | `scryfall_card_promo_type` | `card_uuid CHAR(36) NOT NULL`、`promo_type VARCHAR(128) NOT NULL` | `(card_uuid, promo_type)` | `(promo_type, card_uuid)` | `promo_types[]`。 |
-| `zhs_oracle_former_name` | `face_oracle_id CHAR(36) NOT NULL`、`position SMALLINT UNSIGNED NOT NULL`、`former_name VARCHAR(512) NOT NULL` | `(face_oracle_id, position)` | `former_name` | `former_names[]`；保留数组顺序，`face_oracle_id -> zhs_oracle.face_oracle_id`。 |
+| `oracle_tag_relation` | `parent_tag_id CHAR(36) NOT NULL`、`child_tag_id CHAR(36) NOT NULL` | `(parent_tag_id, child_tag_id)` | `(child_tag_id, parent_tag_id)` | 标签父子关系；两个字段均逻辑关联 `oracle_tag.tag_id`。 |
+| `oracle_tagging` | `oracle_id CHAR(36) NOT NULL`、`tag_id CHAR(36) NOT NULL`、`weight VARCHAR(16) NOT NULL` | `(oracle_id, tag_id)` | `(tag_id, weight, oracle_id)` | Oracle 卡牌与标签关联；`oracle_id -> scryfall_card.oracle_id`，`tag_id -> oracle_tag.tag_id`。 |
 
-除 `zhs_oracle_former_name` 外，上表所有 `card_uuid` 均逻辑关联 `scryfall_card.uuid`。这些表只保存集合成员或派生检索项；用于展示的原始 `mana_cost`、`type_line` 和 `artist` 仍保留在主表。
+上表的 `card_uuid` 均逻辑关联 `scryfall_card.uuid`。这些表只保存集合成员或派生检索项；用于展示的原始 `mana_cost`、`type_line` 和 `artist` 仍保留在主表。
+
+`oracle_tag` 主表定义如下：
+
+| 列 | MySQL 类型 | 用途 |
+| --- | --- | --- |
+| `tag_id` | `CHAR(36)` | 主键；来源标签 UUID。 |
+| `label` | `VARCHAR(255)` | 标签显示及检索名称，普通索引。 |
+| `description` | `LONGTEXT NULL` | 社区维护的英文标签说明，允许为空。 |
+| `aliases` | `VARCHAR(1024) NULL` | 别名数组按源顺序以逗号连接，不单独建表。 |
 
 #### 2.2.5 小型说明字典表
 
 | 表 | 列定义 | 主键 | 使用位置 |
 | --- | --- | --- | --- |
-| `scryfall_color` | `code CHAR(1) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(32) NOT NULL`、`description VARCHAR(255) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | 四个颜色相关位掩码。 |
+| `scryfall_color` | `code CHAR(1) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(32) NOT NULL`、`description VARCHAR(255) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | 三个颜色相关位掩码。 |
 | `scryfall_language` | `code VARCHAR(8) NOT NULL`、`name VARCHAR(64) NOT NULL` | `code` | `scryfall_card.lang`。 |
 | `scryfall_layout` | `code VARCHAR(64) NOT NULL`、`name VARCHAR(128) NOT NULL`、`description VARCHAR(512) NOT NULL`、`face_category VARCHAR(32) NOT NULL` | `code` | `scryfall_card.layout`。 |
 | `scryfall_frame` | `code VARCHAR(32) NOT NULL`、`name VARCHAR(128) NOT NULL`、`description VARCHAR(512) NOT NULL` | `code` | `scryfall_card.frame`。 |
@@ -231,7 +253,7 @@ scryfall_card.set_id
 | `scryfall_finish` | `code VARCHAR(32) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(64) NOT NULL` | `code` | `scryfall_card.finishes_mask`。 |
 | `scryfall_game` | `code VARCHAR(32) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(64) NOT NULL` | `code` | `scryfall_card.games_mask`。 |
 
-字典元数据由导入器在每次重建时写入临时字典表并随其他表一起切换，不从卡牌记录反向推测。卡牌、系列和多值关联数据仍全部来自导入文件。
+字典元数据由导入器在每次加载时写入临时字典表并随其他表一起切换，不从卡牌记录反向推测。卡牌、系列和多值关联数据仍全部来自导入文件。
 
 #### 2.2.6 位掩码查询约定
 
@@ -295,7 +317,7 @@ WHERE (color_identity_mask & 2) = 2;
 | `face_name` | string? | 映射 | 扁平化后的单独牌面名称。 |
 | `oracle_text` | string? | 官方 | 英文 Oracle 规则叙述。 |
 | `power` | string? | 官方 | 生物力量，使用字符串以支持 `*` 等非数字值。 |
-| `produced_mana` | string[]? | 官方 | 卡牌能够产生的法术力颜色。 |
+| `produced_mana` | string[]? | 官方 | 卡牌能够产生的法术力或特殊资源代码；关系模型中以逗号连接字符串保存。 |
 | `reserved` | boolean | 官方 | 是否属于 Reserved List。 |
 | `toughness` | string? | 官方 | 生物防御力，使用字符串以支持 `*` 等非数字值。 |
 | `type_line` | string | 官方 | 英文类别栏。 |
@@ -305,7 +327,7 @@ WHERE (color_identity_mask & 2) = 2;
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
 | `artist` | string? | 官方 | 插画作者名称。 |
-| `artist_ids` | UUID[]? | 官方 | Scryfall 插画作者 ID。 |
+| `artist_ids` | UUID[]? | 官方 | Scryfall 插画作者 ID；关系模型中按源顺序以逗号连接保存在主表，不单独建表。 |
 | `attraction_lights` | integer[]? | 官方 | Attraction 牌上点亮的数字。 |
 | `booster` | boolean | 官方 | 该印刷版本是否可能出现在补充包中。 |
 | `border_color` | string | 官方 | 卡牌边框颜色。 |
@@ -430,24 +452,78 @@ WHERE (color_identity_mask & 2) = 2;
 | `translated_text` | string? | 映射 | 简体中文规则叙述；API 中对应 `CardFaceSchema.oracle_text_zhs_html` 的文本来源。 |
 | `text_stage` | integer | 未确认 | 规则叙述翻译流程阶段，数值枚举未定义。 |
 | `text_source` | string? | Schema 对应概念 | 规则叙述翻译来源，聚合后对应 `TranslationSourceSchema.text_source`。 |
-| `former_names` | array | Schema | 曾用中文名称列表。 |
+| `former_names` | array | Schema | 曾用中文名称列表；以压缩 JSON 数组文本保存在 `zhs_oracle.former_names`，保留名称边界和顺序。 |
 | `extra` | unknown? | 未确认 | 扩展信息，结构未在 Schemas 中定义。 |
 
 ## 7. `zhs_ruling.json`
 
-该文件保存原始裁定及简体中文翻译。Scryfall Card Object 文档只通过 `rulings_uri` 指向裁定列表，并不在 Card Object 中定义这些原始列；MTGCH API 对外输出为 `RulingSchema`。
+该文件保存原始裁定及简体中文翻译。导入后与 `rulings.jsonl` 共同形成 `zhs_ruling` 内容表；已有中文行优先，Scryfall 数据不会覆盖翻译。
 
 | 字段 | 类型 | 来源 | 含义 |
 | --- | --- | --- | --- |
-| `ruling` | UUID | 未确认 | 裁定记录内部 ID；Schemas 未说明它与卡牌或 Oracle ID 的关联方式。 |
-| `comment` | string | Schema | 原始裁定内容；`RulingSchema.comment` 可直接确认，是否只允许英文仍需样本确认。 |
+| `ruling` | UUID | 未确认 | 裁定来源记录内部 ID；入库列名为 `ruling_id`，仅供追溯，不用于关联卡牌。 |
+| `comment` | string | Schema | 英文裁定正文；必须非空，用于计算 `ruling_key`。 |
 | `translation` | string? | Schema | 简体中文裁定翻译。 |
-| `source` | string? | Schema | 裁定来源，例如样本中的 `official`；完整枚举未定义。 |
-| `stage` | integer | 未确认 | 裁定翻译流程阶段，数值枚举未定义。 |
+| `source` | string? | Schema | 翻译来源；入库列名为 `translation_source`。 |
+| `stage` | integer | 未确认 | 翻译流程阶段；入库列名为 `translation_stage`。 |
 | `last_published_at` | date? | Schema 映射 | 最近发布日期；API 聚合后字段名为 `RulingSchema.published_at`。 |
-| `extra` | unknown? | 未确认 | 扩展信息，结构未在 Schemas 中定义。 |
+| `extra` | JSON? | 样本确认 | 扩展信息；对象等任意合法 JSON 值压缩后保存为文本，允许 `null`。 |
 
-## 8. `zhs_set.json`
+`ruling_key` 不直接来自文件。生成规则是：将 `comment` 的 CRLF/CR 统一为 LF，将弯单引号、弯双引号和不换行空格统一为普通字符，去除首尾空白，再计算小写十六进制 SHA-256。不会折叠正文内部普通空白，也不会翻译或改写文本。
+
+## 8. `rulings.jsonl`
+
+该文件来自 Scryfall Bulk Data 的 Rulings 导出。一条记录表示某个 Oracle 身份关联的一条裁定；同一规则正文可以关联多个 `oracle_id`。
+
+| 字段 | 类型 | 来源 | 含义 |
+| --- | --- | --- | --- |
+| `object` | string | 官方 | 固定为 `ruling`；其他值拒绝导入。 |
+| `oracle_id` | UUID | 官方 | 卡牌 Oracle 身份，逻辑关联 `scryfall_card.oracle_id`。 |
+| `source` | string | 官方 | 裁定来源，例如 `wotc`。 |
+| `published_at` | date | 官方 | 该 Oracle 身份下裁定的发布日期。 |
+| `comment` | string | 官方 | 英文裁定正文，用相同规范化算法生成 `ruling_key`。 |
+
+每条记录都独立写入 `scryfall_oracle_ruling` 并取得自增 `id`。同一 `oracle_id`、同一正文即使只因发布日期不同而重复出现，也不覆盖或合并；`id` 只是当前全量加载结果中的内部行标识，加载后可以变化。内容表仍按 `ruling_key` 向 `zhs_ruling` 合并：已有中文记录时仅取较新的 `last_published_at`，保留全部翻译字段；没有内容记录时新增只有英文 `comment` 和日期的行，`ruling_id`、`translation`、翻译来源、翻译阶段及 `extra` 均为 `NULL`。
+
+标准查询链为：
+
+```text
+scryfall_card.oracle_id
+    -> scryfall_oracle_ruling.oracle_id
+    -> zhs_ruling.ruling_key
+```
+
+## 9. `oracle-tags.jsonl`
+
+该文件来自 Scryfall Tagger 社区维护的 Oracle Tags 数据。Oracle 标签描述卡牌规则功能、机制、用途或主题，关联的是逻辑卡牌 `oracle_id`，而不是具体印刷版本。系统不复刻 Scryfall Tagger 页面，只导入卡牌查询需要的信息。
+
+| 字段 | 类型 | 入库规则 |
+| --- | --- | --- |
+| `object` | string | 必须为 `tag`，仅用于校验，不入库。 |
+| `id` | UUID | 写入 `oracle_tag.tag_id`，作为标签稳定主键。 |
+| `label` | string | 写入 `oracle_tag.label`，用于标签展示和检索。 |
+| `slug` | string | Scryfall URL 标识，本系统不使用，不入库。 |
+| `type` | string | 当前文件必须为 `oracle`，仅用于拒绝误放的 illustration 标签，不入库。 |
+| `uri` | string | Scryfall Tagger 页面地址，本系统不使用，不入库。 |
+| `description` | string? | 写入 `oracle_tag.description`，允许为 `NULL`，文本原样保存。 |
+| `parent_ids` | UUID[] | 每个父标签生成 `(parent_id, 当前标签ID)` 关系。 |
+| `child_ids` | UUID[] | 每个子标签生成 `(当前标签ID, child_id)` 关系。 |
+| `aliases` | string[] | 按源顺序以逗号连接写入 `oracle_tag.aliases`；不建立别名表。 |
+| `taggings` | object[] | 展开写入 `oracle_tagging`。 |
+| `taggings[].oracle_id` | UUID | 逻辑关联 `scryfall_card.oracle_id`。 |
+| `taggings[].weight` | string | 标签与卡牌的关联强度，原样保存到 `VARCHAR(16)`；不建立字典且不限制枚举。 |
+
+`parent_ids` 与其他记录的 `child_ids` 可能表达同一条边。导入器统一转换为 `(parent_tag_id, child_tag_id)`，在整个文件范围按联合主键去重，不保存两套方向相反的关系。
+
+标准卡牌标签查询链为：
+
+```text
+scryfall_card.oracle_id
+    -> oracle_tagging.oracle_id
+    -> oracle_tag.tag_id
+```
+
+## 10. `zhs_set.json`
 
 该文件保存系列简体中文名称。Scryfall Card Object 的印刷字段包含 `set_id`、`set`、`set_name`；MTGCH API 最终将中文名称合并进 `SetSchema.translated_name`。
 
@@ -459,7 +535,7 @@ WHERE (color_identity_mask & 2) = 2;
 | `source` | string? | 未确认 | 系列名称翻译来源，枚举未定义。 |
 | `stage` | integer | 未确认 | 系列名称翻译流程阶段，数值枚举未定义。 |
 
-## 9. `zhs_type.json`
+## 11. `zhs_type.json`
 
 该文件保存卡牌类别词汇翻译。Scryfall Card Object 只提供完成后的 `type_line`，MTGCH Schemas 也没有公开类别词典的原始或响应对象，因此本文件所有字段都无法从指定文档直接确认。
 
@@ -472,7 +548,7 @@ WHERE (color_identity_mask & 2) = 2;
 | `created_at` | datetime | 推定 | 词汇翻译记录创建时间。 |
 | `is_funny` | boolean | 推定 | 是否属于非正规或趣味牌相关词汇。 |
 
-## 10. 对当前业务的关键字段
+## 12. 对当前业务的关键字段
 
 | 业务需求 | 建议字段 |
 | --- | --- |
@@ -486,27 +562,28 @@ WHERE (color_identity_mask & 2) = 2;
 | 特定印刷中文文字 | `zhs_card`，通过本地卡牌 ID 或 `multiverse_id` 关联。 |
 | 背景叙述中文翻译 | `flavor_id` 关联 `zhs_flavor`。 |
 | 系列中文名称 | `set_id` 关联 `zhs_set`。 |
+| 单卡释疑 | 由卡牌 `oracle_id` 关联 `scryfall_oracle_ruling`，再按 `ruling_key` 读取 `zhs_ruling`；中文为空时显示 `comment`。 |
+| Oracle 功能标签 | 由卡牌 `oracle_id` 关联 `oracle_tagging`，再按 `tag_id` 读取 `oracle_tag`；可使用 `weight` 排序相关性。 |
 | 卡图 | `scryfall_id`、`face_index`、`layout`；由后端集中生成 Scryfall CDN 地址。 |
 | 排序 | `set_code`、`collector_number`、`colors`、`color_identity`、`cmc`、`name`。 |
 
-## 11. 尚需确认
+## 13. 尚需确认
 
 这些文件是只读卡牌元数据，服务不会增删改，也不会生成其中的 ID 或维护翻译流程。因此只需要确认会影响查询结果、关联结果或语言回退的规则。
 
-### 11.1 实现前需要确认
+### 13.1 实现前需要确认
 
 当前没有阻塞只读查询、关联、中文展示或英文回退实现的待确认项。
 
 中文字段的统一处理规则已经确定：先去除首尾空白，结果为空或原值为 `null` 时视为缺失，并回退对应英文内容。
 
-### 11.2 对应功能启用时再确认
+### 13.2 对应功能启用时再确认
 
 - 如果名称搜索需要兼容历史译名，再确认 `zhs_oracle.former_names` 的元素结构和匹配规则。
-- 如果卡牌详情需要展示裁定，再确认 `zhs_ruling.ruling` 如何关联卡牌或 Oracle 身份。
 - 如果需要展示 `extra`，再确认 `zhs_oracle.extra`、`zhs_ruling.extra` 等字段的结构；当前需求可以忽略。
 - 如果需要使用 `zhs_type` 动态翻译类别词汇，再确认 `type_type`、`stage` 和 `is_funny`；当前可以直接使用卡牌记录中已经生成的中文类别栏。
 
-### 11.3 不需要确认
+### 13.3 不需要确认
 
 - UUID 的生成算法。
 - `source` 的完整枚举，除非界面要展示翻译来源。
@@ -516,9 +593,11 @@ WHERE (color_identity_mask & 2) = 2;
 - `extra` 的完整内容范围，除非产品明确要求展示。
 - 原文字段是否全部来自同一种语言；英文回退可以直接读取 Scryfall 标准字段，不依赖 `zhs_*` 中的原文字段。
 
-## 12. 参考文档
+## 14. 参考文档
 
 - [Scryfall Card Objects](https://scryfall.com/docs/api/cards)
+- [Scryfall Ruling Objects](https://scryfall.com/docs/api/rulings)
+- [Scryfall Tags](https://scryfall.com/docs/api/tags)
 - [Scryfall Card Images](https://scryfall.com/docs/api/images)
 - [MTGCH API 文档](https://mtgch.com/api/v1/docs)
 - [MTGCH OpenAPI Schema](https://mtgch.com/api/v1/openapi.json)

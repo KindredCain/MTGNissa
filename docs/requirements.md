@@ -567,16 +567,16 @@ Commander Atraxa
 
 同一次卡组修改无论调整多少张牌，都作为一次 `修改卡组` 操作，不展开卡组内部卡牌变化。
 
-## 15. 卡牌数据库全量重建
+## 15. 加载卡牌数据
 
 ### 15.1 功能目标
 
-服务需要提供卡牌数据库全量重建功能，将指定目录中的卡牌 JSON 数据重新导入外置卡牌数据库。
+服务需要提供卡牌数据加载功能，将指定目录中的卡牌 JSON 数据全量导入外置卡牌数据库。
 
 - 这是系统维护功能，不是个人收藏、愿望单或卡组的导入功能。
-- 只重建只读卡牌元数据库，不得修改个人数据数据库。
+- 只加载只读卡牌元数据库，不得修改个人数据数据库。
 - 每次执行均为全量替换，不做增量更新、合并或单条修复。
-- 重建后的卡牌表内容必须完全来自本次读取的 JSON 文件。
+- 加载后的卡牌表内容必须完全来自本次读取的 JSON 文件。
 - `scryfall_card` 是卡牌、印刷版本及英文原文的实体数据源；卡牌查询、列表和详情必须以其记录为主体。
 - `zhs_*.json` 是可选的简体中文翻译、本地化及辅助词典数据，只能覆盖或补充 Scryfall 实体的展示字段，不得独立产生卡牌实体。
 - 中文字段缺失、为 `null` 或仅含空白时，必须回退使用 `scryfall_card` 的对应字段。
@@ -597,7 +597,7 @@ CARD_DATA_DIR=/data/card-data
 
 ### 15.3 必需文件
 
-每次重建必须同时读取以下七个 NDJSON 文件：
+每次加载必须同时读取以下九个 NDJSON/JSONL 文件：
 
 1. `scryfall_card.json`
 2. `zhs_card.json`
@@ -606,12 +606,14 @@ CARD_DATA_DIR=/data/card-data
 5. `zhs_ruling.json`
 6. `zhs_set.json`
 7. `zhs_type.json`
+8. `rulings.jsonl`
+9. `oracle-tags.jsonl`
 
-任意文件缺失、无法读取、为空或包含非法 JSON 时，重建失败，现有卡牌库必须保持不变。
+任意文件缺失、无法读取、为空或包含非法 JSON 时，加载失败，现有卡牌库必须保持不变。
 
 ### 15.4 操作前完整确认
 
-在影响现有卡牌表之前，服务必须完整读取七个文件，而不是只检查文件存在或只读取第一行。
+在影响现有卡牌表之前，服务必须完整读取九个文件，而不是只检查文件存在或只读取第一行。
 
 每个文件至少检查：
 
@@ -620,11 +622,11 @@ CARD_DATA_DIR=/data/card-data
 - 每行包含该对象的必需字段。
 - 记录文件大小、总行数和 SHA-256。
 - 已确认唯一的关联字段不存在重复值。
-- `zhs_*.json` 只将各文件的关联键或组合唯一键视为非空必需字段；翻译、名称、评论及其他业务内容字段允许为 `null`。
+- `zhs_*.json` 通常只将各文件的关联键或组合唯一键视为非空必需字段；`zhs_ruling.comment` 还必须非空，因为它用于生成跨数据源稳定规则键。翻译字段仍允许为 `null`。
 
-只有全部七个文件都完成预检后，才能进入数据库重建阶段。
+只有全部九个文件都完成预检后，才能进入数据库加载阶段。
 
-### 15.5 重建方式
+### 15.5 加载方式
 
 业务结果要求为：删除旧卡牌表，按固定 Schema 重新建表，并插入本次 JSON 的全部数据。
 
@@ -632,8 +634,8 @@ CARD_DATA_DIR=/data/card-data
 
 1. 完成全部文件预检。
 2. 创建一组新的临时卡牌表。
-3. 再次流式读取七个文件并导入临时表。
-4. 校验每张表的导入行数与预检行数一致。
+3. 再次流式读取九个文件并导入临时表。
+4. 校验普通源表的导入行数与预检行数一致；合并后的 `zhs_ruling` 行数不得少于 `zhs_ruling.json` 的预检行数。
 5. 再次确认文件大小和 SHA-256 未在导入期间变化。
 6. 使用 MySQL 多表 `RENAME TABLE` 原子切换新旧表。
 7. 切换成功后删除全部旧卡牌表。
@@ -642,22 +644,23 @@ CARD_DATA_DIR=/data/card-data
 
 ### 15.6 表范围
 
-重建逻辑只能操作以下固定白名单表：
+加载逻辑只能操作以下固定白名单表：
 
 - `scryfall_card`
 - `zhs_card`
 - `zhs_flavor`
 - `zhs_oracle`
 - `zhs_ruling`
+- `scryfall_oracle_ruling`
+- `oracle_tag`
+- `oracle_tag_relation`
+- `oracle_tagging`
 - `zhs_set`
 - `zhs_type`
 - `scryfall_card_keyword`
-- `scryfall_card_mana_symbol`
 - `scryfall_card_type`
-- `scryfall_card_artist`
 - `scryfall_card_frame_effect`
 - `scryfall_card_promo_type`
-- `zhs_oracle_former_name`
 - `scryfall_set`
 - `scryfall_color`
 - `scryfall_language`
@@ -673,27 +676,36 @@ CARD_DATA_DIR=/data/card-data
 
 - NDJSON 必须逐行流式读取，不能将整个文件加载到内存。
 - 标量 JSON 字段使用 MySQL 对应标量类型存入主表或字典表，不得将整行记录保存为单个 `document` JSON 列。
-- 颜色、颜色标识、颜色指示符、可产法术力、工艺、游戏平台和 Attraction 灯号为取值受限的多值属性，在 `scryfall_card` 中使用可索引位掩码列保存。
-- 关键词、法术力符号、类型词、画师、牌框效果、推广类型和曾用名仍通过多对多关联表保存。
+- 颜色、颜色标识、颜色指示符、工艺、游戏平台和 Attraction 灯号为取值受限的多值属性，在 `scryfall_card` 中使用可索引位掩码列保存。
+- `produced_mana` 不使用字典或关联表；按源数组顺序以逗号连接后直接存入 `scryfall_card.produced_mana VARCHAR(64) NULL`，不限制元素值域。
+- 关键词、类型词、牌框效果和推广类型通过多对多关联表保存。
+- 不建立费用符号关联表；完整费用保存在 `mana_cost`，法术力值查询使用 `cmc`，颜色查询使用颜色及颜色标识位掩码。
+- `artist_ids` 按源数组顺序以逗号连接后保存到 `scryfall_card.artist_ids VARCHAR(2048) NULL`；`former_names` 以压缩 JSON 数组文本保存到 `zhs_oracle.former_names LONGTEXT NULL`。两者均不建立关联表或索引。
 - `preview` 不参与检索，以规范 JSON 文本存入 `scryfall_card.preview` 的可空 `LONGTEXT` 列，不单独建表。
+- `rulings.jsonl` 的每条规则使用规范化英文 `comment` 的 SHA-256 生成 `ruling_key`；规范化只统一换行、弯引号、不换行空格和首尾空白，正文不折叠或改写。
+- `scryfall_oracle_ruling` 使用自增 `id` 区分每一条源记录，并保存 `oracle_id`、`ruling_key`、来源和发布日期；`zhs_ruling` 保存英文规则及中文翻译。Scryfall 中存在但中文文件缺失的规则必须补成 `translation NULL` 的英文行，已有中文翻译不得被覆盖。
+- `rulings.jsonl` 中同一 `oracle_id` 和正文可能因不同发布日期而重复出现；所有源记录必须分别保留，不得覆盖或合并。自增 `id` 只作为本次加载结果的内部行标识，业务关联仍使用 `oracle_id` 和 `ruling_key`。
+- `zhs_ruling.extra` 接受任意合法 JSON 值并以压缩 JSON 文本保存到 `LONGTEXT`，不建立 JSON 子表。
+- `oracle-tags.jsonl` 只导入 `oracle` 标签。标签主表仅保留标签 ID、名称、说明和逗号连接的别名，不保存 Scryfall URI、slug、对象类型等本系统不用的元数据。
+- `parent_ids` 和 `child_ids` 统一展开为 `oracle_tag_relation(parent_tag_id, child_tag_id)`，来自两个方向的相同关系去重；卡牌标签展开为 `oracle_tagging(oracle_id, tag_id, weight)`，`weight` 原样保存且不使用字典或枚举限制。
 - 颜色、语言、布局、卡框、卡框效果、工艺和游戏平台的代码与说明由 Scryfall 官方元数据生成小型只读字典；卡牌主表保存代码或位掩码。
 - 系列信息从 `scryfall_card` 的 `set_id`、`set_code`、`set_name`和 `set_type` 动态汇总到 `scryfall_set`，卡牌主表仅保留 `set_id` 关联。
 - `cmc`、`mana_cost`、`type_line`、牌名、稀有度和发行日期保留在 `scryfall_card` 主表并建立索引。
 - 主键、翻译关联键和常用查询字段必须建立索引。全量原子换表不建立跨表外键约束，关联完整性由预检和业务查询保证。
 - JSON 的 `null` 原样写入 MySQL `NULL`。
-- 除上述明确的位掩码、字典关联和检索派生字段外，卡牌原始标量值不做业务转换。
+- 除上述明确的位掩码、`produced_mana` 字符串连接、字典关联和检索派生字段外，卡牌原始标量值不做业务转换。
 - 普通、闪卡和蚀刻闪的计数归类只发生在业务查询层，不写回卡牌库。
 - 使用批量插入，并记录每个文件的读取行数和插入行数。
 - 解析或插入失败时需要记录文件名和行号，但不得记录完整卡牌 JSON。
-- 同一服务实例同一时间只允许执行一个重建任务。
-- 重建任务必须在开始、阶段切换、逐文件校验完成、逐文件导入完成、行数核对、原子切换和最终结果时输出结构化日志；任务运行期间每 30 秒输出一次包含任务 ID、当前阶段和累计耗时的心跳日志，大文件导入每 10,000 行额外输出一次写入进度，避免长时间静默。
+- 同一服务实例同一时间只允许执行一个加载任务。
+- 加载任务必须在开始、阶段切换、逐文件校验完成、逐文件导入完成、行数核对、原子切换和最终结果时输出结构化日志；任务运行期间每 30 秒输出一次包含任务 ID、当前阶段、当前文件和累计行数的心跳日志。批量写入过程不按固定行数额外输出进度日志。
 
 ### 15.8 接口行为
 
 建议接口：
 
 ```http
-POST /api/v1/card-data/rebuild
+POST /api/v1/card-data/load
 ```
 
 该操作使用异步任务：
@@ -707,13 +719,13 @@ POST /api/v1/card-data/rebuild
 当前不实现完整用户认证，但该接口必须具备最低限度保护：
 
 - 默认关闭，通过配置显式启用。
-- 请求必须携带固定确认文本，例如 `REBUILD_CARD_DATABASE`。
+- 请求必须携带固定确认文本 `LOAD_CARD_DATA`。
 - 不允许请求指定数据库名、表名或文件路径。
 - 部署时应只向内网或受反向代理限制的管理路径开放。
 
 ### 15.9 日志边界
 
-卡牌数据库重建属于系统维护任务，不计入用户操作日志。
+卡牌数据加载属于系统维护任务，不计入用户操作日志。
 
 任务结果至少记录：
 

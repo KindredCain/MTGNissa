@@ -3,22 +3,118 @@ package carddata
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"sort"
 	"strings"
 )
-
-var manaSymbolPattern = regexp.MustCompile(`\{([^{}]+)\}`)
 
 func deriveRows(s spec, obj map[string]json.RawMessage, line int64) (map[string][]importRow, error) {
 	switch s.table {
 	case "scryfall_card":
 		return deriveScryfallRows(obj, line)
-	case "zhs_oracle":
-		return deriveFormerNameRows(obj, line)
+	case "scryfall_oracle_ruling":
+		return deriveRulingRows(obj, line)
+	case "oracle_tag":
+		return deriveOracleTagRows(obj, line)
 	default:
 		return nil, nil
 	}
+}
+
+func deriveOracleTagRows(obj map[string]json.RawMessage, line int64) (map[string][]importRow, error) {
+	objectType, err := stringField(obj, "object")
+	if err != nil {
+		return nil, err
+	}
+	if objectType != "tag" {
+		return nil, fmt.Errorf("field %q: unsupported object type %q", "object", objectType)
+	}
+	tagType, err := stringField(obj, "type")
+	if err != nil {
+		return nil, err
+	}
+	if tagType != "oracle" {
+		return nil, fmt.Errorf("field %q: expected oracle tag, got %q", "type", tagType)
+	}
+	tagID, err := stringField(obj, "id")
+	if err != nil {
+		return nil, err
+	}
+	parents, err := stringArrayField(obj, "parent_ids")
+	if err != nil {
+		return nil, err
+	}
+	children, err := stringArrayField(obj, "child_ids")
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string][]importRow)
+	seenRelations := make(map[string]struct{}, len(parents)+len(children))
+	appendRelation := func(parentID, childID string) {
+		key := parentID + "\x1f" + childID
+		if _, exists := seenRelations[key]; exists {
+			return
+		}
+		seenRelations[key] = struct{}{}
+		result["oracle_tag_relation"] = append(result["oracle_tag_relation"], importRow{[]any{parentID, childID}, line})
+	}
+	for _, parentID := range parents {
+		appendRelation(parentID, tagID)
+	}
+	for _, childID := range children {
+		appendRelation(tagID, childID)
+	}
+
+	var taggings []struct {
+		OracleID string `json:"oracle_id"`
+		Weight   string `json:"weight"`
+	}
+	if err := json.Unmarshal(obj["taggings"], &taggings); err != nil {
+		return nil, fmt.Errorf("field %q: %w", "taggings", err)
+	}
+	seenTaggings := make(map[string]string, len(taggings))
+	for _, tagging := range taggings {
+		if tagging.OracleID == "" || tagging.Weight == "" {
+			return nil, fmt.Errorf("field %q: oracle_id and weight must be non-empty", "taggings")
+		}
+		if previous, exists := seenTaggings[tagging.OracleID]; exists {
+			if previous != tagging.Weight {
+				return nil, fmt.Errorf("field %q: oracle_id %q has conflicting weights %q and %q", "taggings", tagging.OracleID, previous, tagging.Weight)
+			}
+			continue
+		}
+		seenTaggings[tagging.OracleID] = tagging.Weight
+		result["oracle_tagging"] = append(result["oracle_tagging"], importRow{[]any{tagging.OracleID, tagID, tagging.Weight}, line})
+	}
+	return result, nil
+}
+
+func deriveRulingRows(obj map[string]json.RawMessage, line int64) (map[string][]importRow, error) {
+	objectType, err := stringField(obj, "object")
+	if err != nil {
+		return nil, err
+	}
+	if objectType != "ruling" {
+		return nil, fmt.Errorf("field %q: unsupported object type %q", "object", objectType)
+	}
+	comment, err := stringField(obj, "comment")
+	if err != nil {
+		return nil, err
+	}
+	publishedAt, err := stringField(obj, "published_at")
+	if err != nil {
+		return nil, err
+	}
+	row := importRow{values: []any{
+		rulingKey(comment),
+		nil,
+		comment,
+		nil,
+		nil,
+		nil,
+		publishedAt,
+		nil,
+	}, line: line}
+	return map[string][]importRow{"zhs_ruling": {row}}, nil
 }
 
 func deriveScryfallRows(obj map[string]json.RawMessage, line int64) (map[string][]importRow, error) {
@@ -31,33 +127,11 @@ func deriveScryfallRows(obj map[string]json.RawMessage, line int64) (map[string]
 	if err := appendStringArrayRows(result, obj, "keywords", "scryfall_card_keyword", cardUUID, line); err != nil {
 		return nil, err
 	}
-	if err := appendStringArrayRows(result, obj, "artist_ids", "scryfall_card_artist", cardUUID, line); err != nil {
-		return nil, err
-	}
 	if err := appendStringArrayRows(result, obj, "frame_effects", "scryfall_card_frame_effect", cardUUID, line); err != nil {
 		return nil, err
 	}
 	if err := appendStringArrayRows(result, obj, "promo_types", "scryfall_card_promo_type", cardUUID, line); err != nil {
 		return nil, err
-	}
-
-	manaCost, err := optionalStringField(obj, "mana_cost")
-	if err != nil {
-		return nil, err
-	}
-	if manaCost != nil {
-		counts := make(map[string]int64)
-		for _, match := range manaSymbolPattern.FindAllStringSubmatch(*manaCost, -1) {
-			counts[match[1]]++
-		}
-		symbols := make([]string, 0, len(counts))
-		for symbol := range counts {
-			symbols = append(symbols, symbol)
-		}
-		sort.Strings(symbols)
-		for _, symbol := range symbols {
-			result["scryfall_card_mana_symbol"] = append(result["scryfall_card_mana_symbol"], importRow{[]any{cardUUID, symbol, counts[symbol]}, line})
-		}
 	}
 
 	typeLine, err := stringField(obj, "type_line")
@@ -89,25 +163,6 @@ func deriveScryfallRows(obj map[string]json.RawMessage, line int64) (map[string]
 	result["scryfall_set"] = append(result["scryfall_set"], importRow{[]any{setID, setCode, setName, setType}, line})
 
 	return result, nil
-}
-
-func deriveFormerNameRows(obj map[string]json.RawMessage, line int64) (map[string][]importRow, error) {
-	faceOracleID, err := stringField(obj, "face_oracle_id")
-	if err != nil {
-		return nil, err
-	}
-	names, err := stringArrayField(obj, "former_names")
-	if err != nil {
-		return nil, err
-	}
-	rows := make([]importRow, 0, len(names))
-	for position, name := range names {
-		rows = append(rows, importRow{[]any{faceOracleID, int64(position), name}, line})
-	}
-	if len(rows) == 0 {
-		return nil, nil
-	}
-	return map[string][]importRow{"zhs_oracle_former_name": rows}, nil
 }
 
 func appendStringArrayRows(result map[string][]importRow, obj map[string]json.RawMessage, field, table, cardUUID string, line int64) error {

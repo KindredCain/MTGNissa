@@ -13,31 +13,31 @@ import (
 	"mtgnissa/internal/health"
 )
 
-type rebuildStarter interface {
+type cardDataLoader interface {
 	Start() (carddata.Task, error)
 	Get(string) (carddata.Task, bool)
 }
 
-func New(log *slog.Logger, healthHandler health.Handler, rebuild rebuildStarter, rebuildEnabled bool) *gin.Engine {
+func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, loadEnabled bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery(), requestID(), accessLog(log), bodyLimit(1<<20))
 	r.GET("/health/live", healthHandler.Live)
 	r.GET("/health/ready", healthHandler.Ready)
 	api := r.Group("/api/v1/card-data")
-	api.POST("/rebuild", startRebuild(rebuild, rebuildEnabled))
-	api.GET("/rebuild/:id", getRebuild(rebuild, rebuildEnabled))
+	api.POST("/load", startLoad(loader, loadEnabled))
+	api.GET("/load/:id", getLoad(loader, loadEnabled))
 	r.NoRoute(func(c *gin.Context) { problem(c, http.StatusNotFound, "not_found", "route not found") })
 	return r
 }
 
-func startRebuild(manager rebuildStarter, enabled bool) gin.HandlerFunc {
+func startLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 	type request struct {
 		Confirmation string `json:"confirmation"`
 	}
 	return func(c *gin.Context) {
 		if !enabled {
-			problem(c, http.StatusForbidden, "rebuild_disabled", "card data rebuild is disabled")
+			problem(c, http.StatusForbidden, "load_disabled", "card data loading is disabled")
 			return
 		}
 		var req request
@@ -56,27 +56,27 @@ func startRebuild(manager rebuildStarter, enabled bool) gin.HandlerFunc {
 		}
 		task, err := manager.Start()
 		if errors.Is(err, carddata.ErrRunning) {
-			problem(c, http.StatusConflict, "rebuild_in_progress", err.Error())
+			problem(c, http.StatusConflict, "load_in_progress", err.Error())
 			return
 		}
 		if err != nil {
-			problem(c, 500, "internal_error", "could not start rebuild")
+			problem(c, 500, "internal_error", "could not start card data loading")
 			return
 		}
-		c.Header("Location", "/api/v1/card-data/rebuild/"+task.ID)
+		c.Header("Location", "/api/v1/card-data/load/"+task.ID)
 		c.JSON(http.StatusAccepted, task)
 	}
 }
 
-func getRebuild(manager rebuildStarter, enabled bool) gin.HandlerFunc {
+func getLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !enabled {
-			problem(c, http.StatusForbidden, "rebuild_disabled", "card data rebuild is disabled")
+			problem(c, http.StatusForbidden, "load_disabled", "card data loading is disabled")
 			return
 		}
 		task, ok := manager.Get(c.Param("id"))
 		if !ok {
-			problem(c, 404, "task_not_found", "rebuild task not found")
+			problem(c, 404, "task_not_found", "card data load task not found")
 			return
 		}
 		c.JSON(200, task)

@@ -23,7 +23,7 @@ type Config struct {
 	CardDB          DB
 	AppDB           DB
 	CardDataDir     string
-	RebuildEnabled  bool
+	LoadEnabled     bool
 }
 
 type fileConfig struct {
@@ -35,8 +35,8 @@ type fileConfig struct {
 		Level string `yaml:"level"`
 	} `yaml:"log"`
 	CardData struct {
-		Dir            string `yaml:"dir"`
-		RebuildEnabled *bool  `yaml:"rebuild_enabled"`
+		Dir         string `yaml:"dir"`
+		LoadEnabled *bool  `yaml:"load_enabled"`
 	} `yaml:"card_data"`
 	Databases struct {
 		Card fileDB `yaml:"card"`
@@ -82,8 +82,8 @@ func LoadFile(path string) (Config, error) {
 	if c.CardDB.Name == c.AppDB.Name {
 		return Config{}, fmt.Errorf("card and app database names must differ")
 	}
-	if c.RebuildEnabled && c.CardDataDir == "" {
-		return Config{}, fmt.Errorf("card_data.dir is required when rebuild is enabled")
+	if c.LoadEnabled && c.CardDataDir == "" {
+		return Config{}, fmt.Errorf("card_data.dir is required when card data loading is enabled")
 	}
 	switch c.LogLevel {
 	case "debug", "info", "warn", "error":
@@ -121,8 +121,8 @@ func applyFile(c *Config, path string) error {
 	if raw.CardData.Dir != "" {
 		c.CardDataDir = raw.CardData.Dir
 	}
-	if raw.CardData.RebuildEnabled != nil {
-		c.RebuildEnabled = *raw.CardData.RebuildEnabled
+	if raw.CardData.LoadEnabled != nil {
+		c.LoadEnabled = *raw.CardData.LoadEnabled
 	}
 	if raw.HTTP.ShutdownTimeout != "" {
 		v, err := positiveDuration("http.shutdown_timeout", raw.HTTP.ShutdownTimeout)
@@ -186,7 +186,7 @@ func applyEnvironment(c *Config) error {
 	if err := setDuration("SHUTDOWN_TIMEOUT", &c.ShutdownTimeout); err != nil {
 		return err
 	}
-	if err := setBool("CARD_DATA_REBUILD_ENABLED", &c.RebuildEnabled); err != nil {
+	if err := setBool("CARD_DATA_LOAD_ENABLED", &c.LoadEnabled); err != nil {
 		return err
 	}
 	if err := applyDBEnvironment("CARD_DB", &c.CardDB); err != nil {

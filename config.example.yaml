@@ -8,7 +8,7 @@ log:
 
 card_data:
   dir: /data/card-data
-  rebuild_enabled: false
+  load_enabled: false
 
 databases:
   card:

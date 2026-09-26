@@ -51,6 +51,6 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		return nil, err
 	}
 	manager := carddata.NewManager(ctx, dbs.Card, cfg.CardDB.Name, cfg.CardDataDir, log)
-	router := httpapi.New(log, health.Handler{Card: dbs.Card, App: dbs.App}, manager, cfg.RebuildEnabled)
+	router := httpapi.New(log, health.Handler{Card: dbs.Card, App: dbs.App}, manager, cfg.LoadEnabled)
 	return &Application{Router: router, Databases: dbs, Config: cfg, Logger: log}, nil
 }
