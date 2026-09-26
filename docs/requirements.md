@@ -700,7 +700,7 @@ CARD_DATA_DIR=/data/card-data
 - 颜色、颜色标识、颜色指示符、工艺、游戏平台和 Attraction 灯号为取值受限的多值属性，在 `scryfall_card` 中使用可索引位掩码列保存。
 - `produced_mana` 不使用字典或关联表；按源数组顺序以逗号连接后直接存入 `scryfall_card.produced_mana VARCHAR(64) NULL`，不限制元素值域。
 - 关键词、类型词、牌框效果和推广类型通过多对多关联表保存。
-- 多值字符串派生关系按去除首尾空白后的 Unicode 不区分大小写值去重，并保留第一次出现的原始大小写，避免与 MySQL `utf8mb4_unicode_ci` 唯一键规则冲突。
+- 源文件字符串主键去除首尾空白后，按 Unicode 不区分大小写比较重复；多值字符串派生关系采用相同的比较规则去重，并保留第一次出现的原始大小写，避免仅有大小写或首尾空白差异的数据与 MySQL `utf8mb4_unicode_ci` 唯一键规则冲突。
 - 不建立费用符号关联表；完整费用保存在 `mana_cost`，法术力值查询使用 `cmc`，颜色查询使用颜色及颜色标识位掩码。
 - `artist_ids` 按源数组顺序以逗号连接后保存到 `scryfall_card.artist_ids VARCHAR(2048) NULL`；`former_names` 以压缩 JSON 数组文本保存到 `zhs_oracle.former_names LONGTEXT NULL`。两者均不建立关联表或索引。
 - `preview` 不参与检索，以规范 JSON 文本存入 `scryfall_card.preview` 的可空 `LONGTEXT` 列，不单独建表。
@@ -712,7 +712,7 @@ CARD_DATA_DIR=/data/card-data
 - `parent_ids` 和 `child_ids` 统一展开为 `oracle_tag_relation(parent_tag_id, child_tag_id)`，来自两个方向的相同关系去重；卡牌标签展开为 `oracle_tagging(oracle_id, tag_id, weight)`，`weight` 原样保存且不使用字典或枚举限制。
 - 颜色、语言、布局、卡框、卡框效果、工艺和游戏平台的代码与说明由 Scryfall 官方元数据生成小型只读字典；卡牌主表保存代码或位掩码。
 - 系列信息从 `scryfall_card` 的 `set_id`、`set_code`、`set_name`和 `set_type` 动态汇总到 `scryfall_set`，卡牌主表仅保留 `set_id` 关联。
-- `cmc`、`mana_cost`、`type_line`、牌名、稀有度和发行日期保留在 `scryfall_card` 主表并建立索引。
+- `cmc`、`mana_cost`、`type_line`、牌名、稀有度和发行日期保留在 `scryfall_card` 主表；`cmc`、`mana_cost`、牌名、稀有度和发行日期建立普通索引，类别筛选使用派生的 `scryfall_card_type` 表。
 - 主键、翻译关联键和常用查询字段必须建立索引。全量原子换表不建立跨表外键约束，关联完整性由预检和业务查询保证。
 - JSON 的 `null` 原样写入 MySQL `NULL`。
 - 除上述明确的位掩码、`produced_mana` 字符串连接、字典关联和检索派生字段外，卡牌原始标量值不做业务转换。

@@ -577,7 +577,11 @@ func relationalKey(values []any, s spec) (string, error) {
 		if values[columnIndex] == nil {
 			return "", fmt.Errorf("primary key column %q is null", field)
 		}
-		parts[i] = values[columnIndex]
+		value := values[columnIndex]
+		if text, ok := value.(string); ok {
+			value = strings.ToLower(strings.TrimSpace(text))
+		}
+		parts[i] = value
 	}
 	encoded, err := json.Marshal(parts)
 	if err != nil {

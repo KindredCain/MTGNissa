@@ -81,7 +81,7 @@
 
 系统不提供单个费用符号查询，因此不从 `mana_cost` 派生费用符号表。完整费用展示和精确值保留在 `mana_cost`，费用高低及范围查询使用 `cmc`，卡牌颜色和颜色标识查询使用对应位掩码。
 
-主表为 `cmc`、`mana_cost`、牌名、稀有度、发行日期、语言、布局、卡框、位掩码和印刷版本关联字段建立 B-tree 索引，并为英文牌名、单面牌名、`type_line` 和 `oracle_text` 建立全文索引。
+主表为 `cmc`、`mana_cost`、牌名、稀有度、发行日期、语言、布局、卡框、位掩码和印刷版本关联字段建立 B-tree 索引。当前系统不按英文规则叙述进行全文检索，因此不创建全文索引；类别筛选使用派生的 `scryfall_card_type` 表。
 
 目前可以使用或推定的主要关联如下：
 
@@ -104,7 +104,7 @@
 
 本节记录导入器当前实际创建的正式表。所有表使用 `InnoDB`、`utf8mb4` 和 `utf8mb4_unicode_ci`。除明确标记为 `NULL` 的列外均为 `NOT NULL`；当前列均未声明数据库默认值。`BOOLEAN` 使用 MySQL 布尔类型语法，实际等价于 `TINYINT(1)`。
 
-为了支持整套表通过一次 `RENAME TABLE` 原子切换，当前不创建跨表物理外键。下文“关联”均为由导入校验和业务查询维护的逻辑外键；主键、普通索引和全文索引仍会实际创建。
+为了支持整套表通过一次 `RENAME TABLE` 原子切换，当前不创建跨表物理外键。下文“关联”均为由导入校验和业务查询维护的逻辑外键；主键和普通索引仍会实际创建。
 
 #### 2.2.1 `scryfall_card` 卡牌印刷主表
 
@@ -187,8 +187,6 @@
 
 普通索引：`scryfall_id`、`oracle_id`、`face_oracle_id`、`flavor_id`、`set_id`、`multiverse_id`、`(set_id, collector_number, lang)`、`cmc`、`mana_cost`、`rarity`、`released_at`、`name`、`lang`、`layout`、`frame`、`colors_mask`、`color_identity_mask`、`finishes_mask`、`games_mask`。
 
-全文索引：`(name, face_name, type_line, oracle_text)`。
-
 #### 2.2.2 系列实体与中文系列翻译
 
 | 表 | 列 | 主键 | 索引及关联 |
@@ -232,7 +230,7 @@ scryfall_card.set_id
 
 上表的 `card_uuid` 均逻辑关联 `scryfall_card.uuid`。这些表只保存集合成员或派生检索项；用于展示的原始 `mana_cost`、`type_line` 和 `artist` 仍保留在主表。
 
-关键词、卡框效果、推广类型和类别词等派生字符串集合会先去除首尾空白，再按 Unicode 不区分大小写比较去重，并保留第一次出现的文本。例如 `Family gathering` 与 `Family Gathering` 只生成一条关系，以匹配表的 `utf8mb4_unicode_ci` 唯一键语义。
+源文件中的字符串主键先去除首尾空白，再按 Unicode 不区分大小写检查重复。关键词、卡框效果、推广类型和类别词等派生字符串集合采用相同的比较规则去重，并保留第一次出现的文本。例如 `Family gathering` 与 ` Family Gathering ` 只生成一条关系，以避免仅有大小写或首尾空白差异的数据与表的 `utf8mb4_unicode_ci` 唯一键冲突。
 
 `oracle_tag` 主表定义如下：
 

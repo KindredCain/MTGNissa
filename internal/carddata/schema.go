@@ -47,7 +47,6 @@ type spec struct {
 	columns          []columnSpec
 	derivedFields    []string
 	indexes          []indexSpec
-	fulltextIndexes  []indexSpec
 	standardJSON     bool
 	allowExtraRows   bool
 	autoIncrementKey bool
@@ -170,7 +169,6 @@ var specs = []spec{
 			idx("idx_scryfall_card_finishes_mask", "finishes_mask"),
 			idx("idx_scryfall_card_games_mask", "games_mask"),
 		},
-		fulltextIndexes: []indexSpec{idx("ft_scryfall_card_search", "name", "face_name", "type_line", "oracle_text")},
 	},
 	{
 		table: "zhs_card", file: "zhs_card.json", required: []string{"card_id"}, key: []string{"card_id"},
@@ -442,16 +440,13 @@ func allTableSpecs() []spec {
 }
 
 func createTableSQL(table string, s spec) string {
-	parts := make([]string, 0, len(s.columns)+len(s.indexes)+len(s.fulltextIndexes)+1)
+	parts := make([]string, 0, len(s.columns)+len(s.indexes)+1)
 	for _, column := range s.columns {
 		parts = append(parts, quote(column.name)+" "+column.ddl)
 	}
 	parts = append(parts, "PRIMARY KEY ("+quotedList(s.key)+")")
 	for _, index := range s.indexes {
 		parts = append(parts, "KEY "+quote(index.name)+" ("+quotedList(index.columns)+")")
-	}
-	for _, index := range s.fulltextIndexes {
-		parts = append(parts, "FULLTEXT KEY "+quote(index.name)+" ("+quotedList(index.columns)+")")
 	}
 	return "CREATE TABLE " + quote(table) + " (" + strings.Join(parts, ",") + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
 }
