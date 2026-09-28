@@ -1,6 +1,7 @@
 # Copy outside the image and mount read-only in Docker.
 app:
   display_name: ""
+  timezone: Asia/Shanghai
 
 http:
   addr: ":8080"

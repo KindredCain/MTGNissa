@@ -27,16 +27,15 @@ func Open(ctx context.Context, cardCfg, appCfg config.DB) (*Databases, error) {
 }
 
 func open(ctx context.Context, c config.DB) (*sql.DB, error) {
-	mysqlConfig := mysql.Config{
-		User:      c.User,
-		Passwd:    c.Password,
-		Net:       "tcp",
-		Addr:      net.JoinHostPort(c.Host, fmt.Sprint(c.Port)),
-		DBName:    c.Name,
-		ParseTime: true,
-		Loc:       time.Local,
-		Collation: "utf8mb4_unicode_ci",
-	}
+	mysqlConfig := mysql.NewConfig()
+	mysqlConfig.User = c.User
+	mysqlConfig.Passwd = c.Password
+	mysqlConfig.Net = "tcp"
+	mysqlConfig.Addr = net.JoinHostPort(c.Host, fmt.Sprint(c.Port))
+	mysqlConfig.DBName = c.Name
+	mysqlConfig.ParseTime = true
+	mysqlConfig.Loc = time.UTC
+	mysqlConfig.Collation = "utf8mb4_unicode_ci"
 	dsn := mysqlConfig.FormatDSN()
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

@@ -18,6 +18,7 @@ type DB struct {
 
 type Config struct {
 	DisplayName     string
+	TimeZone        string
 	HTTPAddr        string
 	LogLevel        string
 	ShutdownTimeout time.Duration
@@ -30,6 +31,7 @@ type Config struct {
 type fileConfig struct {
 	App struct {
 		DisplayName string `yaml:"display_name"`
+		TimeZone    string `yaml:"timezone"`
 	} `yaml:"app"`
 	HTTP struct {
 		Addr            string `yaml:"addr"`
@@ -65,7 +67,7 @@ func Load() (Config, error) { return LoadFile(os.Getenv("CONFIG_FILE")) }
 // LoadFile applies defaults, an optional YAML file, then environment overrides.
 func LoadFile(path string) (Config, error) {
 	db := DB{Host: "127.0.0.1", Port: 3306, MaxOpen: 5, MaxIdle: 1, MaxIdleTime: 5 * time.Minute, MaxLifetime: 30 * time.Minute}
-	c := Config{HTTPAddr: ":8080", LogLevel: "info", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
+	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", LogLevel: "info", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
 	if path != "" {
 		if err := applyFile(&c, path); err != nil {
 			return Config{}, err
@@ -88,6 +90,9 @@ func LoadFile(path string) (Config, error) {
 	}
 	if c.LoadEnabled && c.CardDataDir == "" {
 		return Config{}, fmt.Errorf("card_data.dir is required when card data loading is enabled")
+	}
+	if _, err := time.LoadLocation(c.TimeZone); err != nil {
+		return Config{}, fmt.Errorf("app.timezone %q is invalid: %w", c.TimeZone, err)
 	}
 	switch c.LogLevel {
 	case "debug", "info", "warn", "error":
@@ -118,6 +123,9 @@ func applyFile(c *Config, path string) error {
 	}
 	if raw.App.DisplayName != "" {
 		c.DisplayName = raw.App.DisplayName
+	}
+	if raw.App.TimeZone != "" {
+		c.TimeZone = raw.App.TimeZone
 	}
 	if raw.HTTP.Addr != "" {
 		c.HTTPAddr = raw.HTTP.Addr
@@ -188,6 +196,7 @@ func applyFileDB(db *DB, raw fileDB, prefix string) error {
 
 func applyEnvironment(c *Config) error {
 	setString("APP_DISPLAY_NAME", &c.DisplayName)
+	setString("APP_TIMEZONE", &c.TimeZone)
 	setString("HTTP_ADDR", &c.HTTPAddr)
 	setString("LOG_LEVEL", &c.LogLevel)
 	setString("CARD_DATA_DIR", &c.CardDataDir)
