@@ -18,6 +18,7 @@ import (
 type Application struct {
 	Router    *gin.Engine
 	Databases *database.Databases
+	CardData  *carddata.Manager
 	Config    config.Config
 	Logger    *slog.Logger
 }
@@ -57,5 +58,5 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 	}
 	manager := carddata.NewManager(ctx, dbs.Card, cfg.CardDB.Name, cfg.CardDataDir, log)
 	router := httpapi.New(log, health.Handler{Card: dbs.Card, App: dbs.App}, manager, cfg.LoadEnabled)
-	return &Application{Router: router, Databases: dbs, Config: cfg, Logger: log}, nil
+	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

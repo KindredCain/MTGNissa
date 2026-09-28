@@ -77,6 +77,7 @@ type Manager struct {
 	log               *slog.Logger
 	mu                sync.RWMutex
 	tasks             map[string]*Task
+	taskID            string
 	running           bool
 	progressFile      string
 	progressRows      int64
@@ -99,9 +100,20 @@ func (m *Manager) Start() (Task, error) {
 	clear(m.tasks)
 	t := &Task{ID: randomID(), Stage: StageValidating, StartedAt: time.Now().UTC()}
 	m.tasks[t.ID] = t
+	m.taskID = t.ID
 	m.running = true
 	go m.run(t.ID)
 	return cloneTask(t), nil
+}
+
+// LogCurrentTaskStatus records the last known progress before shutdown closes
+// the database. It does nothing when no load task is running.
+func (m *Manager) LogCurrentTaskStatus() {
+	id, stage, file, rows, total, running := m.progressSnapshot()
+	if !running {
+		return
+	}
+	m.log.Info("card data loading interrupted by shutdown", "task_id", id, "stage", stage, "file", file, "processed_rows", rows, "total_rows", total)
 }
 
 func (m *Manager) Get(id string) (Task, bool) {
@@ -140,6 +152,16 @@ func (m *Manager) run(id string) {
 		t.Stage = StageCompleted
 		m.log.Info("card data loading completed", "task_id", id, "duration", time.Since(startedAt))
 	}
+}
+
+func (m *Manager) progressSnapshot() (id string, stage Stage, file string, rows, total int64, running bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	id = m.taskID
+	if task := m.tasks[id]; task != nil {
+		stage = task.Stage
+	}
+	return id, stage, m.progressFile, m.progressRows, m.progressTotal, m.running
 }
 
 func (m *Manager) logHeartbeat(id string, startedAt time.Time, done <-chan struct{}) {
@@ -349,7 +371,7 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 }
 
 func (m *Manager) cleanupTables(id string, names []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), cleanupTimeout)
+	ctx, cancel := context.WithTimeout(m.ctx, cleanupTimeout)
 	defer cancel()
 	startedAt := time.Now()
 	for _, name := range names {

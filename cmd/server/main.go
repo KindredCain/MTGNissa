@@ -42,6 +42,7 @@ func main() {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		app.Logger.Error("http shutdown failed", "error", err)
 	}
+	app.CardData.LogCurrentTaskStatus()
 	if err := app.Databases.Close(); err != nil {
 		app.Logger.Error("database close failed", "error", err)
 	}
