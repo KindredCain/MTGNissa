@@ -481,12 +481,13 @@
     {
       "type": "frame",
       "id": "XVSvI",
-      "x": -2,
-      "y": 2308,
+      "x": -92,
+      "y": 2894,
       "name": "Screen / Deck Workspace",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
       "clip": true,
       "width": 1440,
-      "height": 1080,
+      "height": 900,
       "fill": "$bg",
       "layout": "vertical",
       "children": [
@@ -1964,9 +1965,10 @@
       "x": 1780,
       "y": -746,
       "name": "Screen / Card Detail",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
       "clip": true,
       "width": 1440,
-      "height": 1080,
+      "height": 900,
       "fill": "$paper",
       "layout": "vertical",
       "children": [
@@ -6451,9 +6453,10 @@
       "x": 1534,
       "y": 570,
       "name": "Screen / Set Card List",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
       "clip": true,
       "width": 1440,
-      "height": 1420,
+      "height": 900,
       "fill": "$paper",
       "layout": "vertical",
       "children": [
@@ -6489,7 +6492,7 @@
               "content": "全部卡牌"
             },
             "E9UQpW": {
-              "content": "按系列查看全部卡牌"
+              "content": "查看全部卡牌"
             },
             "Au2ib": {
               "fill": "$accent"
@@ -6542,31 +6545,35 @@
                 {
                   "type": "frame",
                   "id": "D4NcSn",
-                  "name": "Set Card Breadcrumb Row",
+                  "name": "Sticky Set Card Breadcrumb Row",
+                  "context": "吸顶面包屑：与筛选工具栏一起固定在持久导航下方",
                   "width": "fill_container",
+                  "height": 20,
+                  "fill": "$paper",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
-                      "id": "MQL2s",
+                      "id": "PyX8T",
                       "name": "Set Card Breadcrumb",
                       "gap": 7,
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "i8TKcH",
-                          "name": "Set Card Breadcrumb Parent",
+                          "id": "jwSM4",
+                          "name": "Card Center Breadcrumb Link",
+                          "context": "点击跳转 Screen / All Cards — Set Index",
                           "fill": "#247650",
-                          "content": "全部卡牌",
+                          "content": "卡牌中心",
                           "fontFamily": "$font",
                           "fontSize": 11,
                           "fontWeight": "600"
                         },
                         {
                           "type": "icon",
-                          "id": "ozVL1",
-                          "name": "Set Card Breadcrumb Chevron",
+                          "id": "oiZbo",
+                          "name": "Card Center Breadcrumb Chevron",
                           "width": 13,
                           "height": 13,
                           "icon": "chevron-right",
@@ -6575,8 +6582,30 @@
                         },
                         {
                           "type": "text",
-                          "id": "X1Zth1",
+                          "id": "e4YkgQ",
+                          "name": "All Cards Breadcrumb Link",
+                          "context": "点击跳转 Screen / All Cards — Set Index",
+                          "fill": "#247650",
+                          "content": "全部卡牌",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "ZPqhf",
+                          "name": "All Cards Breadcrumb Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "#87918C"
+                        },
+                        {
+                          "type": "text",
+                          "id": "EWRkt",
                           "name": "Set Card Breadcrumb Current",
+                          "context": "当前系列与语言",
                           "fill": "#18201D",
                           "content": "Secrets of Strixhaven（简体中文）",
                           "fontFamily": "$font",
@@ -6590,8 +6619,11 @@
                 {
                   "type": "frame",
                   "id": "jTClw",
-                  "name": "Set Card Search and Filters",
+                  "name": "Sticky Set Card Search Filter Sort Bar",
+                  "context": "吸顶工具栏：与 Set 卡牌面包屑一起固定，滚动卡牌列表时不离开视口",
                   "width": "fill_container",
+                  "height": 36,
+                  "fill": "$paper",
                   "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
@@ -6599,6 +6631,7 @@
                       "type": "frame",
                       "id": "h8197q",
                       "name": "Set Card Filter Controls",
+                      "height": 36,
                       "gap": 9,
                       "alignItems": "center",
                       "children": [
@@ -6607,13 +6640,14 @@
                           "id": "YKV6y",
                           "name": "Card Name Search",
                           "width": 250,
+                          "height": 36,
                           "fill": "#FFFFFF",
                           "cornerRadius": 8,
                           "stroke": "#D6DBD6",
                           "strokeWidth": 1,
                           "gap": 8,
                           "padding": [
-                            9,
+                            0,
                             12
                           ],
                           "alignItems": "center",
@@ -6644,13 +6678,14 @@
                           "type": "frame",
                           "id": "mjxcN",
                           "name": "Card Color Filter",
+                          "height": 36,
                           "fill": "#FFFFFF",
                           "cornerRadius": 8,
                           "stroke": "#D6DBD6",
                           "strokeWidth": 1,
                           "gap": 7,
                           "padding": [
-                            9,
+                            0,
                             11
                           ],
                           "alignItems": "center",
@@ -6681,13 +6716,14 @@
                           "type": "frame",
                           "id": "VF038",
                           "name": "Card Mana Value Filter",
+                          "height": 36,
                           "fill": "#FFFFFF",
                           "cornerRadius": 8,
                           "stroke": "#D6DBD6",
                           "strokeWidth": 1,
                           "gap": 7,
                           "padding": [
-                            9,
+                            0,
                             11
                           ],
                           "alignItems": "center",
@@ -6697,7 +6733,7 @@
                               "id": "EEHdW",
                               "name": "Card Mana Value Filter Label",
                               "fill": "#3E4A44",
-                              "content": "法术力值：全部",
+                              "content": "法术力：全部",
                               "fontFamily": "$font",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -6718,13 +6754,14 @@
                           "type": "frame",
                           "id": "N6pSZ",
                           "name": "Card Rarity Filter",
+                          "height": 36,
                           "fill": "#FFFFFF",
                           "cornerRadius": 8,
                           "stroke": "#D6DBD6",
                           "strokeWidth": 1,
                           "gap": 7,
                           "padding": [
-                            9,
+                            0,
                             11
                           ],
                           "alignItems": "center",
@@ -6752,16 +6789,25 @@
                           ]
                         },
                         {
+                          "type": "rectangle",
+                          "id": "nVlKg",
+                          "name": "Set Card Filter Sort Divider",
+                          "fill": "#AAB4AE",
+                          "width": 1,
+                          "height": 22
+                        },
+                        {
                           "type": "frame",
                           "id": "fQLIp",
                           "name": "Card Sort Filter",
+                          "height": 36,
                           "fill": "#FFFFFF",
                           "cornerRadius": 8,
                           "stroke": "#D6DBD6",
                           "strokeWidth": 1,
                           "gap": 7,
                           "padding": [
-                            9,
+                            0,
                             11
                           ],
                           "alignItems": "center",
@@ -6809,26 +6855,36 @@
                   "width": "fill_container",
                   "height": "fill_container",
                   "layout": "vertical",
-                  "gap": 14,
+                  "gap": 20,
                   "children": [
                     {
                       "type": "frame",
                       "id": "G9MI3j",
                       "name": "Set Card Row 1",
                       "width": "fill_container",
-                      "gap": 14,
+                      "gap": 35,
                       "children": [
                         {
                           "type": "frame",
                           "id": "tqSD8",
                           "name": "Card Image 发明天使",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -6854,12 +6910,22 @@
                           "id": "Nylsx",
                           "name": "Card Image 精巧艺师",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -6885,12 +6951,22 @@
                           "id": "fB4Qn",
                           "name": "Card Image 夜市侦察兵",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -6916,12 +6992,22 @@
                           "id": "F3jAoK",
                           "name": "Card Image 鲁莽火术士",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -6941,27 +7027,28 @@
                               "alignItems": "center"
                             }
                           ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "PF3w1",
-                      "name": "Set Card Row 2",
-                      "width": "fill_container",
-                      "gap": 14,
-                      "children": [
+                        },
                         {
                           "type": "frame",
                           "id": "J7QFu",
                           "name": "Card Image 蓬勃构装体",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -6981,18 +7068,37 @@
                               "alignItems": "center"
                             }
                           ]
-                        },
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PF3w1",
+                      "name": "Set Card Row 2",
+                      "width": "fill_container",
+                      "gap": 35,
+                      "children": [
                         {
                           "type": "frame",
                           "id": "vhyk6",
                           "name": "Card Image 妮莎，生命之力",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -7018,12 +7124,22 @@
                           "id": "ropFg",
                           "name": "Card Image 动态法器",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -7049,12 +7165,22 @@
                           "id": "hHdmt",
                           "name": "Card Image 植物圣所",
                           "clip": true,
-                          "width": "fill_container",
-                          "height": 463,
+                          "width": 244,
+                          "height": 340,
                           "fill": "#00000000",
-                          "cornerRadius": 12,
+                          "cornerRadius": 10,
                           "stroke": "#BEC6C0",
                           "strokeWidth": 1,
+                          "effect": {
+                            "type": "shadow",
+                            "shadowType": "outer",
+                            "color": "#101A1530",
+                            "offset": {
+                              "x": 0,
+                              "y": 5
+                            },
+                            "blur": 12
+                          },
                           "layout": "vertical",
                           "children": [
                             {
@@ -7122,20 +7248,20 @@
       "id": "j7xJM",
       "x": 1487,
       "y": -746,
-      "name": "Component / Card Browser Tile",
+      "name": "Component / Owned Card Tile",
       "reusable": true,
-      "width": 218,
+      "width": 244,
       "height": 368,
       "layout": "vertical",
-      "gap": 9,
+      "gap": 4,
       "alignItems": "center",
       "children": [
         {
           "type": "frame",
           "id": "COyrD",
           "name": "Full Card Image",
-          "width": 200,
-          "height": 279,
+          "width": 244,
+          "height": 340,
           "fill": {
             "type": "gradient",
             "gradientType": "linear",
@@ -7186,103 +7312,205 @@
         },
         {
           "type": "frame",
-          "id": "vr8bb",
-          "name": "Browser Card Metadata",
-          "width": "fill_container",
-          "layout": "vertical",
-          "gap": 4,
+          "id": "ct1wY",
+          "name": "Browser Card Actions",
+          "width": 244,
+          "gap": 5,
+          "justifyContent": "center",
+          "alignItems": "center",
           "children": [
             {
-              "type": "text",
-              "id": "Tdcru",
-              "name": "Browser Card Title",
-              "fill": "#18201D",
-              "textGrowth": "fixed-width",
-              "width": "fill_container",
-              "content": "卡牌名称",
-              "fontFamily": "$font",
-              "fontSize": 13,
-              "fontWeight": "700"
-            },
-            {
-              "type": "text",
-              "id": "feFE6",
-              "name": "Browser Card Printing",
-              "fill": "#7A8580",
-              "textGrowth": "fixed-width",
-              "width": "fill_container",
-              "content": "SET · #000 · 简中",
-              "fontFamily": "$font",
-              "fontSize": 10,
-              "fontWeight": "normal"
-            },
-            {
               "type": "frame",
-              "id": "ct1wY",
-              "name": "Browser Card Actions",
-              "width": "fill_container",
-              "gap": 5,
+              "id": "QvtIc",
+              "name": "Owned Quantity Bar",
+              "context": "普通卡与闪卡快捷加减会请求后端，同时前端立即更新数量；成功后不刷新列表或移除卡片，失败则回滚。两种数量均为 0 时当前卡片仍保留，仅重新进入页面后按后端数据消失",
+              "width": 228,
+              "height": 24,
+              "fill": "#F1F5F2",
+              "cornerRadius": 7,
+              "stroke": "#D8E1DB",
+              "strokeWidth": 1,
+              "gap": 12,
+              "padding": [
+                0,
+                12
+              ],
+              "justifyContent": "center",
               "alignItems": "center",
               "children": [
                 {
+                  "type": "icon",
+                  "id": "emOPq",
+                  "x": 68.5,
+                  "y": 4.5,
+                  "name": "Owned Quantity Icon",
+                  "enabled": false,
+                  "width": 13,
+                  "height": 13,
+                  "icon": "layers",
+                  "library": "lucide",
+                  "fill": "#247650"
+                },
+                {
+                  "type": "text",
+                  "id": "clwUI",
+                  "x": 88.5,
+                  "y": 4,
+                  "name": "Owned Quantity Breakdown",
+                  "enabled": false,
+                  "fill": "#365746",
+                  "content": "普通 0 · 闪卡 0",
+                  "fontFamily": "$font",
+                  "fontSize": 10,
+                  "fontWeight": "650"
+                },
+                {
                   "type": "frame",
-                  "id": "QvtIc",
-                  "name": "Normal Quantity Badge",
-                  "fill": "#EDF1ED",
-                  "cornerRadius": 6,
-                  "gap": 4,
-                  "padding": [
-                    5,
-                    7
-                  ],
+                  "id": "ViIY3",
+                  "name": "Normal Quantity Stepper",
+                  "gap": 5,
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "frame",
+                      "id": "APxXn",
+                      "name": "Decrease Normal Quantity",
+                      "context": "普通卡数量减 1：前端即时更新并请求后端；为 0 时禁用。操作成功后不重新请求列表",
+                      "opacity": 0.2,
+                      "width": 16,
+                      "height": 16,
+                      "fill": "#00000000",
+                      "cornerRadius": 3,
+                      "stroke": "#B8C9BE",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "I0gv4R",
+                          "name": "Decrease Normal Quantity Icon",
+                          "width": 8,
+                          "height": 8,
+                          "icon": "minus",
+                          "library": "lucide",
+                          "fill": "#687A70"
+                        }
+                      ]
+                    },
+                    {
                       "type": "text",
-                      "id": "clwUI",
+                      "id": "Q8lyT",
                       "name": "Normal Quantity Label",
-                      "fill": "#456052",
+                      "fill": "#365746",
                       "content": "普通 0",
                       "fontFamily": "$font",
                       "fontSize": 9,
                       "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ubanQ",
+                      "name": "Increase Normal Quantity",
+                      "context": "普通卡数量加 1：前端即时更新并请求后端；操作成功后不重新请求列表，失败回滚",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "#00000000",
+                      "cornerRadius": 3,
+                      "stroke": "#B8C9BE",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "TxZ3F",
+                          "name": "Increase Normal Quantity Icon",
+                          "width": 8,
+                          "height": 8,
+                          "icon": "plus",
+                          "library": "lucide",
+                          "fill": "#687A70"
+                        }
+                      ]
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "u9l903",
-                  "name": "Foil Quantity Badge",
-                  "fill": "#FFF0D6",
-                  "cornerRadius": 6,
-                  "gap": 4,
-                  "padding": [
-                    5,
-                    7
-                  ],
+                  "id": "IOPz7",
+                  "name": "Quantity Type Divider",
+                  "width": 1,
+                  "height": 12,
+                  "fill": "#CDD8D1"
+                },
+                {
+                  "type": "frame",
+                  "id": "LPMMJ",
+                  "name": "Foil Quantity Stepper",
+                  "gap": 5,
                   "alignItems": "center",
                   "children": [
                     {
+                      "type": "frame",
+                      "id": "Bm7aG",
+                      "name": "Decrease Foil Quantity",
+                      "context": "闪卡数量减 1：前端即时更新并请求后端；为 0 时禁用。操作成功后不重新请求列表",
+                      "opacity": 0.2,
+                      "width": 16,
+                      "height": 16,
+                      "fill": "#00000000",
+                      "cornerRadius": 3,
+                      "stroke": "#B8C9BE",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "BxAh4",
+                          "name": "Decrease Foil Quantity Icon",
+                          "width": 8,
+                          "height": 8,
+                          "icon": "minus",
+                          "library": "lucide",
+                          "fill": "#687A70"
+                        }
+                      ]
+                    },
+                    {
                       "type": "text",
-                      "id": "k0PPi",
+                      "id": "Rx3On",
                       "name": "Foil Quantity Label",
-                      "fill": "#945B00",
-                      "content": "闪 0",
+                      "fill": "#365746",
+                      "content": "闪卡 0",
                       "fontFamily": "$font",
                       "fontSize": 9,
                       "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UlsZZ",
+                      "name": "Increase Foil Quantity",
+                      "context": "闪卡数量加 1：前端即时更新并请求后端；操作成功后不重新请求列表，失败回滚",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "#00000000",
+                      "cornerRadius": 3,
+                      "stroke": "#B8C9BE",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "vNGJJ",
+                          "name": "Increase Foil Quantity Icon",
+                          "width": 8,
+                          "height": 8,
+                          "icon": "plus",
+                          "library": "lucide",
+                          "fill": "#687A70"
+                        }
+                      ]
                     }
                   ]
-                },
-                {
-                  "type": "icon",
-                  "id": "emOPq",
-                  "name": "Wishlist Status",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "star",
-                  "library": "lucide",
-                  "fill": "#AAB1AD"
                 }
               ]
             }
@@ -7296,9 +7524,10 @@
       "x": -2,
       "y": 570,
       "name": "Screen / All Cards — Set Index",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
       "clip": true,
       "width": 1440,
-      "height": 1080,
+      "height": 900,
       "fill": "$paper",
       "layout": "vertical",
       "children": [
@@ -7330,7 +7559,7 @@
               "content": "全部卡牌"
             },
             "E9UQpW": {
-              "content": "按系列浏览全部卡牌"
+              "content": "查看全部卡牌"
             },
             "Au2ib": {
               "fill": "$accent"
@@ -7365,7 +7594,7 @@
           "width": "fill_container",
           "height": "fill_container",
           "layout": "vertical",
-          "gap": 18,
+          "gap": 12,
           "padding": [
             22,
             40,
@@ -7375,9 +7604,57 @@
           "children": [
             {
               "type": "frame",
-              "id": "uQyoJ",
-              "name": "Set Filters",
+              "id": "F0BGCt",
+              "name": "Sticky All Cards Breadcrumb",
+              "context": "吸顶面包屑；卡牌中心与全部卡牌均跳转到 Set 列表页",
               "width": "fill_container",
+              "height": 20,
+              "fill": "$paper",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "WNYQD",
+                  "name": "Card Center Breadcrumb Link",
+                  "context": "点击跳转 Screen / All Cards — Set Index",
+                  "fill": "#247650",
+                  "content": "卡牌中心",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "icon",
+                  "id": "hON8i",
+                  "name": "Card Center Breadcrumb Chevron",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "chevron-right",
+                  "library": "lucide",
+                  "fill": "#87918C"
+                },
+                {
+                  "type": "text",
+                  "id": "wAyIT",
+                  "name": "All Cards Breadcrumb Current",
+                  "context": "点击跳转 Screen / All Cards — Set Index",
+                  "fill": "#18201D",
+                  "content": "全部卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uQyoJ",
+              "name": "Sticky Set Index Search Filter Sort Bar",
+              "context": "吸顶工具栏：与全部卡牌面包屑一起固定，滚动系列列表时不离开视口",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
               "justifyContent": "space_between",
               "alignItems": "center",
               "children": [
@@ -7385,20 +7662,23 @@
                   "type": "frame",
                   "id": "G8j4Bm",
                   "name": "Set Filter Controls",
-                  "gap": 10,
+                  "height": 36,
+                  "gap": 9,
+                  "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
                       "id": "bHGua",
                       "name": "Global Set Fuzzy Search",
-                      "width": 248,
+                      "width": 250,
+                      "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
                       "stroke": "#D6DBD6",
                       "strokeWidth": 1,
                       "gap": 8,
                       "padding": [
-                        9,
+                        0,
                         12
                       ],
                       "alignItems": "center",
@@ -7429,14 +7709,15 @@
                       "type": "frame",
                       "id": "mFrJK",
                       "name": "语言 Filter",
+                      "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
                       "stroke": "#D6DBD6",
                       "strokeWidth": 1,
-                      "gap": 8,
+                      "gap": 7,
                       "padding": [
-                        9,
-                        12
+                        0,
+                        11
                       ],
                       "alignItems": "center",
                       "children": [
@@ -7447,15 +7728,15 @@
                           "fill": "#3E4A44",
                           "content": "语言：全部语言",
                           "fontFamily": "$font",
-                          "fontSize": 12,
+                          "fontSize": 11,
                           "fontWeight": "normal"
                         },
                         {
                           "type": "icon",
                           "id": "VOjyR",
                           "name": "语言 Chevron",
-                          "width": 14,
-                          "height": 14,
+                          "width": 13,
+                          "height": 13,
                           "icon": "chevron-down",
                           "library": "lucide",
                           "fill": "#7A8580"
@@ -7466,14 +7747,15 @@
                       "type": "frame",
                       "id": "zTuIq",
                       "name": "系列类型 Filter",
+                      "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
                       "stroke": "#D6DBD6",
                       "strokeWidth": 1,
-                      "gap": 8,
+                      "gap": 7,
                       "padding": [
-                        9,
-                        12
+                        0,
+                        11
                       ],
                       "alignItems": "center",
                       "children": [
@@ -7484,15 +7766,15 @@
                           "fill": "#3E4A44",
                           "content": "系列类型：全部",
                           "fontFamily": "$font",
-                          "fontSize": 12,
+                          "fontSize": 11,
                           "fontWeight": "normal"
                         },
                         {
                           "type": "icon",
                           "id": "k3qKv0",
                           "name": "类型 Chevron",
-                          "width": 14,
-                          "height": 14,
+                          "width": 13,
+                          "height": 13,
                           "icon": "chevron-down",
                           "library": "lucide",
                           "fill": "#7A8580"
@@ -7500,17 +7782,26 @@
                       ]
                     },
                     {
+                      "type": "rectangle",
+                      "id": "H12EX",
+                      "name": "Set Index Filter Sort Divider",
+                      "fill": "#AAB4AE",
+                      "width": 1,
+                      "height": 22
+                    },
+                    {
                       "type": "frame",
                       "id": "VVfXu",
                       "name": "排序 Filter",
+                      "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
                       "stroke": "#D6DBD6",
                       "strokeWidth": 1,
-                      "gap": 8,
+                      "gap": 7,
                       "padding": [
-                        9,
-                        12
+                        0,
+                        11
                       ],
                       "alignItems": "center",
                       "children": [
@@ -7521,15 +7812,15 @@
                           "fill": "#3E4A44",
                           "content": "排序：发行日期 ↓",
                           "fontFamily": "$font",
-                          "fontSize": 12,
+                          "fontSize": 11,
                           "fontWeight": "normal"
                         },
                         {
                           "type": "icon",
                           "id": "KXtDQ",
                           "name": "排序 Chevron",
-                          "width": 14,
-                          "height": 14,
+                          "width": 13,
+                          "height": 13,
                           "icon": "chevron-down",
                           "library": "lucide",
                           "fill": "#7A8580"
@@ -11501,7 +11792,7 @@
               "id": "E9UQpW",
               "name": "Secondary Navigation Subtitle",
               "fill": "#A9B8B1",
-              "content": "按系列浏览全部卡牌",
+              "content": "查看全部卡牌",
               "fontFamily": "$font",
               "fontSize": 12,
               "fontWeight": "normal"
@@ -11596,9 +11887,10 @@
       "x": 3300,
       "y": -746,
       "name": "Screen / Card Detail — Official Rulings",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
       "clip": true,
       "width": 1440,
-      "height": 1080,
+      "height": 900,
       "fill": "$paper",
       "layout": "vertical",
       "children": [
@@ -13189,9 +13481,10 @@
       "x": 4820,
       "y": -746,
       "name": "Screen / Card Detail — Function Tags",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
       "clip": true,
       "width": 1440,
-      "height": 1080,
+      "height": 900,
       "fill": "$paper",
       "layout": "vertical",
       "children": [
@@ -15144,6 +15437,4157 @@
                       ]
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "IDmDb",
+      "x": -2,
+      "y": 1687,
+      "name": "Screen / My Cards",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "VVcmN",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "My Cards Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$text",
+              "fontWeight": "650"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "NFBnw": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "id": "TkZqE",
+          "type": "ref",
+          "ref": "Cnctt",
+          "name": "My Cards Secondary Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "o3qr7k": {
+              "content": "我的卡牌"
+            },
+            "E9UQpW": {
+              "content": "管理拥有的卡牌收藏"
+            },
+            "Au2ib": {
+              "fill": "#00000000"
+            },
+            "kWB5M": {
+              "content": "全部卡牌",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            },
+            "IB6bH": {
+              "fill": "$accent"
+            },
+            "dYsmF": {
+              "content": "我的卡牌",
+              "fill": "#18201D",
+              "fontWeight": "700"
+            },
+            "fGOIM": {
+              "fill": "#00000000"
+            },
+            "n2ies": {
+              "content": "愿望单",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "z1FIV",
+          "name": "My Cards Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            22,
+            40,
+            30,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "Y9ki9",
+              "name": "Sticky My Cards Breadcrumb",
+              "context": "吸顶面包屑；卡牌中心跳转 Set 列表页，我的卡牌跳转按系列排序页",
+              "width": "fill_container",
+              "height": 20,
+              "fill": "$paper",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "uwTJq",
+                  "name": "Card Center Breadcrumb Link",
+                  "context": "点击跳转 Screen / All Cards — Set Index",
+                  "fill": "#247650",
+                  "content": "卡牌中心",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "icon",
+                  "id": "lPWfX",
+                  "name": "Card Center Breadcrumb Chevron",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "chevron-right",
+                  "library": "lucide",
+                  "fill": "#87918C"
+                },
+                {
+                  "type": "text",
+                  "id": "JdSWj",
+                  "name": "My Cards Breadcrumb Current",
+                  "context": "点击跳转 Screen / My Cards（系列排序）",
+                  "fill": "#18201D",
+                  "content": "我的卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rd301",
+              "name": "Sticky My Cards Search Filter Sort Bar",
+              "context": "吸顶工具栏：与我的卡牌面包屑一起固定，滚动收藏列表时不离开视口",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "BBDRd",
+                  "name": "My Cards Filter Controls",
+                  "height": 36,
+                  "gap": 9,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "JSCdN",
+                      "name": "My Cards Search",
+                      "width": 250,
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "LgdTb",
+                          "name": "My Cards Search Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "search",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LeneV",
+                          "name": "My Cards Search Placeholder",
+                          "fill": "#7A8580",
+                          "content": "搜索我的卡牌",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "s5Gcc",
+                      "name": "My Cards Set Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Y6hOw",
+                          "name": "My Cards Set Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "系列：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "dydI6",
+                          "name": "My Cards Set Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "h7RyX2",
+                      "name": "My Cards Language Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "B6AK4u",
+                          "name": "My Cards Language Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "语言：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "pVSh2",
+                          "name": "My Cards Language Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BNDXA",
+                      "name": "My Cards Color Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "J3sKub",
+                          "name": "My Cards Color Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "颜色：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "xcjDL",
+                          "name": "My Cards Color Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MhWPq",
+                      "name": "My Cards Mana Value Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lp7SA",
+                          "name": "My Cards Mana Value Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "法术力：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "hg6f0",
+                          "name": "My Cards Mana Value Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p6ZXP",
+                      "name": "My Cards Rarity Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "civtK",
+                          "name": "My Cards Rarity Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "稀有度：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "cfK51",
+                          "name": "My Cards Rarity Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "D38WLK",
+                      "name": "My Cards Filter Sort Divider",
+                      "fill": "#AAB4AE",
+                      "width": 1,
+                      "height": 22
+                    },
+                    {
+                      "type": "frame",
+                      "id": "G6gE1",
+                      "name": "My Cards Sort",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EmFo4",
+                          "name": "My Cards Sort Label",
+                          "fill": "#3E4A44",
+                          "content": "排序：系列",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "gDiUu",
+                          "name": "My Cards Sort Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "y55Gn",
+                  "name": "My Cards Merge and Count",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Jhen0",
+                      "name": "Merge Different Series Inline Disabled",
+                      "opacity": 0.5,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "alDoX",
+                          "name": "Merge Different Series Inline Label",
+                          "fill": "#59655F",
+                          "content": "合并不同系列",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "wEuhn",
+                          "name": "Merge Different Series Switch Off",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#D8DDDA",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "MQb5I",
+                              "x": 2,
+                              "y": 2,
+                              "name": "Merge Different Series Knob Off",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ybywY",
+                      "name": "Merge Different Languages Inline",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "dny1h",
+                          "name": "Merge Different Languages Inline Label",
+                          "fill": "#59655F",
+                          "content": "合并不同语言",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Xa4bk",
+                          "name": "Merge Different Languages Switch On",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#247650",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "ev98a",
+                              "x": 16,
+                              "y": 2,
+                              "name": "Merge Different Languages Knob On",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "IWDey",
+                      "name": "My Cards Result Count",
+                      "fill": "#7A8580",
+                      "content": "共 2,416 张，812 种",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "V1dAd",
+              "name": "My Cards Set Groups",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "n2ntv",
+                  "name": "Expanded Set Group CMM",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "A30ev9",
+                      "name": "Set Group Header CMM",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "IUfIx",
+                          "name": "Set Group Identity CMM",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "r88iU",
+                              "name": "Clickable Set Code CMM",
+                              "fill": "#000000",
+                              "content": "CMM",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Kk38o",
+                              "name": "Set Name CMM",
+                              "fill": "#18201D",
+                              "content": "指挥官大师",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "p8QBb",
+                              "name": "Set Release Date CMM",
+                              "fill": "#7A8580",
+                              "content": "2023-08-04",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "B6tb8",
+                          "name": "Set Header Divider CMM",
+                          "fill": "#DCE2DE",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "MuKpE",
+                          "name": "Set Owned Summary CMM",
+                          "fill": "#5D6963",
+                          "content": "共 31 张，18 种",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "pMCK5",
+                          "name": "Set Group Toggle CMM",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "chevron-up",
+                          "library": "lucide",
+                          "fill": "#6E7974"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L5oyK",
+                      "name": "Owned Cards in CMM",
+                      "width": "fill_container",
+                      "gap": 35,
+                      "children": [
+                        {
+                          "id": "j6W1R",
+                          "type": "ref",
+                          "ref": "j7xJM",
+                          "name": "CMM Owned Card 生机妮莎",
+                          "height": 368,
+                          "width": 244,
+                          "descendants": {
+                            "COyrD": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-1.jpg",
+                                "mode": "fit"
+                              },
+                              "width": 244,
+                              "height": 340
+                            },
+                            "eQBkQ": {
+                              "enabled": false
+                            },
+                            "ct1wY": {
+                              "width": 244
+                            },
+                            "QvtIc": {
+                              "width": 228,
+                              "height": 24
+                            },
+                            "clwUI": {
+                              "content": "普通 3 · 闪卡 1"
+                            },
+                            "APxXn": {
+                              "opacity": 1
+                            },
+                            "Q8lyT": {
+                              "content": "普通 3"
+                            },
+                            "Bm7aG": {
+                              "opacity": 1
+                            },
+                            "Rx3On": {
+                              "content": "闪卡 1"
+                            }
+                          }
+                        },
+                        {
+                          "id": "jRVkV",
+                          "type": "ref",
+                          "ref": "j7xJM",
+                          "name": "CMM Owned Card 闪电击",
+                          "height": 368,
+                          "width": 244,
+                          "descendants": {
+                            "COyrD": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-2.jpg",
+                                "mode": "fit"
+                              },
+                              "width": 244,
+                              "height": 340
+                            },
+                            "eQBkQ": {
+                              "enabled": false
+                            },
+                            "ct1wY": {
+                              "width": 244
+                            },
+                            "QvtIc": {
+                              "width": 228,
+                              "height": 24
+                            },
+                            "clwUI": {
+                              "content": "普通 4 · 闪卡 0"
+                            },
+                            "APxXn": {
+                              "opacity": 1
+                            },
+                            "Q8lyT": {
+                              "content": "普通 4"
+                            },
+                            "Bm7aG": {
+                              "opacity": 0.2
+                            },
+                            "Rx3On": {
+                              "content": "闪卡 0"
+                            }
+                          }
+                        },
+                        {
+                          "id": "YoAxo",
+                          "type": "ref",
+                          "ref": "j7xJM",
+                          "name": "CMM Owned Card 阳光戒",
+                          "height": 368,
+                          "width": 244,
+                          "descendants": {
+                            "COyrD": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-3.jpg",
+                                "mode": "fit"
+                              },
+                              "width": 244,
+                              "height": 340
+                            },
+                            "eQBkQ": {
+                              "enabled": false
+                            },
+                            "ct1wY": {
+                              "width": 244
+                            },
+                            "QvtIc": {
+                              "width": 228,
+                              "height": 24
+                            },
+                            "clwUI": {
+                              "content": "普通 1 · 闪卡 2"
+                            },
+                            "APxXn": {
+                              "opacity": 1
+                            },
+                            "Q8lyT": {
+                              "content": "普通 1"
+                            },
+                            "Bm7aG": {
+                              "opacity": 1
+                            },
+                            "Rx3On": {
+                              "content": "闪卡 2"
+                            }
+                          }
+                        },
+                        {
+                          "id": "v5udOT",
+                          "type": "ref",
+                          "ref": "j7xJM",
+                          "name": "CMM Owned Card 致命一推",
+                          "height": 368,
+                          "width": 244,
+                          "descendants": {
+                            "COyrD": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-4.jpg",
+                                "mode": "fit"
+                              },
+                              "width": 244,
+                              "height": 340
+                            },
+                            "eQBkQ": {
+                              "enabled": false
+                            },
+                            "ct1wY": {
+                              "width": 244
+                            },
+                            "QvtIc": {
+                              "width": 228,
+                              "height": 24
+                            },
+                            "clwUI": {
+                              "content": "普通 2 · 闪卡 0"
+                            },
+                            "APxXn": {
+                              "opacity": 1
+                            },
+                            "Q8lyT": {
+                              "content": "普通 2"
+                            },
+                            "Bm7aG": {
+                              "opacity": 0.2
+                            },
+                            "Rx3On": {
+                              "content": "闪卡 0"
+                            }
+                          }
+                        },
+                        {
+                          "id": "JKuag",
+                          "type": "ref",
+                          "ref": "j7xJM",
+                          "name": "CMM Owned Card 逸散条约",
+                          "height": 368,
+                          "width": 244,
+                          "descendants": {
+                            "COyrD": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-5.jpg",
+                                "mode": "fit"
+                              },
+                              "width": 244,
+                              "height": 340
+                            },
+                            "eQBkQ": {
+                              "enabled": false
+                            },
+                            "ct1wY": {
+                              "width": 244
+                            },
+                            "QvtIc": {
+                              "width": 228,
+                              "height": 24
+                            },
+                            "clwUI": {
+                              "content": "普通 1 · 闪卡 1"
+                            },
+                            "APxXn": {
+                              "opacity": 1
+                            },
+                            "Q8lyT": {
+                              "content": "普通 1"
+                            },
+                            "Bm7aG": {
+                              "opacity": 1
+                            },
+                            "Rx3On": {
+                              "content": "闪卡 1"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VfJ1X",
+                  "name": "Collapsed Set Group ZNR",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "QFWvK",
+                      "name": "Set Group Header ZNR",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "xHq4V",
+                          "name": "Set Group Identity ZNR",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Ced9N",
+                              "name": "Clickable Set Code ZNR",
+                              "fill": "#000000",
+                              "content": "ZNR",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "sw0O3",
+                              "name": "Set Name ZNR",
+                              "fill": "#18201D",
+                              "content": "赞迪卡再起",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "hanBx",
+                              "name": "Set Release Date ZNR",
+                              "fill": "#7A8580",
+                              "content": "2020-09-25",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "yxOpp",
+                          "name": "Set Header Divider ZNR",
+                          "fill": "#DCE2DE",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "c8tl4",
+                          "name": "Set Owned Summary ZNR",
+                          "fill": "#5D6963",
+                          "content": "共 20 张，12 种",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "Kai6M",
+                          "name": "Set Group Toggle ZNR",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#6E7974"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dIAwf",
+                  "name": "Collapsed Set Group KLD",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "e8yq4",
+                      "name": "Set Group Header KLD",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "PujLr",
+                          "name": "Set Group Identity KLD",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kIWUE",
+                              "name": "Clickable Set Code KLD",
+                              "fill": "#000000",
+                              "content": "KLD",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lHpgT",
+                              "name": "Set Name KLD",
+                              "fill": "#18201D",
+                              "content": "卡拉德许",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ht8Rf",
+                              "name": "Set Release Date KLD",
+                              "fill": "#7A8580",
+                              "content": "2016-09-30",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "pODaK",
+                          "name": "Set Header Divider KLD",
+                          "fill": "#DCE2DE",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "w9CPL",
+                          "name": "Set Owned Summary KLD",
+                          "fill": "#5D6963",
+                          "content": "共 14 张，9 种",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "kWloz",
+                          "name": "Set Group Toggle KLD",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#6E7974"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fCAf4",
+              "name": "My Cards Infinite Scroll Status",
+              "width": "fill_container",
+              "height": 34,
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "SVz9p",
+                  "name": "My Cards Loader Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "loader-circle",
+                  "library": "lucide",
+                  "fill": "#7A8580"
+                },
+                {
+                  "type": "text",
+                  "id": "HY0Ex",
+                  "name": "My Cards Loader Text",
+                  "fill": "#7A8580",
+                  "content": "向下滚动时显示更多收藏卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "WrxUX",
+      "x": 1534,
+      "y": 1687,
+      "name": "Screen / My Cards — Color Sort",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "bzUGt",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "My Cards Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$text",
+              "fontWeight": "650"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "NFBnw": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "id": "BJQPl",
+          "type": "ref",
+          "ref": "Cnctt",
+          "name": "My Cards Secondary Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "o3qr7k": {
+              "content": "我的卡牌"
+            },
+            "E9UQpW": {
+              "content": "管理拥有的卡牌收藏"
+            },
+            "Au2ib": {
+              "fill": "#00000000"
+            },
+            "kWB5M": {
+              "content": "全部卡牌",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            },
+            "IB6bH": {
+              "fill": "$accent"
+            },
+            "dYsmF": {
+              "content": "我的卡牌",
+              "fill": "#18201D",
+              "fontWeight": "700"
+            },
+            "fGOIM": {
+              "fill": "#00000000"
+            },
+            "n2ies": {
+              "content": "愿望单",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "b7i9Pf",
+          "name": "My Cards Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            22,
+            40,
+            30,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "tgNC1",
+              "name": "Sticky My Cards Breadcrumb",
+              "context": "吸顶面包屑；卡牌中心跳转 Set 列表页，我的卡牌跳转按系列排序页",
+              "width": "fill_container",
+              "height": 20,
+              "fill": "$paper",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Q6qf7",
+                  "name": "Card Center Breadcrumb Link",
+                  "context": "点击跳转 Screen / All Cards — Set Index",
+                  "fill": "#247650",
+                  "content": "卡牌中心",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "icon",
+                  "id": "jGXNs",
+                  "name": "Card Center Breadcrumb Chevron",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "chevron-right",
+                  "library": "lucide",
+                  "fill": "#87918C"
+                },
+                {
+                  "type": "text",
+                  "id": "tVFaD",
+                  "name": "My Cards Breadcrumb Current",
+                  "context": "点击跳转 Screen / My Cards（系列排序）",
+                  "fill": "#18201D",
+                  "content": "我的卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "regDX",
+              "name": "Sticky My Cards Search Filter Sort Bar",
+              "context": "吸顶工具栏：与我的卡牌面包屑一起固定，滚动收藏列表时不离开视口",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "nVS8I",
+                  "name": "My Cards Filter Controls",
+                  "height": 36,
+                  "gap": 9,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "kF59l",
+                      "name": "My Cards Search",
+                      "width": 250,
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "esqSv",
+                          "name": "My Cards Search Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "search",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HBAtz",
+                          "name": "My Cards Search Placeholder",
+                          "fill": "#7A8580",
+                          "content": "搜索我的卡牌",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "w8dxy",
+                      "name": "My Cards Set Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "m7395",
+                          "name": "My Cards Set Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "系列：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "k2tNZA",
+                          "name": "My Cards Set Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L0dMU4",
+                      "name": "My Cards Language Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "S1cph",
+                          "name": "My Cards Language Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "语言：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "rJEr2",
+                          "name": "My Cards Language Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yq8vF",
+                      "name": "My Cards Color Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rOtkg",
+                          "name": "My Cards Color Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "颜色：蓝色",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "Ta1yr",
+                          "name": "My Cards Color Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Gxdrg",
+                      "name": "My Cards Mana Value Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nACe6",
+                          "name": "My Cards Mana Value Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "法术力：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "n6wjy",
+                          "name": "My Cards Mana Value Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EB6WN",
+                      "name": "My Cards Rarity Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gMYbP",
+                          "name": "My Cards Rarity Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "稀有度：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "FptvY",
+                          "name": "My Cards Rarity Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "J5qnrV",
+                      "name": "My Cards Filter Sort Divider",
+                      "fill": "#AAB4AE",
+                      "width": 1,
+                      "height": 22
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kqdCT",
+                      "name": "My Cards Sort",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "uMiI3",
+                          "name": "My Cards Sort Label",
+                          "fill": "#3E4A44",
+                          "content": "排序：颜色",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "l1qgUb",
+                          "name": "My Cards Sort Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yiWJm",
+                  "name": "My Cards Merge and Count",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "RI4hH",
+                      "name": "Merge Different Series Inline",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "y7kJA0",
+                          "name": "Merge Different Series Inline Label",
+                          "fill": "#59655F",
+                          "content": "合并不同系列",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "uqbDt",
+                          "name": "Merge Different Series Switch Off",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#D8DDDA",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "f3gou",
+                              "x": 2,
+                              "y": 2,
+                              "name": "Merge Different Series Knob Off",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bmrk3",
+                      "name": "Merge Different Languages Inline",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n5gaLz",
+                          "name": "Merge Different Languages Inline Label",
+                          "fill": "#59655F",
+                          "content": "合并不同语言",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "B5ogG",
+                          "name": "Merge Different Languages Switch On",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#247650",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "XytU5",
+                              "x": 16,
+                              "y": 2,
+                              "name": "Merge Different Languages Knob On",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "CBMN6",
+                      "name": "My Cards Result Count",
+                      "fill": "#7A8580",
+                      "content": "共 2,416 张，812 种",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BOVW6",
+              "name": "颜色 Flat Owned Card Grid",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "QnjmE",
+                  "name": "颜色 Owned Card Row 1",
+                  "width": "fill_container",
+                  "gap": 35,
+                  "children": [
+                    {
+                      "id": "WTz9m",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 1",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-1.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 3 · 闪卡 1"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 3"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 1"
+                        }
+                      }
+                    },
+                    {
+                      "id": "mR1jz",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 2",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-2.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 4 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 4"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "OOJXE",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 3",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-3.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 2"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 2"
+                        }
+                      }
+                    },
+                    {
+                      "id": "e17zQw",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 4",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-4.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 2 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 2"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "IHDC7",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 5",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-5.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 1"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 1"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QrUnr",
+                  "name": "颜色 Owned Card Row 2",
+                  "width": "fill_container",
+                  "gap": 35,
+                  "children": [
+                    {
+                      "id": "sVLnj",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 6",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-6.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 2 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 2"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "VP47t",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 7",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-7.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 6 · 闪卡 1"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 6"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 1"
+                        }
+                      }
+                    },
+                    {
+                      "id": "ojmZo",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 8",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-8.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "nEAGF",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 9",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-4.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 0 · 闪卡 2"
+                        },
+                        "APxXn": {
+                          "opacity": 0.2
+                        },
+                        "Q8lyT": {
+                          "content": "普通 0"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 2"
+                        }
+                      }
+                    },
+                    {
+                      "id": "L3clz",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "颜色 Owned Card 10",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-2.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "a4tle",
+              "name": "My Cards Infinite Scroll Status",
+              "width": "fill_container",
+              "height": 34,
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "HBW1a",
+                  "name": "My Cards Loader Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "loader-circle",
+                  "library": "lucide",
+                  "fill": "#7A8580"
+                },
+                {
+                  "type": "text",
+                  "id": "dmV5S",
+                  "name": "My Cards Loader Text",
+                  "fill": "#7A8580",
+                  "content": "向下滚动时显示更多收藏卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "OMv95",
+      "x": 3040,
+      "y": 1687,
+      "name": "Screen / My Cards — Mana Sort",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "ZaxiE",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "My Cards Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$text",
+              "fontWeight": "650"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "NFBnw": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "id": "A03aIy",
+          "type": "ref",
+          "ref": "Cnctt",
+          "name": "My Cards Secondary Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "o3qr7k": {
+              "content": "我的卡牌"
+            },
+            "E9UQpW": {
+              "content": "管理拥有的卡牌收藏"
+            },
+            "Au2ib": {
+              "fill": "#00000000"
+            },
+            "kWB5M": {
+              "content": "全部卡牌",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            },
+            "IB6bH": {
+              "fill": "$accent"
+            },
+            "dYsmF": {
+              "content": "我的卡牌",
+              "fill": "#18201D",
+              "fontWeight": "700"
+            },
+            "fGOIM": {
+              "fill": "#00000000"
+            },
+            "n2ies": {
+              "content": "愿望单",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "XGmP3",
+          "name": "My Cards Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            22,
+            40,
+            30,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "e42U7",
+              "name": "Sticky My Cards Breadcrumb",
+              "context": "吸顶面包屑；卡牌中心跳转 Set 列表页，我的卡牌跳转按系列排序页",
+              "width": "fill_container",
+              "height": 20,
+              "fill": "$paper",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "tyYar",
+                  "name": "Card Center Breadcrumb Link",
+                  "context": "点击跳转 Screen / All Cards — Set Index",
+                  "fill": "#247650",
+                  "content": "卡牌中心",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "icon",
+                  "id": "dorg6",
+                  "name": "Card Center Breadcrumb Chevron",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "chevron-right",
+                  "library": "lucide",
+                  "fill": "#87918C"
+                },
+                {
+                  "type": "text",
+                  "id": "CICYK",
+                  "name": "My Cards Breadcrumb Current",
+                  "context": "点击跳转 Screen / My Cards（系列排序）",
+                  "fill": "#18201D",
+                  "content": "我的卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AZOZw",
+              "name": "Sticky My Cards Search Filter Sort Bar",
+              "context": "吸顶工具栏：与我的卡牌面包屑一起固定，滚动收藏列表时不离开视口",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IA8jk",
+                  "name": "My Cards Filter Controls",
+                  "height": 36,
+                  "gap": 9,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "b8lzw",
+                      "name": "My Cards Search",
+                      "width": 250,
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "G6PtY",
+                          "name": "My Cards Search Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "search",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        },
+                        {
+                          "type": "text",
+                          "id": "EuTKE",
+                          "name": "My Cards Search Placeholder",
+                          "fill": "#7A8580",
+                          "content": "搜索我的卡牌",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FgS50",
+                      "name": "My Cards Set Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fNmXx",
+                          "name": "My Cards Set Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "系列：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "xa6GS",
+                          "name": "My Cards Set Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UeHzL",
+                      "name": "My Cards Language Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JwHpG",
+                          "name": "My Cards Language Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "语言：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "CMD7t",
+                          "name": "My Cards Language Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "m3HIiV",
+                      "name": "My Cards Color Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "luxo7",
+                          "name": "My Cards Color Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "颜色：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "FfKAz",
+                          "name": "My Cards Color Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eBQaa",
+                      "name": "My Cards Mana Value Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U4WGp0",
+                          "name": "My Cards Mana Value Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "法术力：已选 3 项",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "R2pWO",
+                          "name": "My Cards Mana Value Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "w18Gh",
+                      "name": "My Cards Rarity Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "BR0bj",
+                          "name": "My Cards Rarity Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "稀有度：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "z6hUG9",
+                          "name": "My Cards Rarity Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "ht4VO",
+                      "name": "My Cards Filter Sort Divider",
+                      "fill": "#AAB4AE",
+                      "width": 1,
+                      "height": 22
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XveaL",
+                      "name": "My Cards Sort",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "e8evOU",
+                          "name": "My Cards Sort Label",
+                          "fill": "#3E4A44",
+                          "content": "排序：法术力",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "gV8Ad",
+                          "name": "My Cards Sort Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zUafV",
+                  "name": "My Cards Merge and Count",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "rlAAy",
+                      "name": "Merge Different Series Inline",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "y0Dg6",
+                          "name": "Merge Different Series Inline Label",
+                          "fill": "#59655F",
+                          "content": "合并不同系列",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IcKKU",
+                          "name": "Merge Different Series Switch Off",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#D8DDDA",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "bbSGi",
+                              "x": 2,
+                              "y": 2,
+                              "name": "Merge Different Series Knob Off",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Ohlq2",
+                      "name": "Merge Different Languages Inline",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TNwDc",
+                          "name": "Merge Different Languages Inline Label",
+                          "fill": "#59655F",
+                          "content": "合并不同语言",
+                          "fontFamily": "$font",
+                          "fontSize": 10,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hpL9r",
+                          "name": "Merge Different Languages Switch On",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#247650",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "CtvsW",
+                              "x": 16,
+                              "y": 2,
+                              "name": "Merge Different Languages Knob On",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "VX8kf",
+                      "name": "My Cards Result Count",
+                      "fill": "#7A8580",
+                      "content": "共 2,416 张，812 种",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "w1KA9",
+              "name": "法术力 Flat Owned Card Grid",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "CdFg4",
+                  "name": "法术力 Owned Card Row 1",
+                  "width": "fill_container",
+                  "gap": 35,
+                  "children": [
+                    {
+                      "id": "RZSeN",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 1",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-1.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 3 · 闪卡 1"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 3"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 1"
+                        }
+                      }
+                    },
+                    {
+                      "id": "AMtSF",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 2",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-2.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 4 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 4"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "h90DB",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 3",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-3.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 2"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 2"
+                        }
+                      }
+                    },
+                    {
+                      "id": "GqQpl",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 4",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-4.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 2 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 2"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "m4NPNE",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 5",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-5.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 1"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 1"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QXVAE",
+                  "name": "法术力 Owned Card Row 2",
+                  "width": "fill_container",
+                  "gap": 35,
+                  "children": [
+                    {
+                      "id": "mMCi3",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 6",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-6.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 2 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 2"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "vyHAj",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 7",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-7.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 6 · 闪卡 1"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 6"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 1"
+                        }
+                      }
+                    },
+                    {
+                      "id": "D4YSEO",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 8",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-8.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    },
+                    {
+                      "id": "hklSa",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 9",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-4.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 0 · 闪卡 2"
+                        },
+                        "APxXn": {
+                          "opacity": 0.2
+                        },
+                        "Q8lyT": {
+                          "content": "普通 0"
+                        },
+                        "Bm7aG": {
+                          "opacity": 1
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 2"
+                        }
+                      }
+                    },
+                    {
+                      "id": "ttMNV",
+                      "type": "ref",
+                      "ref": "j7xJM",
+                      "name": "法术力 Owned Card 10",
+                      "height": 368,
+                      "width": 244,
+                      "descendants": {
+                        "COyrD": {
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/card-2.jpg",
+                            "mode": "fit"
+                          },
+                          "width": 244,
+                          "height": 340
+                        },
+                        "eQBkQ": {
+                          "enabled": false
+                        },
+                        "ct1wY": {
+                          "width": 244
+                        },
+                        "QvtIc": {
+                          "width": 228,
+                          "height": 24
+                        },
+                        "clwUI": {
+                          "content": "普通 1 · 闪卡 0"
+                        },
+                        "APxXn": {
+                          "opacity": 1
+                        },
+                        "Q8lyT": {
+                          "content": "普通 1"
+                        },
+                        "Bm7aG": {
+                          "opacity": 0.2
+                        },
+                        "Rx3On": {
+                          "content": "闪卡 0"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XQX9m",
+              "name": "My Cards Infinite Scroll Status",
+              "width": "fill_container",
+              "height": 34,
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Iqc37",
+                  "name": "My Cards Loader Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "loader-circle",
+                  "library": "lucide",
+                  "fill": "#7A8580"
+                },
+                {
+                  "type": "text",
+                  "id": "PpfPI",
+                  "name": "My Cards Loader Text",
+                  "fill": "#7A8580",
+                  "content": "向下滚动时显示更多收藏卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "AGGjX",
+      "x": 6340,
+      "y": -746,
+      "name": "Component / Wishlist Card Tile",
+      "context": "愿望单卡牌：卡图下方为与我的卡牌数量条同色的信息条，显示中文名与金色实心选中星。取消后星形在前端变为空心灰色，卡片不立即移除",
+      "reusable": true,
+      "width": 244,
+      "height": 368,
+      "layout": "vertical",
+      "gap": 4,
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "LvU5j",
+          "name": "Wishlist Full Card Image",
+          "width": 244,
+          "height": 340,
+          "fill": {
+            "type": "gradient",
+            "gradientType": "linear",
+            "enabled": true,
+            "rotation": 145,
+            "size": {
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#4C8559",
+                "position": 0
+              },
+              {
+                "color": "#122A1B",
+                "position": 1
+              }
+            ]
+          },
+          "cornerRadius": 10,
+          "stroke": "#26332D",
+          "strokeWidth": 1,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#101A1530",
+            "offset": {
+              "x": 0,
+              "y": 5
+            },
+            "blur": 12
+          },
+          "layout": "vertical",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon",
+              "id": "uqhdM",
+              "name": "Wishlist Card Image Placeholder",
+              "width": 46,
+              "height": 46,
+              "icon": "sparkles",
+              "library": "lucide",
+              "fill": "#FFFFFF55"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "UqyVD",
+          "name": "Wishlist Card Footer",
+          "context": "愿望单卡牌信息条；与我的卡牌数量条使用相同底色。点击实心星后立即在前端切换状态并请求后端，不刷新列表",
+          "width": 228,
+          "height": 24,
+          "fill": "#F1F5F2",
+          "cornerRadius": 6,
+          "stroke": "#D8E1DB",
+          "strokeWidth": 1,
+          "padding": [
+            0,
+            10
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "t4aXy5",
+              "name": "Wishlist Card Chinese Name",
+              "fill": "#365746",
+              "content": "卡牌中文名",
+              "fontFamily": "$font",
+              "fontSize": 9,
+              "fontWeight": "650"
+            },
+            {
+              "type": "text",
+              "id": "gux8f",
+              "name": "Wishlist Toggle Selected Solid Star",
+              "context": "当前已加入愿望单；金色实心星为选中态。点击后前端立即改为空心灰星并请求后端，当前列表不刷新；失败时回滚",
+              "fill": "#C58A20",
+              "content": "★",
+              "fontFamily": "$font",
+              "fontSize": 14,
+              "fontWeight": "700"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "LDy2r",
+      "x": 6100,
+      "y": 1687,
+      "name": "Screen / Wishlist",
+      "context": "愿望单初次进入时请求后端。收藏切换采用前端即时更新并请求后端，成功后不刷新列表；取消项在当前页面保留以便撤销，仅重新进入页面时重新请求并移除未收藏卡牌。系列标题末尾不显示计数，但保留连接系列信息与展开箭头的浅色分隔线",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "M5wz1R",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "My Cards Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$text",
+              "fontWeight": "650"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            },
+            "NFBnw": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "id": "HP79k",
+          "type": "ref",
+          "ref": "Cnctt",
+          "name": "Wishlist Secondary Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "o3qr7k": {
+              "content": "愿望单"
+            },
+            "E9UQpW": {
+              "content": "管理我的愿望单"
+            },
+            "Au2ib": {
+              "fill": "#00000000"
+            },
+            "kWB5M": {
+              "content": "全部卡牌",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            },
+            "IB6bH": {
+              "fill": "#00000000"
+            },
+            "dYsmF": {
+              "content": "我的卡牌",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            },
+            "fGOIM": {
+              "fill": "$accent"
+            },
+            "n2ies": {
+              "content": "愿望单",
+              "fill": "#18201D",
+              "fontWeight": "700"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "rdlmi",
+          "name": "Wishlist Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            22,
+            40,
+            30,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "KlVVJ",
+              "name": "Sticky Wishlist Breadcrumb",
+              "context": "吸顶面包屑；卡牌中心跳转 Set 列表页，愿望单跳转当前页面",
+              "width": "fill_container",
+              "height": 20,
+              "fill": "$paper",
+              "gap": 7,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "fIPpL",
+                  "name": "Card Center Breadcrumb Link",
+                  "context": "点击跳转 Screen / All Cards — Set Index",
+                  "fill": "#247650",
+                  "content": "卡牌中心",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "icon",
+                  "id": "Jxuft",
+                  "name": "Card Center Breadcrumb Chevron",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "chevron-right",
+                  "library": "lucide",
+                  "fill": "#87918C"
+                },
+                {
+                  "type": "text",
+                  "id": "RDjJR",
+                  "name": "Wishlist Breadcrumb Current",
+                  "context": "点击跳转 Screen / Wishlist",
+                  "fill": "#18201D",
+                  "content": "愿望单",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "EogrT",
+              "name": "Sticky Wishlist Search Filter Sort Bar",
+              "context": "吸顶工具栏：与我的卡牌面包屑一起固定，滚动收藏列表时不离开视口",
+              "width": "fill_container",
+              "height": 36,
+              "fill": "$paper",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "rRC3c",
+                  "name": "My Cards Filter Controls",
+                  "height": 36,
+                  "gap": 9,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bHrrY",
+                      "name": "My Cards Search",
+                      "width": 250,
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 8,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "e1830Q",
+                          "name": "My Cards Search Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "search",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        },
+                        {
+                          "type": "text",
+                          "id": "FHhrD",
+                          "name": "Wishlist Search Placeholder",
+                          "fill": "#7A8580",
+                          "content": "搜索愿望单",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "R3TsTV",
+                      "name": "My Cards Set Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iuMxi",
+                          "name": "My Cards Set Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "系列：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "k1uqPj",
+                          "name": "My Cards Set Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qHDwe",
+                      "name": "My Cards Language Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "LC2QC",
+                          "name": "My Cards Language Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "语言：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "U3418",
+                          "name": "My Cards Language Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gjBnC",
+                      "name": "My Cards Color Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "v7Pjd",
+                          "name": "My Cards Color Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "颜色：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "mfImU",
+                          "name": "My Cards Color Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wmGjW",
+                      "name": "My Cards Mana Value Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "y2FOvC",
+                          "name": "My Cards Mana Value Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "法术力：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "g5N9v",
+                          "name": "My Cards Mana Value Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "j6PzPV",
+                      "name": "My Cards Rarity Filter",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KRMk4",
+                          "name": "My Cards Rarity Filter Label",
+                          "fill": "#3E4A44",
+                          "content": "稀有度：全部",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "O3KRk",
+                          "name": "My Cards Rarity Filter Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "D5iMyr",
+                      "name": "My Cards Filter Sort Divider",
+                      "fill": "#AAB4AE",
+                      "width": 1,
+                      "height": 22
+                    },
+                    {
+                      "type": "frame",
+                      "id": "poVsB",
+                      "name": "My Cards Sort",
+                      "height": 36,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "gap": 7,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N4na1k",
+                          "name": "My Cards Sort Label",
+                          "fill": "#3E4A44",
+                          "content": "排序：系列",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "LswhQ",
+                          "name": "My Cards Sort Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#7A8580"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "K9VM0K",
+              "name": "Wishlist Set Groups",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "wv29i",
+                  "name": "Expanded Set Group CMM",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "c05Ul",
+                      "name": "Set Group Header CMM",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "l7p6mw",
+                          "name": "Set Group Identity CMM",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Har7c",
+                              "name": "Clickable Set Code CMM",
+                              "fill": "#000000",
+                              "content": "CMM",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "uOfo0",
+                              "name": "Set Name CMM",
+                              "fill": "#18201D",
+                              "content": "指挥官大师",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "yK4u2",
+                              "name": "Set Release Date CMM",
+                              "fill": "#7A8580",
+                              "content": "2023-08-04",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "fd2wl",
+                          "name": "Set Header Divider CMM",
+                          "fill": "#D8E1DB",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "icon",
+                          "id": "svzHB",
+                          "name": "Set Group Toggle CMM",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "chevron-up",
+                          "library": "lucide",
+                          "fill": "#6E7974"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "c10gUm",
+                      "name": "Wishlist Cards in CMM",
+                      "width": "fill_container",
+                      "gap": 35,
+                      "children": [
+                        {
+                          "id": "TU0Or",
+                          "type": "ref",
+                          "ref": "AGGjX",
+                          "name": "Wishlist Card 生机妮莎",
+                          "width": 244,
+                          "height": 368,
+                          "descendants": {
+                            "LvU5j": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-1.jpg",
+                                "mode": "fit"
+                              }
+                            },
+                            "uqhdM": {
+                              "enabled": false
+                            },
+                            "t4aXy5": {
+                              "content": "生机妮莎"
+                            },
+                            "gux8f": {
+                              "name": "Wishlist Toggle Selected Solid Star",
+                              "content": "★",
+                              "fill": "#C58A20",
+                              "opacity": 1,
+                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
+                            }
+                          }
+                        },
+                        {
+                          "id": "BTyUd",
+                          "type": "ref",
+                          "ref": "AGGjX",
+                          "name": "Wishlist Card 闪电击",
+                          "width": 244,
+                          "height": 368,
+                          "descendants": {
+                            "LvU5j": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-2.jpg",
+                                "mode": "fit"
+                              }
+                            },
+                            "uqhdM": {
+                              "enabled": false
+                            },
+                            "t4aXy5": {
+                              "content": "闪电击"
+                            },
+                            "gux8f": {
+                              "name": "Wishlist Toggle Unselected Sample",
+                              "content": "☆",
+                              "fill": "#8B9690",
+                              "opacity": 1,
+                              "context": "取消收藏后的前端即时状态样例；点击可重新加入愿望单。当前卡片不移除，仅重新进入页面后按后端权威数据消失"
+                            }
+                          }
+                        },
+                        {
+                          "id": "NnLsr",
+                          "type": "ref",
+                          "ref": "AGGjX",
+                          "name": "Wishlist Card 阳光戒",
+                          "width": 244,
+                          "height": 368,
+                          "descendants": {
+                            "LvU5j": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-3.jpg",
+                                "mode": "fit"
+                              }
+                            },
+                            "uqhdM": {
+                              "enabled": false
+                            },
+                            "t4aXy5": {
+                              "content": "阳光戒"
+                            },
+                            "gux8f": {
+                              "name": "Wishlist Toggle Selected Solid Star",
+                              "content": "★",
+                              "fill": "#C58A20",
+                              "opacity": 1,
+                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
+                            }
+                          }
+                        },
+                        {
+                          "id": "oPY0G",
+                          "type": "ref",
+                          "ref": "AGGjX",
+                          "name": "Wishlist Card 致命一推",
+                          "width": 244,
+                          "height": 368,
+                          "descendants": {
+                            "LvU5j": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-4.jpg",
+                                "mode": "fit"
+                              }
+                            },
+                            "uqhdM": {
+                              "enabled": false
+                            },
+                            "t4aXy5": {
+                              "content": "致命一推"
+                            },
+                            "gux8f": {
+                              "name": "Wishlist Toggle Selected Solid Star",
+                              "content": "★",
+                              "fill": "#C58A20",
+                              "opacity": 1,
+                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
+                            }
+                          }
+                        },
+                        {
+                          "id": "Jtg2E",
+                          "type": "ref",
+                          "ref": "AGGjX",
+                          "name": "Wishlist Card 逸散条约",
+                          "width": 244,
+                          "height": 368,
+                          "descendants": {
+                            "LvU5j": {
+                              "fill": {
+                                "type": "image",
+                                "enabled": true,
+                                "url": "assets/card-samples/card-5.jpg",
+                                "mode": "fit"
+                              }
+                            },
+                            "uqhdM": {
+                              "enabled": false
+                            },
+                            "t4aXy5": {
+                              "content": "逸散条约"
+                            },
+                            "gux8f": {
+                              "name": "Wishlist Toggle Selected Solid Star",
+                              "content": "★",
+                              "fill": "#C58A20",
+                              "opacity": 1,
+                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VKjB2",
+                  "name": "Collapsed Set Group ZNR",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Sz5MB",
+                      "name": "Set Group Header ZNR",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qSUWD",
+                          "name": "Set Group Identity ZNR",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gxcna",
+                              "name": "Clickable Set Code ZNR",
+                              "fill": "#000000",
+                              "content": "ZNR",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "z84X1",
+                              "name": "Set Name ZNR",
+                              "fill": "#18201D",
+                              "content": "赞迪卡再起",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "uHHGd",
+                              "name": "Set Release Date ZNR",
+                              "fill": "#7A8580",
+                              "content": "2020-09-25",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "l3AnUl",
+                          "name": "Set Header Divider ZNR",
+                          "fill": "#D8E1DB",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "icon",
+                          "id": "nMXAu",
+                          "name": "Set Group Toggle ZNR",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#6E7974"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DXqSN",
+                  "name": "Collapsed Set Group KLD",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "I1P94",
+                      "name": "Set Group Header KLD",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "e9cCT",
+                          "name": "Set Group Identity KLD",
+                          "gap": 9,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jVGke",
+                              "name": "Clickable Set Code KLD",
+                              "fill": "#000000",
+                              "content": "KLD",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "v7M7O",
+                              "name": "Set Name KLD",
+                              "fill": "#18201D",
+                              "content": "卡拉德许",
+                              "fontFamily": "$font",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YrMiy",
+                              "name": "Set Release Date KLD",
+                              "fill": "#7A8580",
+                              "content": "2016-09-30",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "uww00",
+                          "name": "Set Header Divider KLD",
+                          "fill": "#D8E1DB",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "icon",
+                          "id": "zv8X6",
+                          "name": "Set Group Toggle KLD",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "#6E7974"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hncoy",
+              "name": "Wishlist Infinite Scroll Status",
+              "width": "fill_container",
+              "height": 34,
+              "gap": 8,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "XTqhI",
+                  "name": "My Cards Loader Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "loader-circle",
+                  "library": "lucide",
+                  "fill": "#7A8580"
+                },
+                {
+                  "type": "text",
+                  "id": "Evu5K",
+                  "name": "Wishlist Loader Text",
+                  "fill": "#7A8580",
+                  "content": "向下滚动时显示更多愿望单卡牌",
+                  "fontFamily": "$font",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 }
               ]
             }
