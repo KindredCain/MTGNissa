@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+
 	"mtgnissa/internal/config"
 )
 
+// Databases contains the independent card-data and application-data connections.
 type Databases struct{ Card, App *sql.DB }
 
 func Open(ctx context.Context, cardCfg, appCfg config.DB) (*Databases, error) {

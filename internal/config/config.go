@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// DB defines the connection and pool settings for one MySQL database.
 type DB struct {
 	Host, Name, User, Password string
 	Port                       int
@@ -16,6 +17,7 @@ type DB struct {
 	MaxIdleTime, MaxLifetime   time.Duration
 }
 
+// Config contains the validated runtime configuration for the application.
 type Config struct {
 	DisplayName     string
 	TimeZone        string
@@ -62,7 +64,9 @@ type fileDB struct {
 	MaxLifetime string `yaml:"conn_max_lifetime"`
 }
 
-func Load() (Config, error) { return LoadFile(os.Getenv("CONFIG_FILE")) }
+func Load() (Config, error) {
+	return LoadFile(os.Getenv("CONFIG_FILE"))
+}
 
 // LoadFile applies defaults, an optional YAML file, then environment overrides.
 func LoadFile(path string) (Config, error) {

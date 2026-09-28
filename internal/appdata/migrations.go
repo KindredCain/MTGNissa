@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/pressly/goose/v3"
+
 	"mtgnissa/migrations"
 )
 

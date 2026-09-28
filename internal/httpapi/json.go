@@ -5,4 +5,6 @@ import (
 	"io"
 )
 
-func newJSONDecoder(r io.Reader) *json.Decoder { return json.NewDecoder(r) }
+func newJSONDecoder(r io.Reader) *json.Decoder {
+	return json.NewDecoder(r)
+}

@@ -64,7 +64,8 @@ func TestValidateFilePreservesRepublishedRulings(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, rulingSpec.file), []byte(content), 0o600); err != nil {
 		t.Fatalf("write rulings fixture: %v", err)
 	}
-	result, taskErr := validateFile(context.Background(), dir, rulingSpec, func(int64) {})
+	result, taskErr := validateFile(context.Background(), dir, rulingSpec, func(int64) {
+	})
 	if taskErr != nil {
 		t.Fatalf("validateFile() error = %v", taskErr)
 	}

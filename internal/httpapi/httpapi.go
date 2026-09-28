@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"mtgnissa/internal/carddata"
 	"mtgnissa/internal/health"
+	"mtgnissa/internal/httpresponse"
 )
 
 type cardDataLoader interface {
@@ -19,33 +21,50 @@ type cardDataLoader interface {
 }
 
 type loadTaskResponse struct {
-	ID         string              `json:"id"`
-	Stage      carddata.Stage      `json:"stage"`
-	StartedAt  time.Time           `json:"started_at"`
-	FinishedAt *time.Time          `json:"finished_at,omitempty"`
-	Error      *carddata.TaskError `json:"error,omitempty"`
+	ID         string                 `json:"id"`
+	Stage      carddata.Stage         `json:"stage"`
+	StartedAt  time.Time              `json:"started_at"`
+	FinishedAt *time.Time             `json:"finished_at,omitempty"`
+	Error      *loadTaskErrorResponse `json:"error,omitempty"`
+}
+
+type loadTaskErrorResponse struct {
+	Stage   carddata.Stage `json:"stage"`
+	File    string         `json:"file,omitempty"`
+	Line    int64          `json:"line,omitempty"`
+	Message string         `json:"message"`
 }
 
 func newLoadTaskResponse(task carddata.Task) loadTaskResponse {
-	return loadTaskResponse{
+	response := loadTaskResponse{
 		ID:         task.ID,
 		Stage:      task.Stage,
 		StartedAt:  task.StartedAt,
 		FinishedAt: task.FinishedAt,
-		Error:      task.Error,
 	}
+	if task.Error != nil {
+		response.Error = &loadTaskErrorResponse{
+			Stage:   task.Error.Stage,
+			File:    task.Error.File,
+			Line:    task.Error.Line,
+			Message: task.Error.Message,
+		}
+	}
+	return response
 }
 
 func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, loadEnabled bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery(), requestID(), accessLog(log), bodyLimit(1<<20))
+	r.Use(requestID(), accessLog(log), recovery(), bodyLimit(1<<20))
 	r.GET("/health/live", healthHandler.Live)
 	r.GET("/health/ready", healthHandler.Ready)
 	api := r.Group("/api/v1/card-data")
 	api.POST("/load", startLoad(loader, loadEnabled))
 	api.GET("/load/:id", getLoad(loader, loadEnabled))
-	r.NoRoute(func(c *gin.Context) { problem(c, http.StatusNotFound, "not_found", "route not found") })
+	r.NoRoute(func(c *gin.Context) {
+		httpresponse.WriteError(c, http.StatusNotFound, "not_found", "route not found")
+	})
 	return r
 }
 
@@ -55,54 +74,56 @@ func startLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		if !enabled {
-			problem(c, http.StatusForbidden, "load_disabled", "card data loading is disabled")
+			httpresponse.WriteError(c, http.StatusForbidden, "load_disabled", "card data loading is disabled")
 			return
 		}
 		var req request
 		decoder := jsonDecoder(c.Request.Body)
 		if err := decoder.Decode(&req); err != nil {
-			problem(c, 400, "invalid_request", "body must be a JSON object containing confirmation")
+			httpresponse.WriteError(c, http.StatusBadRequest, "invalid_request", "body must be a JSON object containing confirmation")
 			return
 		}
 		if err := ensureEOF(decoder); err != nil {
-			problem(c, 400, "invalid_request", "body must contain one JSON object")
+			httpresponse.WriteError(c, http.StatusBadRequest, "invalid_request", "body must contain one JSON object")
 			return
 		}
 		if req.Confirmation != carddata.Confirmation {
-			problem(c, 400, "confirmation_required", "confirmation must equal "+carddata.Confirmation)
+			httpresponse.WriteError(c, http.StatusBadRequest, "confirmation_required", "confirmation must equal "+carddata.Confirmation)
 			return
 		}
 		task, err := manager.Start()
 		if errors.Is(err, carddata.ErrRunning) {
-			problem(c, http.StatusConflict, "load_in_progress", err.Error())
+			httpresponse.WriteError(c, http.StatusConflict, "load_in_progress", err.Error())
 			return
 		}
 		if err != nil {
-			problem(c, 500, "internal_error", "could not start card data loading")
+			httpresponse.WriteError(c, http.StatusInternalServerError, "internal_error", "could not start card data loading")
 			return
 		}
 		c.Header("Location", "/api/v1/card-data/load/"+task.ID)
-		c.JSON(http.StatusAccepted, newLoadTaskResponse(task))
+		httpresponse.WriteJSON(c, http.StatusAccepted, newLoadTaskResponse(task))
 	}
 }
 
 func getLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !enabled {
-			problem(c, http.StatusForbidden, "load_disabled", "card data loading is disabled")
+			httpresponse.WriteError(c, http.StatusForbidden, "load_disabled", "card data loading is disabled")
 			return
 		}
 		task, ok := manager.Get(c.Param("id"))
 		if !ok {
-			problem(c, 404, "task_not_found", "card data load task not found")
+			httpresponse.WriteError(c, http.StatusNotFound, "task_not_found", "card data load task not found")
 			return
 		}
-		c.JSON(200, newLoadTaskResponse(task))
+		httpresponse.WriteJSON(c, http.StatusOK, newLoadTaskResponse(task))
 	}
 }
 
-func problem(c *gin.Context, status int, code, message string) {
-	c.AbortWithStatusJSON(status, gin.H{"error": gin.H{"code": code, "message": message}, "request_id": c.GetString("request_id")})
+func recovery() gin.HandlerFunc {
+	return gin.CustomRecovery(func(c *gin.Context, _ any) {
+		httpresponse.WriteError(c, http.StatusInternalServerError, "internal_error", "internal server error")
+	})
 }
 
 func requestID() gin.HandlerFunc {
@@ -124,7 +145,10 @@ func accessLog(log *slog.Logger) gin.HandlerFunc {
 	}
 }
 func bodyLimit(bytes int64) gin.HandlerFunc {
-	return func(c *gin.Context) { c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, bytes); c.Next() }
+	return func(c *gin.Context) {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, bytes)
+		c.Next()
+	}
 }
 
 type decoderAPI interface {
@@ -132,7 +156,11 @@ type decoderAPI interface {
 	DisallowUnknownFields()
 }
 
-func jsonDecoder(r io.Reader) decoderAPI { d := newJSONDecoder(r); d.DisallowUnknownFields(); return d }
+func jsonDecoder(r io.Reader) decoderAPI {
+	d := newJSONDecoder(r)
+	d.DisallowUnknownFields()
+	return d
+}
 func ensureEOF(d decoderAPI) error {
 	var extra any
 	err := d.Decode(&extra)

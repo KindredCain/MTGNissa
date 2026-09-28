@@ -3,20 +3,30 @@ package health
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"mtgnissa/internal/httpresponse"
 )
 
+type statusResponse struct {
+	Status string `json:"status"`
+}
+
+// Handler serves liveness and database-backed readiness checks.
 type Handler struct{ Card, App *sql.DB }
 
-func (h Handler) Live(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) }
+func (h Handler) Live(c *gin.Context) {
+	httpresponse.WriteJSON(c, http.StatusOK, statusResponse{Status: "ok"})
+}
 func (h Handler) Ready(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
 	defer cancel()
 	if h.Card.PingContext(ctx) != nil || h.App.PingContext(ctx) != nil {
-		c.JSON(503, gin.H{"status": "not_ready"})
+		httpresponse.WriteError(c, http.StatusServiceUnavailable, "not_ready", "service is not ready")
 		return
 	}
-	c.JSON(200, gin.H{"status": "ok"})
+	httpresponse.WriteJSON(c, http.StatusOK, statusResponse{Status: "ok"})
 }

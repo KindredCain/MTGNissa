@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+
 	"mtgnissa/internal/appdata"
 	"mtgnissa/internal/carddata"
 	"mtgnissa/internal/config"
@@ -15,6 +16,7 @@ import (
 	"mtgnissa/internal/httpapi"
 )
 
+// Application contains the initialized server dependencies and runtime configuration.
 type Application struct {
 	Router    *gin.Engine
 	Databases *database.Databases
