@@ -18,6 +18,24 @@ type cardDataLoader interface {
 	Get(string) (carddata.Task, bool)
 }
 
+type loadTaskResponse struct {
+	ID         string              `json:"id"`
+	Stage      carddata.Stage      `json:"stage"`
+	StartedAt  time.Time           `json:"started_at"`
+	FinishedAt *time.Time          `json:"finished_at,omitempty"`
+	Error      *carddata.TaskError `json:"error,omitempty"`
+}
+
+func newLoadTaskResponse(task carddata.Task) loadTaskResponse {
+	return loadTaskResponse{
+		ID:         task.ID,
+		Stage:      task.Stage,
+		StartedAt:  task.StartedAt,
+		FinishedAt: task.FinishedAt,
+		Error:      task.Error,
+	}
+}
+
 func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, loadEnabled bool) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -64,7 +82,7 @@ func startLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 			return
 		}
 		c.Header("Location", "/api/v1/card-data/load/"+task.ID)
-		c.JSON(http.StatusAccepted, task)
+		c.JSON(http.StatusAccepted, newLoadTaskResponse(task))
 	}
 }
 
@@ -79,7 +97,7 @@ func getLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 			problem(c, 404, "task_not_found", "card data load task not found")
 			return
 		}
-		c.JSON(200, task)
+		c.JSON(200, newLoadTaskResponse(task))
 	}
 }
 

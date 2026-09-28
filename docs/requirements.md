@@ -661,7 +661,7 @@ CARD_DATA_DIR=/data/card-data
 6. 使用 MySQL 多表 `RENAME TABLE` 原子切换新旧表。
 7. 切换成功后删除全部旧卡牌表。
 
-在切换前发生任何错误时，只清理临时表，现有正式卡牌表保持不变。
+在切换前发生任何错误时立即停止数据库操作，不自动清理临时表，现有正式卡牌表保持不变；遗留临时表用于排查并由运维人员处理。只有原子切换成功后才进入 `cleaning` 阶段，按表删除本次切换产生的旧表，任一删除失败即停止后续数据库操作。
 
 ### 15.6 表范围
 
@@ -734,9 +734,9 @@ POST /api/v1/card-data/load
 
 - 启动成功返回 `202 Accepted` 和任务 ID。
 - 已有任务执行时返回 `409 Conflict`。
-- 任务状态至少包括：`validating`、`preparing`、`importing`、`verifying`、`switching`、`completed`、`failed`。
-- 提供按任务 ID 查询状态的接口。
-- 失败结果需要包含失败阶段、文件名、行号和错误摘要。
+- 任务状态至少包括：`validating`、`preparing`、`importing`、`verifying`、`switching`、`cleaning`、`completed`、`failed`。
+- 提供按任务 ID 查询状态的接口；启动和查询响应返回任务 ID、当前状态、开始时间，以及存在时的结束时间和错误详情。
+- 每个文件的统计和处理进度只写入结构化日志，不通过任务状态接口返回。
 
 当前不实现完整用户认证，但该接口必须具备最低限度保护：
 

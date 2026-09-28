@@ -21,6 +21,8 @@ import (
 
 const Confirmation = "LOAD_CARD_DATA"
 
+const cleanupTimeout = 30 * time.Second
+
 type Stage string
 
 const (
@@ -29,6 +31,7 @@ const (
 	StageImporting  Stage = "importing"
 	StageVerifying  Stage = "verifying"
 	StageSwitching  Stage = "switching"
+	StageCleaning   Stage = "cleaning"
 	StageCompleted  Stage = "completed"
 	StageFailed     Stage = "failed"
 )
@@ -90,6 +93,10 @@ func (m *Manager) Start() (Task, error) {
 	if m.running {
 		return Task{}, ErrRunning
 	}
+	// A finished task remains queryable until the next task starts. Once a new
+	// task is accepted, older task results are no longer useful and must not
+	// accumulate for the lifetime of the process.
+	clear(m.tasks)
 	t := &Task{ID: randomID(), Stage: StageValidating, StartedAt: time.Now().UTC()}
 	m.tasks[t.ID] = t
 	m.running = true
@@ -162,11 +169,11 @@ func (m *Manager) logHeartbeat(id string, startedAt time.Time, done <-chan struc
 
 func (m *Manager) validateAll(id string) ([]FileResult, *TaskError) {
 	m.stage(id, StageValidating)
+	stageStartedAt := time.Now()
 	results := make([]FileResult, 0, len(specs))
 	for _, s := range specs {
-		startedAt := time.Now()
+		fileStartedAt := time.Now()
 		m.setProgress(s.file, 0, 0)
-		m.log.Info("card data file validation started", "task_id", id, "file", s.file)
 		result, err := validateFile(m.ctx, m.dir, s, func(rows int64) {
 			m.setProgress(s.file, rows, 0)
 		})
@@ -177,8 +184,9 @@ func (m *Manager) validateAll(id string) ([]FileResult, *TaskError) {
 		results = append(results, result)
 		m.setProgress(s.file, result.ReadRows, result.ReadRows)
 		m.files(id, results)
-		m.log.Info("card data file validation completed", "task_id", id, "file", s.file, "rows", result.ReadRows, "normalized_rows", result.NormalizedRows, "size_bytes", result.Size, "duration", time.Since(startedAt))
+		m.log.Info("card data file validation completed", "task_id", id, "file", s.file, "rows", result.ReadRows, "normalized_rows", result.NormalizedRows, "size_bytes", result.Size, "duration", time.Since(fileStartedAt))
 	}
+	m.stageCompleted(id, StageValidating, "file_count", len(results), "duration", time.Since(stageStartedAt))
 	return results, nil
 }
 
@@ -258,36 +266,33 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 	tables := allTableSpecs()
 	tempNames := make(map[string]string, len(tables))
 	backupNames := make(map[string]string, len(tables))
-	cleanupNames := make([]string, 0, len(tables)*2)
 	for _, table := range tables {
 		tempNames[table.table] = table.table + "__new_" + suffix
 		backupNames[table.table] = table.table + "__old_" + suffix
-		cleanupNames = append(cleanupNames, tempNames[table.table], backupNames[table.table])
 	}
-	cleanup := func() {
-		for _, name := range cleanupNames {
-			_, _ = m.db.ExecContext(context.Background(), "DROP TABLE IF EXISTS "+quote(name))
-		}
-	}
-	defer cleanup()
 	m.stage(id, StagePreparing)
 	prepareStartedAt := time.Now()
 	for _, table := range tables {
+		tableStartedAt := time.Now()
 		q := createTableSQL(tempNames[table.table], table)
 		if _, err := m.db.ExecContext(ctx, q); err != nil {
 			return stageFail(StagePreparing, table.file, 0, err)
 		}
+		m.log.Info("card data temporary table creation completed", "task_id", id, "table", table.table, "duration", time.Since(tableStartedAt))
 	}
 	seedRows := dictionaryRows()
 	for _, table := range dictionarySpecs {
+		tableStartedAt := time.Now()
 		if err := insertRows(ctx, m.db, tempNames[table.table], table, seedRows[table.table]); err != nil {
 			return stageFail(StagePreparing, "", 0, fmt.Errorf("seed dictionary %s: %w", table.table, err))
 		}
+		m.log.Info("card data dictionary table seeding completed", "task_id", id, "table", table.table, "rows", len(seedRows[table.table]), "duration", time.Since(tableStartedAt))
 	}
-	m.log.Info("card data temporary tables prepared", "task_id", id, "table_count", len(tables), "duration", time.Since(prepareStartedAt))
+	m.stageCompleted(id, StagePreparing, "table_count", len(tables), "duration", time.Since(prepareStartedAt))
 	m.stage(id, StageImporting)
+	importStartedAt := time.Now()
 	for i, s := range specs {
-		startedAt := time.Now()
+		fileStartedAt := time.Now()
 		m.setProgress(s.file, 0, results[i].ReadRows)
 		m.log.Info("card data file import started", "task_id", id, "file", s.file, "expected_rows", results[i].ReadRows, "size_bytes", results[i].Size)
 		inserted, taskErr := m.importFile(ctx, s, tempNames, results[i])
@@ -297,10 +302,13 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		}
 		results[i].InsertedRows = inserted
 		m.files(id, results)
-		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration", time.Since(startedAt))
+		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration", time.Since(fileStartedAt))
 	}
+	m.stageCompleted(id, StageImporting, "file_count", len(specs), "duration", time.Since(importStartedAt))
 	m.stage(id, StageVerifying)
+	verifyStartedAt := time.Now()
 	for i, s := range specs {
+		tableStartedAt := time.Now()
 		m.setProgress(s.file, 0, results[i].ReadRows)
 		var count int64
 		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tempNames[s.table])).Scan(&count); err != nil {
@@ -310,8 +318,9 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: read %d, inserted %d", results[i].ReadRows, count))
 		}
 		m.setProgress(s.file, count, results[i].ReadRows)
-		m.log.Info("card data table row count verified", "task_id", id, "table", s.table, "rows", count)
+		m.log.Info("card data table verification completed", "task_id", id, "table", s.table, "rows", count, "duration", time.Since(tableStartedAt))
 	}
+	m.stageCompleted(id, StageVerifying, "table_count", len(specs), "duration", time.Since(verifyStartedAt))
 	m.stage(id, StageSwitching)
 	switchStartedAt := time.Now()
 	for _, table := range tables {
@@ -327,18 +336,30 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 	if _, err := m.db.ExecContext(ctx, "RENAME TABLE "+strings.Join(parts, ", ")); err != nil {
 		return stageFail(StageSwitching, "", 0, err)
 	}
-	m.log.Info("card data tables switched", "task_id", id, "table_count", len(tables), "duration", time.Since(switchStartedAt))
-	for _, obsolete := range []string{
-		"scryfall_card_color",
-		"scryfall_card_attraction_light",
-		"scryfall_card_finish",
-		"scryfall_card_game",
-		"scryfall_card_preview",
-	} {
-		if _, err := m.db.ExecContext(ctx, "DROP TABLE IF EXISTS "+quote(obsolete)); err != nil {
-			m.log.Warn("obsolete card data table cleanup failed", "table", obsolete, "error", err)
-		}
+	m.stageCompleted(id, StageSwitching, "table_count", len(tables), "duration", time.Since(switchStartedAt))
+	m.stage(id, StageCleaning)
+	cleanupNames := make([]string, 0, len(backupNames))
+	for _, table := range tables {
+		cleanupNames = append(cleanupNames, backupNames[table.table])
 	}
+	if err := m.cleanupTables(id, cleanupNames); err != nil {
+		return stageFail(StageCleaning, "", 0, fmt.Errorf("card data tables switched but cleanup failed: %w", err))
+	}
+	return nil
+}
+
+func (m *Manager) cleanupTables(id string, names []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), cleanupTimeout)
+	defer cancel()
+	startedAt := time.Now()
+	for _, name := range names {
+		tableStartedAt := time.Now()
+		if _, err := m.db.ExecContext(ctx, "DROP TABLE IF EXISTS "+quote(name)); err != nil {
+			return fmt.Errorf("drop table %s: %w", name, err)
+		}
+		m.log.Info("card data table cleanup completed", "task_id", id, "table", name, "duration", time.Since(tableStartedAt))
+	}
+	m.stageCompleted(id, StageCleaning, "table_count", len(names), "duration", time.Since(startedAt))
 	return nil
 }
 
@@ -619,6 +640,12 @@ func (m *Manager) stage(id string, s Stage) {
 	m.progressTotal = 0
 	m.mu.Unlock()
 	m.log.Info("card data loading stage started", "task_id", id, "stage", s)
+}
+
+func (m *Manager) stageCompleted(id string, s Stage, attributes ...any) {
+	fields := []any{"task_id", id, "stage", s}
+	fields = append(fields, attributes...)
+	m.log.Info("card data loading stage completed", fields...)
 }
 
 func (m *Manager) setProgress(file string, rows, total int64) {
