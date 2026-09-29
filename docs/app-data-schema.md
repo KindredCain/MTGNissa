@@ -14,7 +14,7 @@
 
 | 业务对象 | 稳定标识 | 原因 |
 | --- | --- | --- |
-| 具体印刷及语言版本 | `scryfall_id CHAR(36)` | 同时确定 Set、收藏编号和实体牌语言；同一多面牌的各牌面共享此 ID，不会重复计算收藏。 |
+| 具体印刷及语言版本 | `scryfall_id CHAR(36)` | 同时确定 Set、收藏编号和卡牌原语言；同一多面牌的各牌面共享此 ID，不会重复计算收藏。UI 统一显示为“语言”。 |
 | 逻辑卡牌 | `oracle_id CHAR(36)` | 跨 Set、收藏编号和语言归并同一张牌，适合卡组记录和收藏汇总。 |
 
 `scryfall_card.uuid` 是扁平化后的牌面记录 ID，只用于 Card DB 内部关联中文印刷文字，不能用作个人收藏主键，否则双面牌会被当作两张实体牌。
@@ -55,7 +55,7 @@ operation_log
 | `set_id` | `CHAR(36)` | 系列稳定 ID。 |
 | `set_code` | `VARCHAR(32)` | 系列代码快照，便于故障展示和诊断。 |
 | `collector_number` | `VARCHAR(64)` | 收藏编号快照；不能转为数字。 |
-| `lang` | `VARCHAR(16)` | 实体牌语言代码。 |
+| `lang` | `VARCHAR(16)` | 卡牌原语言代码；UI 统一显示为“语言”。 |
 | `created_at` | `DATETIME(6)` | 首次被个人数据引用的时间。 |
 | `last_verified_at` | `DATETIME(6)` | 最近一次从 Card DB 验证成功的时间。 |
 
@@ -148,10 +148,10 @@ operation_log
 | `operation_id` | `BIGINT UNSIGNED` | 主键；外键到 `operation_log(id)`。 |
 | `scryfall_id` | `CHAR(36)` | 操作时的印刷版本 ID。 |
 | `oracle_id` | `CHAR(36) NULL` | 操作时的逻辑卡牌 ID。 |
-| `card_name` | `VARCHAR(512)` | 操作时按说明语言回退规则得到的组合牌名快照。 |
+| `card_name` | `VARCHAR(512)` | 操作时按翻译后语言回退规则得到的组合牌名快照。 |
 | `set_code` | `VARCHAR(32)` | 系列代码快照。 |
 | `collector_number` | `VARCHAR(64)` | 收藏编号快照。 |
-| `lang` | `VARCHAR(16)` | 实体牌语言快照。 |
+| `lang` | `VARCHAR(16)` | 卡牌原语言快照；UI 统一显示为“语言”。 |
 | `finish_kind` | `TINYINT UNSIGNED NULL` | 收藏操作为 1=普通、2=闪；愿望单操作为 `NULL`。 |
 | `quantity_delta` | `BIGINT NULL` | 收藏操作保存有符号变化量；使用 `BIGINT` 才能覆盖 `INT UNSIGNED` 数量列的完整变化范围。愿望单操作为 `NULL`。 |
 

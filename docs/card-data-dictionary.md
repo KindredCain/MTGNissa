@@ -46,6 +46,8 @@
 
 数据模型以 `scryfall_card` 为主：每个卡牌及其具体印刷版本都必须来自 `scryfall_card`。六个 `zhs_*` 文件仅作为简体中文翻译、本地化展示字段或辅助词典，不定义独立卡牌实体。业务查询应从 `scryfall_card` 出发左连接需要的 `zhs_*` 数据；没有可用中文值时使用 Scryfall 字段。
 
+语言概念统一为：`scryfall_card.lang` 表示**卡牌原语言**，决定具体印刷记录及卡图；翻译表提供的展示内容使用**翻译后语言**，当前为简体中文。卡牌名称、类别、规则文字、风味文字和官方释疑等卡牌说明统一优先使用翻译后语言，缺失时回退对应英文内容。UI 中仅显示“语言”，并统一表示卡牌原语言；翻译后语言不作为 UI 交互项。
+
 ### 2.1 字典、位掩码与检索关联
 
 颜色、语言、布局、卡框、卡框效果、工艺和游戏平台是小型说明性字典。字典的代码及英文说明来自 Scryfall 官方 Colors、Languages、Layouts、Frames 和 Card Object 元数据：
@@ -115,7 +117,7 @@
 | `uuid` | `CHAR(36)` | 主键；本地卡牌记录标识。 |
 | `scryfall_id` | `CHAR(36)` | Scryfall 卡牌对象 ID。 |
 | `face_index` | `INT` | 多面牌牌面序号，非牌面记录通常为 `-1`。 |
-| `lang` | `VARCHAR(16)` | 语言代码，逻辑关联 `scryfall_language.code`。 |
+| `lang` | `VARCHAR(16)` | 卡牌原语言代码；UI 统一显示为“语言”，逻辑关联 `scryfall_language.code`。 |
 | `oracle_id` | `CHAR(36) NULL` | Oracle 身份。 |
 | `layout` | `VARCHAR(64)` | 布局代码，逻辑关联 `scryfall_layout.code`。 |
 | `arena_id` | `BIGINT NULL` | Arena ID。 |
@@ -347,9 +349,9 @@ WHERE (color_identity_mask & 2) = 2;
 | `illustration_id` | UUID? | 官方 | 插画身份 ID；相同插画通常共享此值。 |
 | `image_status` | string | 官方 | 图片状态，例如 `missing`、`placeholder`、`lowres`、`highres_scan`。 |
 | `oversized` | boolean | 官方 | 是否为超大尺寸印刷。 |
-| `printed_name` | string? | 官方 | 当前语言实际印刷的牌名。 |
-| `printed_text` | string? | 官方 | 当前语言实际印刷的规则叙述。 |
-| `printed_type_line` | string? | 官方 | 当前语言实际印刷的类别栏。 |
+| `printed_name` | string? | 官方 | 当前卡牌原语言实际印刷的牌名。 |
+| `printed_text` | string? | 官方 | 当前卡牌原语言实际印刷的规则叙述。 |
+| `printed_type_line` | string? | 官方 | 当前卡牌原语言实际印刷的类别栏。 |
 | `promo` | boolean | 官方 | 是否为赠卡或推广版本。 |
 | `promo_types` | string[]? | 官方 | 推广版本类型。 |
 | `rarity` | string | 官方 | 稀有度。 |
@@ -555,9 +557,9 @@ scryfall_card.oracle_id
 | 区分具体印刷版本 | `scryfall_id`；数据库内部也可继续使用 `uuid`。 |
 | 跨系列合并同一张牌 | `oracle_id`；多面牌显示还需结合 `face_oracle_id` 和 `face_index`。 |
 | 系列内定位 | `set_code` + `collector_number`，必要时再加 `lang`。 |
-| 区分实体牌语言 | `lang`，不能用中文翻译是否存在来代替。 |
+| 区分卡牌原语言 | `lang`，不能用翻译后语言内容是否存在来代替；UI 统一显示为“语言”。 |
 | 普通/闪卡可用工艺 | `finishes`、`foil`、`nonfoil`。 |
-| 卡牌中文名称和规则叙述 | 优先使用 `oracle_translation` 中非空的翻译字段，不检查 `stage`；翻译缺失时回退 `scryfall_card` 英文 Oracle 字段。 |
+| 翻译后语言的卡牌名称和规则叙述 | 优先使用 `oracle_translation` 中非空的翻译字段，不检查 `stage`；翻译缺失时回退 `scryfall_card` 英文 Oracle 字段。当前翻译后语言为简体中文。 |
 | 中文缺失判断 | `null`、空字符串和仅包含空白字符的字符串统一视为缺失。 |
 | 特定印刷中文文字 | `card_translation`，通过本地卡牌 ID 或 `multiverse_id` 关联。 |
 | 背景叙述中文翻译 | `flavor_id` 关联 `flavor_translation`。 |

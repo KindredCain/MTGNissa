@@ -363,6 +363,7 @@
                       "type": "text",
                       "id": "Bdvq9",
                       "name": "Global Card and Syntax Search Placeholder",
+                      "context": "右上角全局搜索入口：支持普通卡名和已支持的查询语法；提交后进入独立搜索结果页",
                       "fill": "$muted",
                       "content": "搜索卡牌或输入语法…",
                       "fontFamily": "$font",
@@ -1965,7 +1966,7 @@
       "x": 1780,
       "y": -746,
       "name": "Screen / Card Detail",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
+      "context": "UI 中所有“语言”交互均指卡牌原语言；卡图、面包屑和版本选择跟随卡牌原语言。卡牌名称、类别、规则文字等说明统一使用翻译后语言，当前为简体中文，缺失时回退英文；UI 不显示“原语言”或“翻译后语言”术语",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -2008,7 +2009,8 @@
             {
               "type": "text",
               "id": "g1twA",
-              "name": "Breadcrumb Set and Language",
+              "name": "Breadcrumb Set and Original Language",
+              "context": "括号内为卡牌原语言；点击返回同一 Set、同一卡牌原语言的卡牌列表",
               "fill": "#247650",
               "content": "卡拉德许（日文）",
               "fontFamily": "$font",
@@ -2110,7 +2112,8 @@
                         {
                           "type": "text",
                           "id": "J7PfSR",
-                          "name": "Localized Card Name",
+                          "name": "Translated Card Name",
+                          "context": "使用翻译后语言展示；当前翻译后语言为简体中文，缺失时回退英文",
                           "fill": "#18201D",
                           "content": "妮莎，生命之力",
                           "fontFamily": "$font",
@@ -2788,7 +2791,7 @@
                     {
                       "type": "text",
                       "id": "v7llCS",
-                      "name": "Current Set Languages Title",
+                      "name": "Current Set Original Languages Title",
                       "fill": "#18201D",
                       "content": "当前系列语言",
                       "fontFamily": "$font",
@@ -2841,7 +2844,7 @@
                             {
                               "type": "text",
                               "id": "ywKlH",
-                              "name": "Selected Language Label",
+                              "name": "Selected Original Language Label",
                               "fill": "#18201D",
                               "content": "日文",
                               "fontFamily": "$font",
@@ -2860,7 +2863,7 @@
                             {
                               "type": "text",
                               "id": "hnYa9",
-                              "name": "Available Language Count",
+                              "name": "Available Original Language Count",
                               "fill": "#7A8580",
                               "content": "3 种可选",
                               "fontFamily": "$font",
@@ -2970,9 +2973,9 @@
                                     {
                                       "type": "text",
                                       "id": "ms3QA",
-                                      "name": "Commander Masters · CMM Name",
+                                      "name": "Commander Masters · CMM · #289 Name",
                                       "fill": "#18201D",
-                                      "content": "Commander Masters · CMM",
+                                      "content": "Commander Masters · CMM · #289",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -3093,9 +3096,9 @@
                                     {
                                       "type": "text",
                                       "id": "fPDOK",
-                                      "name": "Jumpstart 2022 · J22 Name",
+                                      "name": "Jumpstart 2022 · J22 · #673 Name",
                                       "fill": "#18201D",
-                                      "content": "Jumpstart 2022 · J22",
+                                      "content": "Jumpstart 2022 · J22 · #673",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -3193,9 +3196,9 @@
                                     {
                                       "type": "text",
                                       "id": "WIzbz",
-                                      "name": "Kaladesh Remastered · KLR Name",
+                                      "name": "Kaladesh Remastered · KLR · #179 Name",
                                       "fill": "#18201D",
-                                      "content": "Kaladesh Remastered · KLR",
+                                      "content": "Kaladesh Remastered · KLR · #179",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -3487,8 +3490,9 @@
                   "type": "text",
                   "id": "v4GeYN",
                   "name": "Set Search Placeholder",
+                  "context": "Set 列表中间搜索框；仅作为 Set list 接口的名称或缩写关键字参数，不解析查询语法",
                   "fill": "#87918C",
-                  "content": "搜索系列名称或代码…",
+                  "content": "按系列名称或缩写搜索",
                   "fontFamily": "$font",
                   "fontSize": 13,
                   "fontWeight": "normal"
@@ -3719,7 +3723,8 @@
                     {
                       "type": "frame",
                       "id": "a3ARd",
-                      "name": "语言 Filter",
+                      "name": "卡牌原语言 Filter",
+                      "context": "按卡牌原语言筛选 Set；卡牌原语言来自 scryfall_card.lang",
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
                       "stroke": "#D6DBD6",
@@ -3734,7 +3739,7 @@
                         {
                           "type": "text",
                           "id": "rd3bm",
-                          "name": "语言 Filter Label",
+                          "name": "卡牌原语言 Filter Label",
                           "fill": "#3E4A44",
                           "content": "语言：全部语言",
                           "fontFamily": "$font",
@@ -3964,7 +3969,7 @@
                     {
                       "type": "frame",
                       "id": "FmUsR",
-                      "name": "可用语言 Header Cell",
+                      "name": "可用原语言 Header Cell",
                       "width": "fill_container",
                       "height": "fill_container",
                       "padding": [
@@ -3976,7 +3981,7 @@
                         {
                           "type": "text",
                           "id": "l4HoC",
-                          "name": "可用语言 Header Text",
+                          "name": "可用原语言 Header Text",
                           "fill": "#C9D1CD",
                           "content": "可用语言",
                           "fontFamily": "$font",
@@ -6666,8 +6671,9 @@
                               "type": "text",
                               "id": "r555Pv",
                               "name": "Card Search Placeholder",
+                              "context": "当前 Set 列表中间搜索框；仅作为 Set 卡牌 list 接口的卡名关键字参数，不解析查询语法",
                               "fill": "#7A8580",
-                              "content": "搜索当前语言的卡牌",
+                              "content": "按卡名关键字搜索",
                               "fontFamily": "$font",
                               "fontSize": 12,
                               "fontWeight": "normal"
@@ -7323,7 +7329,7 @@
               "type": "frame",
               "id": "QvtIc",
               "name": "Owned Quantity Bar",
-              "context": "普通卡与闪卡快捷加减会请求后端，同时前端立即更新数量；成功后不刷新列表或移除卡片，失败则回滚。两种数量均为 0 时当前卡片仍保留，仅重新进入页面后按后端数据消失",
+              "context": "数量栏本身、数量文字和分隔线不触发增减；仅四个透明独立热区可操作。热区略大于符号，操作采用前端即时更新并请求后端",
               "width": 228,
               "height": 24,
               "fill": "#F1F5F2",
@@ -7375,13 +7381,13 @@
                       "type": "frame",
                       "id": "APxXn",
                       "name": "Decrease Normal Quantity",
-                      "context": "普通卡数量减 1：前端即时更新并请求后端；为 0 时禁用。操作成功后不重新请求列表",
+                      "context": "普通卡减一独立热区，范围略大于减号；为 0 时整块热区禁用。点击后前端即时更新并请求后端",
                       "opacity": 0.2,
-                      "width": 16,
-                      "height": 16,
+                      "width": 18,
+                      "height": 20,
                       "fill": "#00000000",
-                      "cornerRadius": 3,
-                      "stroke": "#B8C9BE",
+                      "cornerRadius": 4,
+                      "stroke": "#00000000",
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -7389,6 +7395,7 @@
                           "type": "icon",
                           "id": "I0gv4R",
                           "name": "Decrease Normal Quantity Icon",
+                          "context": "数量操作视觉符号；实际点击由外层独立热区处理",
                           "width": 8,
                           "height": 8,
                           "icon": "minus",
@@ -7411,12 +7418,12 @@
                       "type": "frame",
                       "id": "ubanQ",
                       "name": "Increase Normal Quantity",
-                      "context": "普通卡数量加 1：前端即时更新并请求后端；操作成功后不重新请求列表，失败回滚",
-                      "width": 16,
-                      "height": 16,
+                      "context": "普通卡加一独立热区，范围略大于加号；点击后前端即时更新并请求后端，失败回滚",
+                      "width": 18,
+                      "height": 20,
                       "fill": "#00000000",
-                      "cornerRadius": 3,
-                      "stroke": "#B8C9BE",
+                      "cornerRadius": 4,
+                      "stroke": "#00000000",
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -7424,6 +7431,7 @@
                           "type": "icon",
                           "id": "TxZ3F",
                           "name": "Increase Normal Quantity Icon",
+                          "context": "数量操作视觉符号；实际点击由外层独立热区处理",
                           "width": 8,
                           "height": 8,
                           "icon": "plus",
@@ -7453,13 +7461,13 @@
                       "type": "frame",
                       "id": "Bm7aG",
                       "name": "Decrease Foil Quantity",
-                      "context": "闪卡数量减 1：前端即时更新并请求后端；为 0 时禁用。操作成功后不重新请求列表",
+                      "context": "闪卡减一独立热区，范围略大于减号；为 0 时整块热区禁用。点击后前端即时更新并请求后端",
                       "opacity": 0.2,
-                      "width": 16,
-                      "height": 16,
+                      "width": 18,
+                      "height": 20,
                       "fill": "#00000000",
-                      "cornerRadius": 3,
-                      "stroke": "#B8C9BE",
+                      "cornerRadius": 4,
+                      "stroke": "#00000000",
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -7467,6 +7475,7 @@
                           "type": "icon",
                           "id": "BxAh4",
                           "name": "Decrease Foil Quantity Icon",
+                          "context": "数量操作视觉符号；实际点击由外层独立热区处理",
                           "width": 8,
                           "height": 8,
                           "icon": "minus",
@@ -7489,12 +7498,12 @@
                       "type": "frame",
                       "id": "UlsZZ",
                       "name": "Increase Foil Quantity",
-                      "context": "闪卡数量加 1：前端即时更新并请求后端；操作成功后不重新请求列表，失败回滚",
-                      "width": 16,
-                      "height": 16,
+                      "context": "闪卡加一独立热区，范围略大于加号；点击后前端即时更新并请求后端，失败回滚",
+                      "width": 18,
+                      "height": 20,
                       "fill": "#00000000",
-                      "cornerRadius": 3,
-                      "stroke": "#B8C9BE",
+                      "cornerRadius": 4,
+                      "stroke": "#00000000",
                       "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
@@ -7502,6 +7511,7 @@
                           "type": "icon",
                           "id": "vNGJJ",
                           "name": "Increase Foil Quantity Icon",
+                          "context": "数量操作视觉符号；实际点击由外层独立热区处理",
                           "width": 8,
                           "height": 8,
                           "icon": "plus",
@@ -7697,8 +7707,9 @@
                           "type": "text",
                           "id": "TpqKZ",
                           "name": "Global Set Search Placeholder",
+                          "context": "Set 列表中间搜索框；仅作为 Set list 接口的名称或缩写关键字参数，不解析查询语法",
                           "fill": "#7A8580",
-                          "content": "全库搜索系列缩写，如 SOS",
+                          "content": "按系列名称或缩写搜索",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -7708,7 +7719,8 @@
                     {
                       "type": "frame",
                       "id": "mFrJK",
-                      "name": "语言 Filter",
+                      "name": "卡牌原语言 Filter",
+                      "context": "按卡牌原语言筛选 Set；卡牌原语言来自 scryfall_card.lang",
                       "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
@@ -7724,7 +7736,7 @@
                         {
                           "type": "text",
                           "id": "S8Ltb8",
-                          "name": "语言 Filter Label",
+                          "name": "卡牌原语言 Filter Label",
                           "fill": "#3E4A44",
                           "content": "语言：全部语言",
                           "fontFamily": "$font",
@@ -7964,7 +7976,7 @@
                     {
                       "type": "frame",
                       "id": "w8BZ6u",
-                      "name": "可用语言 Header Cell",
+                      "name": "可用原语言 Header Cell",
                       "width": "fill_container",
                       "height": "fill_container",
                       "padding": [
@@ -7976,7 +7988,7 @@
                         {
                           "type": "text",
                           "id": "UGWDt",
-                          "name": "可用语言 Header Text",
+                          "name": "可用原语言 Header Text",
                           "fill": "#C9D1CD",
                           "content": "可用语言",
                           "fontFamily": "$font",
@@ -11887,7 +11899,7 @@
       "x": 3300,
       "y": -746,
       "name": "Screen / Card Detail — Official Rulings",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
+      "context": "UI 中所有“语言”交互均指卡牌原语言；官方释疑使用翻译后语言，当前为简体中文，缺失时回退英文；UI 不暴露两类语言术语",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -11930,7 +11942,8 @@
             {
               "type": "text",
               "id": "O0s7W",
-              "name": "Breadcrumb Set and Language",
+              "name": "Breadcrumb Set and Original Language",
+              "context": "括号内为卡牌原语言；点击返回同一 Set、同一卡牌原语言的卡牌列表",
               "fill": "#247650",
               "content": "卡拉德许（日文）",
               "fontFamily": "$font",
@@ -12032,7 +12045,8 @@
                         {
                           "type": "text",
                           "id": "As86a",
-                          "name": "Localized Card Name",
+                          "name": "Translated Card Name",
+                          "context": "使用翻译后语言展示；当前翻译后语言为简体中文，缺失时回退英文",
                           "fill": "#18201D",
                           "content": "妮莎，生命之力",
                           "fontFamily": "$font",
@@ -12382,7 +12396,8 @@
                         {
                           "type": "text",
                           "id": "Y7vZWU",
-                          "name": "Official Ruling 01 Chinese",
+                          "name": "Official Ruling Translated Text",
+                          "context": "使用翻译后语言展示的官方释疑；当前为简体中文，缺失时回退英文",
                           "fill": "#18201D",
                           "content": "永久物牌包括神器、生物、结界、地以及鹏洛客牌。",
                           "fontFamily": "$font",
@@ -12466,7 +12481,8 @@
                         {
                           "type": "text",
                           "id": "T9ry2i",
-                          "name": "Official Ruling 02 Chinese",
+                          "name": "Official Ruling Translated Text",
+                          "context": "使用翻译后语言展示的官方释疑；当前为简体中文，缺失时回退英文",
                           "fill": "#18201D",
                           "content": "你能以某个未横置的地为目标起动妮莎的第一个异能。",
                           "fontFamily": "$font",
@@ -12550,7 +12566,8 @@
                         {
                           "type": "text",
                           "id": "fpuTo",
-                          "name": "Official Ruling 03 Chinese",
+                          "name": "Official Ruling Translated Text",
+                          "context": "使用翻译后语言展示的官方释疑；当前为简体中文，缺失时回退英文",
                           "fill": "#18201D",
                           "content": "妮莎的第一个异能结算后，该目标地依旧会具有它在成为生物前具有之所有异能及其他类别。",
                           "fontFamily": "$font",
@@ -12890,7 +12907,7 @@
                     {
                       "type": "text",
                       "id": "fBpEI",
-                      "name": "Current Set Languages Title",
+                      "name": "Current Set Original Languages Title",
                       "fill": "#18201D",
                       "content": "当前系列语言",
                       "fontFamily": "$font",
@@ -12943,7 +12960,7 @@
                             {
                               "type": "text",
                               "id": "feIws",
-                              "name": "Selected Language Label",
+                              "name": "Selected Original Language Label",
                               "fill": "#18201D",
                               "content": "日文",
                               "fontFamily": "$font",
@@ -12962,7 +12979,7 @@
                             {
                               "type": "text",
                               "id": "g5fu3",
-                              "name": "Available Language Count",
+                              "name": "Available Original Language Count",
                               "fill": "#7A8580",
                               "content": "3 种可选",
                               "fontFamily": "$font",
@@ -13072,9 +13089,9 @@
                                     {
                                       "type": "text",
                                       "id": "VTljq",
-                                      "name": "Commander Masters · CMM Name",
+                                      "name": "Commander Masters · CMM · #289 Name",
                                       "fill": "#18201D",
-                                      "content": "Commander Masters · CMM",
+                                      "content": "Commander Masters · CMM · #289",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -13195,9 +13212,9 @@
                                     {
                                       "type": "text",
                                       "id": "d7TjWR",
-                                      "name": "Jumpstart 2022 · J22 Name",
+                                      "name": "Jumpstart 2022 · J22 · #673 Name",
                                       "fill": "#18201D",
-                                      "content": "Jumpstart 2022 · J22",
+                                      "content": "Jumpstart 2022 · J22 · #673",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -13295,9 +13312,9 @@
                                     {
                                       "type": "text",
                                       "id": "J2lE9q",
-                                      "name": "Kaladesh Remastered · KLR Name",
+                                      "name": "Kaladesh Remastered · KLR · #179 Name",
                                       "fill": "#18201D",
-                                      "content": "Kaladesh Remastered · KLR",
+                                      "content": "Kaladesh Remastered · KLR · #179",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -13481,7 +13498,7 @@
       "x": 4820,
       "y": -746,
       "name": "Screen / Card Detail — Function Tags",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看",
+      "context": "UI 中所有“语言”交互均指卡牌原语言；卡牌说明使用翻译后语言，功能标签保持数据源标签值；UI 不暴露两类语言术语",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -13524,7 +13541,8 @@
             {
               "type": "text",
               "id": "Cj7ru",
-              "name": "Breadcrumb Set and Language",
+              "name": "Breadcrumb Set and Original Language",
+              "context": "括号内为卡牌原语言；点击返回同一 Set、同一卡牌原语言的卡牌列表",
               "fill": "#247650",
               "content": "卡拉德许（日文）",
               "fontFamily": "$font",
@@ -13626,7 +13644,8 @@
                         {
                           "type": "text",
                           "id": "uFFog",
-                          "name": "Localized Card Name",
+                          "name": "Translated Card Name",
+                          "context": "使用翻译后语言展示；当前翻译后语言为简体中文，缺失时回退英文",
                           "fill": "#18201D",
                           "content": "妮莎，生命之力",
                           "fontFamily": "$font",
@@ -14859,7 +14878,7 @@
                     {
                       "type": "text",
                       "id": "Oma5Q",
-                      "name": "Current Set Languages Title",
+                      "name": "Current Set Original Languages Title",
                       "fill": "#18201D",
                       "content": "当前系列语言",
                       "fontFamily": "$font",
@@ -14912,7 +14931,7 @@
                             {
                               "type": "text",
                               "id": "u1TYc",
-                              "name": "Selected Language Label",
+                              "name": "Selected Original Language Label",
                               "fill": "#18201D",
                               "content": "日文",
                               "fontFamily": "$font",
@@ -14931,7 +14950,7 @@
                             {
                               "type": "text",
                               "id": "JQSdg",
-                              "name": "Available Language Count",
+                              "name": "Available Original Language Count",
                               "fill": "#7A8580",
                               "content": "3 种可选",
                               "fontFamily": "$font",
@@ -15041,9 +15060,9 @@
                                     {
                                       "type": "text",
                                       "id": "nZkqB",
-                                      "name": "Commander Masters · CMM Name",
+                                      "name": "Commander Masters · CMM · #289 Name",
                                       "fill": "#18201D",
-                                      "content": "Commander Masters · CMM",
+                                      "content": "Commander Masters · CMM · #289",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -15164,9 +15183,9 @@
                                     {
                                       "type": "text",
                                       "id": "h7uqG",
-                                      "name": "Jumpstart 2022 · J22 Name",
+                                      "name": "Jumpstart 2022 · J22 · #673 Name",
                                       "fill": "#18201D",
-                                      "content": "Jumpstart 2022 · J22",
+                                      "content": "Jumpstart 2022 · J22 · #673",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -15264,9 +15283,9 @@
                                     {
                                       "type": "text",
                                       "id": "W1NmB",
-                                      "name": "Kaladesh Remastered · KLR Name",
+                                      "name": "Kaladesh Remastered · KLR · #179 Name",
                                       "fill": "#18201D",
-                                      "content": "Kaladesh Remastered · KLR",
+                                      "content": "Kaladesh Remastered · KLR · #179",
                                       "fontFamily": "$font",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -15627,8 +15646,9 @@
                           "type": "text",
                           "id": "LeneV",
                           "name": "My Cards Search Placeholder",
+                          "context": "我的卡牌列表中间搜索框；仅作为我的卡牌 list 接口的卡名关键字参数，不解析查询语法",
                           "fill": "#7A8580",
-                          "content": "搜索我的卡牌",
+                          "content": "按卡名搜索我的卡牌",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -15692,7 +15712,7 @@
                         {
                           "type": "text",
                           "id": "B6AK4u",
-                          "name": "My Cards Language Filter Label",
+                          "name": "My Cards Original Language Filter Label",
                           "fill": "#3E4A44",
                           "content": "语言：全部",
                           "fontFamily": "$font",
@@ -15932,7 +15952,7 @@
                         {
                           "type": "text",
                           "id": "dny1h",
-                          "name": "Merge Different Languages Inline Label",
+                          "name": "Merge Different Original Languages Inline Label",
                           "fill": "#59655F",
                           "content": "合并不同语言",
                           "fontFamily": "$font",
@@ -15997,6 +16017,7 @@
                       "type": "frame",
                       "id": "A30ev9",
                       "name": "Set Group Header CMM",
+                      "context": "整条系列标头均为展开/收起热区；点击系列信息、浅色分隔线空白处或最右箭头效果相同",
                       "width": "fill_container",
                       "height": 34,
                       "gap": 12,
@@ -16063,6 +16084,7 @@
                           "type": "icon",
                           "id": "pMCK5",
                           "name": "Set Group Toggle CMM",
+                          "context": "展开/收起状态的视觉提示；点击由整条系列标头热区处理",
                           "width": 15,
                           "height": 15,
                           "icon": "chevron-up",
@@ -16318,6 +16340,7 @@
                       "type": "frame",
                       "id": "QFWvK",
                       "name": "Set Group Header ZNR",
+                      "context": "整条系列标头均为展开/收起热区；点击系列信息、浅色分隔线空白处或最右箭头效果相同",
                       "width": "fill_container",
                       "height": 34,
                       "gap": 12,
@@ -16384,6 +16407,7 @@
                           "type": "icon",
                           "id": "Kai6M",
                           "name": "Set Group Toggle ZNR",
+                          "context": "展开/收起状态的视觉提示；点击由整条系列标头热区处理",
                           "width": 15,
                           "height": 15,
                           "icon": "chevron-down",
@@ -16405,6 +16429,7 @@
                       "type": "frame",
                       "id": "e8yq4",
                       "name": "Set Group Header KLD",
+                      "context": "整条系列标头均为展开/收起热区；点击系列信息、浅色分隔线空白处或最右箭头效果相同",
                       "width": "fill_container",
                       "height": 34,
                       "gap": 12,
@@ -16471,6 +16496,7 @@
                           "type": "icon",
                           "id": "kWloz",
                           "name": "Set Group Toggle KLD",
+                          "context": "展开/收起状态的视觉提示；点击由整条系列标头热区处理",
                           "width": 15,
                           "height": 15,
                           "icon": "chevron-down",
@@ -16702,8 +16728,9 @@
                           "type": "text",
                           "id": "HBAtz",
                           "name": "My Cards Search Placeholder",
+                          "context": "我的卡牌列表中间搜索框；仅作为我的卡牌 list 接口的卡名关键字参数，不解析查询语法",
                           "fill": "#7A8580",
-                          "content": "搜索我的卡牌",
+                          "content": "按卡名搜索我的卡牌",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -16767,7 +16794,7 @@
                         {
                           "type": "text",
                           "id": "S1cph",
-                          "name": "My Cards Language Filter Label",
+                          "name": "My Cards Original Language Filter Label",
                           "fill": "#3E4A44",
                           "content": "语言：全部",
                           "fontFamily": "$font",
@@ -17006,7 +17033,7 @@
                         {
                           "type": "text",
                           "id": "n5gaLz",
-                          "name": "Merge Different Languages Inline Label",
+                          "name": "Merge Different Original Languages Inline Label",
                           "fill": "#59655F",
                           "content": "合并不同语言",
                           "fontFamily": "$font",
@@ -17748,8 +17775,9 @@
                           "type": "text",
                           "id": "EuTKE",
                           "name": "My Cards Search Placeholder",
+                          "context": "我的卡牌列表中间搜索框；仅作为我的卡牌 list 接口的卡名关键字参数，不解析查询语法",
                           "fill": "#7A8580",
-                          "content": "搜索我的卡牌",
+                          "content": "按卡名搜索我的卡牌",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -17813,7 +17841,7 @@
                         {
                           "type": "text",
                           "id": "JwHpG",
-                          "name": "My Cards Language Filter Label",
+                          "name": "My Cards Original Language Filter Label",
                           "fill": "#3E4A44",
                           "content": "语言：全部",
                           "fontFamily": "$font",
@@ -18052,7 +18080,7 @@
                         {
                           "type": "text",
                           "id": "TNwDc",
-                          "name": "Merge Different Languages Inline Label",
+                          "name": "Merge Different Original Languages Inline Label",
                           "fill": "#59655F",
                           "content": "合并不同语言",
                           "fontFamily": "$font",
@@ -18683,7 +18711,7 @@
           "type": "frame",
           "id": "UqyVD",
           "name": "Wishlist Card Footer",
-          "context": "愿望单卡牌信息条；与我的卡牌数量条使用相同底色。点击实心星后立即在前端切换状态并请求后端，不刷新列表",
+          "context": "愿望单卡牌信息条；卡名区域和整条信息栏不触发收藏切换，只有右侧独立星标热区可操作",
           "width": 228,
           "height": 24,
           "fill": "#F1F5F2",
@@ -18708,15 +18736,29 @@
               "fontWeight": "650"
             },
             {
-              "type": "text",
-              "id": "gux8f",
-              "name": "Wishlist Toggle Selected Solid Star",
-              "context": "当前已加入愿望单；金色实心星为选中态。点击后前端立即改为空心灰星并请求后端，当前列表不刷新；失败时回滚",
-              "fill": "#C58A20",
-              "content": "★",
-              "fontFamily": "$font",
-              "fontSize": 14,
-              "fontWeight": "700"
+              "type": "frame",
+              "id": "mCWWZ",
+              "name": "Wishlist Toggle Hit Area",
+              "context": "愿望单切换热区；范围略大于星形但不覆盖整条信息栏。点击后前端即时切换并请求后端，失败回滚",
+              "width": 24,
+              "height": 22,
+              "fill": "#00000000",
+              "cornerRadius": 5,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gux8f",
+                  "name": "Wishlist Toggle Selected Solid Star",
+                  "context": "愿望单状态视觉符号；实际点击由外层星标热区处理",
+                  "fill": "#C58A20",
+                  "content": "★",
+                  "fontFamily": "$font",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
             }
           ]
         }
@@ -18905,8 +18947,9 @@
                           "type": "text",
                           "id": "FHhrD",
                           "name": "Wishlist Search Placeholder",
+                          "context": "愿望单列表中间搜索框；仅作为愿望单 list 接口的卡名关键字参数，不解析查询语法",
                           "fill": "#7A8580",
-                          "content": "搜索愿望单",
+                          "content": "按卡名搜索愿望单",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -18970,7 +19013,7 @@
                         {
                           "type": "text",
                           "id": "LC2QC",
-                          "name": "My Cards Language Filter Label",
+                          "name": "My Cards Original Language Filter Label",
                           "fill": "#3E4A44",
                           "content": "语言：全部",
                           "fontFamily": "$font",
@@ -19173,6 +19216,7 @@
                       "type": "frame",
                       "id": "c05Ul",
                       "name": "Set Group Header CMM",
+                      "context": "整条系列标头均为展开/收起热区；点击系列信息、浅色分隔线空白处或最右箭头效果相同",
                       "width": "fill_container",
                       "height": 34,
                       "gap": 12,
@@ -19229,6 +19273,7 @@
                           "type": "icon",
                           "id": "svzHB",
                           "name": "Set Group Toggle CMM",
+                          "context": "展开/收起状态的视觉提示；点击由整条系列标头热区处理",
                           "width": 15,
                           "height": 15,
                           "icon": "chevron-up",
@@ -19265,13 +19310,6 @@
                             },
                             "t4aXy5": {
                               "content": "生机妮莎"
-                            },
-                            "gux8f": {
-                              "name": "Wishlist Toggle Selected Solid Star",
-                              "content": "★",
-                              "fill": "#C58A20",
-                              "opacity": 1,
-                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
                             }
                           }
                         },
@@ -19302,7 +19340,7 @@
                               "content": "☆",
                               "fill": "#8B9690",
                               "opacity": 1,
-                              "context": "取消收藏后的前端即时状态样例；点击可重新加入愿望单。当前卡片不移除，仅重新进入页面后按后端权威数据消失"
+                              "context": "取消收藏后的视觉状态；实际点击由外层右侧星标热区处理"
                             }
                           }
                         },
@@ -19327,13 +19365,6 @@
                             },
                             "t4aXy5": {
                               "content": "阳光戒"
-                            },
-                            "gux8f": {
-                              "name": "Wishlist Toggle Selected Solid Star",
-                              "content": "★",
-                              "fill": "#C58A20",
-                              "opacity": 1,
-                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
                             }
                           }
                         },
@@ -19358,13 +19389,6 @@
                             },
                             "t4aXy5": {
                               "content": "致命一推"
-                            },
-                            "gux8f": {
-                              "name": "Wishlist Toggle Selected Solid Star",
-                              "content": "★",
-                              "fill": "#C58A20",
-                              "opacity": 1,
-                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
                             }
                           }
                         },
@@ -19389,13 +19413,6 @@
                             },
                             "t4aXy5": {
                               "content": "逸散条约"
-                            },
-                            "gux8f": {
-                              "name": "Wishlist Toggle Selected Solid Star",
-                              "content": "★",
-                              "fill": "#C58A20",
-                              "opacity": 1,
-                              "context": "当前已加入愿望单；点击后前端即时取消并请求后端，当前卡片保留，重新进入页面后才按后端数据消失"
                             }
                           }
                         }
@@ -19414,6 +19431,7 @@
                       "type": "frame",
                       "id": "Sz5MB",
                       "name": "Set Group Header ZNR",
+                      "context": "整条系列标头均为展开/收起热区；点击系列信息、浅色分隔线空白处或最右箭头效果相同",
                       "width": "fill_container",
                       "height": 34,
                       "gap": 12,
@@ -19470,6 +19488,7 @@
                           "type": "icon",
                           "id": "nMXAu",
                           "name": "Set Group Toggle ZNR",
+                          "context": "展开/收起状态的视觉提示；点击由整条系列标头热区处理",
                           "width": 15,
                           "height": 15,
                           "icon": "chevron-down",
@@ -19491,6 +19510,7 @@
                       "type": "frame",
                       "id": "I1P94",
                       "name": "Set Group Header KLD",
+                      "context": "整条系列标头均为展开/收起热区；点击系列信息、浅色分隔线空白处或最右箭头效果相同",
                       "width": "fill_container",
                       "height": 34,
                       "gap": 12,
@@ -19547,6 +19567,7 @@
                           "type": "icon",
                           "id": "zv8X6",
                           "name": "Set Group Toggle KLD",
+                          "context": "展开/收起状态的视觉提示；点击由整条系列标头热区处理",
                           "width": 15,
                           "height": 15,
                           "icon": "chevron-down",
