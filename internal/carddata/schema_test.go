@@ -31,6 +31,31 @@ func TestStringArrayColumnValue(t *testing.T) {
 	}
 }
 
+func TestDateTimeColumnValueConvertsToUTC(t *testing.T) {
+	column := col("created_at", "DATETIME(6) NOT NULL", kindDateTime)
+	got, err := columnValue(json.RawMessage(`"2026-09-16T01:32:04.857605+08:00"`), column)
+	if err != nil {
+		t.Fatalf("columnValue() error = %v", err)
+	}
+	want := "2026-09-15 17:32:04.857605"
+	if got != want {
+		t.Fatalf("columnValue() = %q, want %q", got, want)
+	}
+}
+
+func TestRelationalKeyRejectsEmptyStringPrimaryKey(t *testing.T) {
+	s := spec{
+		key: []string{"id"},
+		columns: []columnSpec{
+			col("id", "CHAR(36) NOT NULL", kindString),
+		},
+	}
+	_, err := relationalKey([]any{" \t"}, s)
+	if err == nil || !strings.Contains(err.Error(), `primary key column "id" is empty`) {
+		t.Fatalf("relationalKey() error = %v", err)
+	}
+}
+
 func TestRulingKeyNormalizesTypography(t *testing.T) {
 	curly := "They’re affected.\r\n“Example”"
 	plain := "  They're affected.\n\"Example\"  "

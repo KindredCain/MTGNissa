@@ -113,7 +113,11 @@ func relationalKey(values []any, s spec) (string, error) {
 		}
 		value := values[columnIndex]
 		if text, ok := value.(string); ok {
-			value = strings.ToLower(strings.TrimSpace(text))
+			text = strings.TrimSpace(text)
+			if text == "" {
+				return "", fmt.Errorf("primary key column %q is empty", field)
+			}
+			value = strings.ToLower(text)
 		}
 		parts[i] = value
 	}

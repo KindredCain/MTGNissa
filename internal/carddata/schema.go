@@ -536,7 +536,7 @@ func columnValue(raw json.RawMessage, column columnSpec) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		return parsed.Format("2006-01-02 15:04:05.999999"), nil
+		return parsed.UTC().Format("2006-01-02 15:04:05.999999"), nil
 	case kindColorMask:
 		return stringSetMask(raw, colorBits)
 	case kindFinishMask:

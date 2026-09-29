@@ -250,22 +250,9 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration", time.Since(fileStartedAt))
 	}
 	m.stageCompleted(id, StageImporting, "file_count", len(specs), "duration", time.Since(importStartedAt))
-	m.stage(id, StageVerifying)
-	verifyStartedAt := time.Now()
-	for i, s := range specs {
-		tableStartedAt := time.Now()
-		m.setProgress(s.file, 0, results[i].ReadRows)
-		var count int64
-		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tempNames[s.table])).Scan(&count); err != nil {
-			return stageFail(StageVerifying, s.file, 0, err)
-		}
-		if (!s.allowExtraRows && count != results[i].ReadRows) || (s.allowExtraRows && count < results[i].ReadRows) {
-			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: read %d, inserted %d", results[i].ReadRows, count))
-		}
-		m.setProgress(s.file, count, results[i].ReadRows)
-		m.log.Info("card data table verification completed", "task_id", id, "table", s.table, "rows", count, "duration", time.Since(tableStartedAt))
+	if taskErr := m.verifyImportedData(ctx, id, results, tempNames); taskErr != nil {
+		return taskErr
 	}
-	m.stageCompleted(id, StageVerifying, "table_count", len(specs), "duration", time.Since(verifyStartedAt))
 	m.stage(id, StageSwitching)
 	switchStartedAt := time.Now()
 	for _, table := range tables {
