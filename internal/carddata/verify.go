@@ -9,45 +9,48 @@ import (
 )
 
 type associationSpec struct {
-	childTable, childColumn   string
-	parentTable, parentColumn string
+	childTable   tableName
+	childColumn  string
+	parentTable  tableName
+	parentColumn string
 }
 
 var associationSpecs = []associationSpec{
-	{childTable: "scryfall_card", childColumn: "lang", parentTable: "scryfall_language", parentColumn: "code"},
-	{childTable: "scryfall_card", childColumn: "layout", parentTable: "scryfall_layout", parentColumn: "code"},
-	{childTable: "scryfall_card", childColumn: "frame", parentTable: "scryfall_frame", parentColumn: "code"},
-	{childTable: "scryfall_card", childColumn: "set_id", parentTable: "scryfall_set", parentColumn: "set_id"},
-	{childTable: "zhs_card", childColumn: "card_id", parentTable: "scryfall_card", parentColumn: "uuid"},
-	{childTable: "zhs_flavor", childColumn: "flavor_id", parentTable: "scryfall_card", parentColumn: "flavor_id"},
-	{childTable: "zhs_oracle", childColumn: "face_oracle_id", parentTable: "scryfall_card", parentColumn: "face_oracle_id"},
-	{childTable: "zhs_oracle", childColumn: "oracle_id", parentTable: "scryfall_card", parentColumn: "oracle_id"},
-	{childTable: "zhs_set", childColumn: "set_id", parentTable: "scryfall_set", parentColumn: "set_id"},
-	{childTable: "scryfall_oracle_ruling", childColumn: "oracle_id", parentTable: "scryfall_card", parentColumn: "oracle_id"},
-	{childTable: "scryfall_oracle_ruling", childColumn: "ruling_key", parentTable: "zhs_ruling", parentColumn: "ruling_key"},
-	{childTable: "zhs_ruling", childColumn: "ruling_key", parentTable: "scryfall_oracle_ruling", parentColumn: "ruling_key"},
-	{childTable: "scryfall_card_keyword", childColumn: "card_uuid", parentTable: "scryfall_card", parentColumn: "uuid"},
-	{childTable: "scryfall_card_type", childColumn: "card_uuid", parentTable: "scryfall_card", parentColumn: "uuid"},
-	{childTable: "scryfall_card_frame_effect", childColumn: "card_uuid", parentTable: "scryfall_card", parentColumn: "uuid"},
-	{childTable: "scryfall_card_frame_effect", childColumn: "frame_effect", parentTable: "scryfall_frame_effect", parentColumn: "code"},
-	{childTable: "scryfall_card_promo_type", childColumn: "card_uuid", parentTable: "scryfall_card", parentColumn: "uuid"},
-	{childTable: "oracle_tag_relation", childColumn: "parent_tag_id", parentTable: "oracle_tag", parentColumn: "tag_id"},
-	{childTable: "oracle_tag_relation", childColumn: "child_tag_id", parentTable: "oracle_tag", parentColumn: "tag_id"},
-	{childTable: "oracle_tagging", childColumn: "tag_id", parentTable: "oracle_tag", parentColumn: "tag_id"},
-	{childTable: "oracle_tagging", childColumn: "oracle_id", parentTable: "scryfall_card", parentColumn: "oracle_id"},
+	{childTable: tableScryfallCard, childColumn: "lang", parentTable: tableScryfallLanguage, parentColumn: "code"},
+	{childTable: tableScryfallCard, childColumn: "layout", parentTable: tableScryfallLayout, parentColumn: "code"},
+	{childTable: tableScryfallCard, childColumn: "frame", parentTable: tableScryfallFrame, parentColumn: "code"},
+	{childTable: tableScryfallCard, childColumn: "set_id", parentTable: tableScryfallSet, parentColumn: "set_id"},
+	{childTable: tableCardTranslation, childColumn: "card_id", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableFlavorTranslation, childColumn: "flavor_id", parentTable: tableScryfallCard, parentColumn: "flavor_id"},
+	{childTable: tableOracleTranslation, childColumn: "face_oracle_id", parentTable: tableScryfallCard, parentColumn: "face_oracle_id"},
+	{childTable: tableOracleTranslation, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
+	{childTable: tableSetTranslation, childColumn: "set_id", parentTable: tableScryfallSet, parentColumn: "set_id"},
+	{childTable: tableScryfallOracleRuling, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
+	{childTable: tableScryfallOracleRuling, childColumn: "ruling_key", parentTable: tableRulingTranslation, parentColumn: "ruling_key"},
+	{childTable: tableRulingTranslation, childColumn: "ruling_key", parentTable: tableScryfallOracleRuling, parentColumn: "ruling_key"},
+	{childTable: tableScryfallCardKeyword, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableScryfallCardType, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableScryfallCardFrameEffect, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableScryfallCardFrameEffect, childColumn: "frame_effect", parentTable: tableScryfallFrameEffectDef, parentColumn: "code"},
+	{childTable: tableScryfallCardPromoType, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableOracleTagRelation, childColumn: "parent_tag_id", parentTable: tableOracleTag, parentColumn: "tag_id"},
+	{childTable: tableOracleTagRelation, childColumn: "child_tag_id", parentTable: tableOracleTag, parentColumn: "tag_id"},
+	{childTable: tableOracleTagging, childColumn: "tag_id", parentTable: tableOracleTag, parentColumn: "tag_id"},
+	{childTable: tableOracleTagging, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
 }
 
-func (m *Manager) verifyImportedData(ctx context.Context, id string, results []FileResult, tableNames map[string]string) *TaskError {
+func (m *Manager) verifyImportedData(ctx context.Context, id string, results []FileResult, tableNames map[tableName]string) *TaskError {
 	m.stage(id, StageVerifying)
 	startedAt := time.Now()
-	for i, s := range specs {
+	for i, s := range sourceSpecs {
+		tableSpec := mustTableSpec(s.table)
 		tableStartedAt := time.Now()
 		m.setProgress(s.file, 0, results[i].ReadRows)
 		var count int64
 		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tableNames[s.table])).Scan(&count); err != nil {
 			return stageFail(StageVerifying, s.file, 0, err)
 		}
-		if (!s.allowExtraRows && count != results[i].ReadRows) || (s.allowExtraRows && count < results[i].ReadRows) {
+		if (!tableSpec.allowExtraRows && count != results[i].ReadRows) || (tableSpec.allowExtraRows && count < results[i].ReadRows) {
 			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: read %d, inserted %d", results[i].ReadRows, count))
 		}
 		m.setProgress(s.file, count, results[i].ReadRows)
@@ -58,11 +61,11 @@ func (m *Manager) verifyImportedData(ctx context.Context, id string, results []F
 		return stageFail(StageVerifying, "", 0, err)
 	}
 	m.log.Info("card data association validation completed", "task_id", id, "association_count", len(associationSpecs), "duration", time.Since(associationStartedAt))
-	m.stageCompleted(id, StageVerifying, "table_count", len(specs), "association_count", len(associationSpecs), "duration", time.Since(startedAt))
+	m.stageCompleted(id, StageVerifying, "table_count", len(sourceSpecs), "association_count", len(associationSpecs), "duration", time.Since(startedAt))
 	return nil
 }
 
-func validateImportedAssociations(ctx context.Context, db *sql.DB, tableNames map[string]string) error {
+func validateImportedAssociations(ctx context.Context, db *sql.DB, tableNames map[tableName]string) error {
 	for _, association := range associationSpecs {
 		var orphan string
 		err := db.QueryRowContext(ctx, associationCheckSQL(association, tableNames)).Scan(&orphan)
@@ -77,7 +80,7 @@ func validateImportedAssociations(ctx context.Context, db *sql.DB, tableNames ma
 	return nil
 }
 
-func associationCheckSQL(association associationSpec, tableNames map[string]string) string {
+func associationCheckSQL(association associationSpec, tableNames map[tableName]string) string {
 	childColumn := quote(association.childColumn)
 	parentColumn := quote(association.parentColumn)
 	return "SELECT child." + childColumn +

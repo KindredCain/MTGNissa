@@ -17,8 +17,8 @@ import (
 func (m *Manager) validateAll(id string) ([]FileResult, *TaskError) {
 	m.stage(id, StageValidating)
 	stageStartedAt := time.Now()
-	results := make([]FileResult, 0, len(specs))
-	for _, s := range specs {
+	results := make([]FileResult, 0, len(sourceSpecs))
+	for _, s := range sourceSpecs {
 		fileStartedAt := time.Now()
 		m.setProgress(s.file, 0, 0)
 		result, err := validateFile(m.ctx, m.dir, s, func(rows int64) {
@@ -37,7 +37,7 @@ func (m *Manager) validateAll(id string) ([]FileResult, *TaskError) {
 	return results, nil
 }
 
-func validateFile(ctx context.Context, dir string, s spec, progress func(int64)) (FileResult, *TaskError) {
+func validateFile(ctx context.Context, dir string, s sourceSpec, progress func(int64)) (FileResult, *TaskError) {
 	path := filepath.Join(dir, s.file)
 	f, err := os.Open(path)
 	if err != nil {
@@ -77,8 +77,9 @@ func validateFile(ctx context.Context, dir string, s spec, progress func(int64))
 		if normalized {
 			normalizedRows++
 		}
-		if !s.autoIncrementKey {
-			key, err := relationalKey(values, s)
+		tableSpec := mustTableSpec(s.table)
+		if !tableSpec.autoIncrementKey {
+			key, err := relationalKey(values, tableSpec)
 			if err != nil {
 				return FileResult{}, fail(s.file, line, err)
 			}

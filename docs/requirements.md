@@ -656,7 +656,7 @@ CARD_DATA_DIR=/data/card-data
 1. 完成全部文件预检。
 2. 创建一组新的临时卡牌表。
 3. 再次流式读取九个文件并导入临时表。
-4. 校验普通源表的导入行数与预检行数一致；合并后的 `zhs_ruling` 行数不得少于 `zhs_ruling.json` 的预检行数。
+4. 校验普通源表的导入行数与预检行数一致；合并后的 `ruling_translation` 行数不得少于 `zhs_ruling.json` 的预检行数。
 5. 再次确认文件大小和 SHA-256 未在导入期间变化。
 6. 使用 MySQL 多表 `RENAME TABLE` 原子切换新旧表。
 7. 切换成功后删除全部旧卡牌表。
@@ -668,16 +668,16 @@ CARD_DATA_DIR=/data/card-data
 加载逻辑只能操作以下固定白名单表：
 
 - `scryfall_card`
-- `zhs_card`
-- `zhs_flavor`
-- `zhs_oracle`
-- `zhs_ruling`
+- `card_translation`
+- `flavor_translation`
+- `oracle_translation`
+- `ruling_translation`
 - `scryfall_oracle_ruling`
 - `oracle_tag`
 - `oracle_tag_relation`
 - `oracle_tagging`
-- `zhs_set`
-- `zhs_type`
+- `set_translation`
+- `type_translation`
 - `scryfall_card_keyword`
 - `scryfall_card_type`
 - `scryfall_card_frame_effect`
@@ -702,12 +702,12 @@ CARD_DATA_DIR=/data/card-data
 - 关键词、类型词、牌框效果和推广类型通过多对多关联表保存。
 - 源文件字符串主键去除首尾空白后，按 Unicode 不区分大小写比较重复；多值字符串派生关系采用相同的比较规则去重，并保留第一次出现的原始大小写，避免仅有大小写或首尾空白差异的数据与 MySQL `utf8mb4_unicode_ci` 唯一键规则冲突。
 - 不建立费用符号关联表；完整费用保存在 `mana_cost`，法术力值查询使用 `cmc`，颜色查询使用颜色及颜色标识位掩码。
-- `artist_ids` 按源数组顺序以逗号连接后保存到 `scryfall_card.artist_ids VARCHAR(2048) NULL`；`former_names` 以压缩 JSON 数组文本保存到 `zhs_oracle.former_names LONGTEXT NULL`。两者均不建立关联表或索引。
+- `artist_ids` 按源数组顺序以逗号连接后保存到 `scryfall_card.artist_ids VARCHAR(2048) NULL`；`former_names` 以压缩 JSON 数组文本保存到 `oracle_translation.former_names LONGTEXT NULL`。两者均不建立关联表或索引。
 - `preview` 不参与检索，以规范 JSON 文本存入 `scryfall_card.preview` 的可空 `LONGTEXT` 列，不单独建表。
 - `rulings.jsonl` 的每条规则使用规范化英文 `comment` 的 SHA-256 生成 `ruling_key`；规范化只统一换行、弯引号、不换行空格和首尾空白，正文不折叠或改写。
-- `scryfall_oracle_ruling` 使用自增 `id` 区分每一条源记录，并保存 `oracle_id`、`ruling_key`、来源和发布日期；`zhs_ruling` 保存英文规则及中文翻译。Scryfall 中存在但中文文件缺失的规则必须补成 `translation NULL` 的英文行，已有中文翻译不得被覆盖。
+- `scryfall_oracle_ruling` 使用自增 `id` 区分每一条源记录，并保存 `oracle_id`、`ruling_key`、来源和发布日期；`ruling_translation` 保存英文规则及翻译文本。Scryfall 中存在但翻译来源文件缺失的规则必须补成 `translation NULL` 的英文行，已有翻译不得被覆盖。
 - `rulings.jsonl` 中同一 `oracle_id` 和正文可能因不同发布日期而重复出现；所有源记录必须分别保留，不得覆盖或合并。自增 `id` 只作为本次加载结果的内部行标识，业务关联仍使用 `oracle_id` 和 `ruling_key`。
-- `zhs_ruling.extra` 接受任意合法 JSON 值并以压缩 JSON 文本保存到 `LONGTEXT`，不建立 JSON 子表。
+- `ruling_translation.extra` 接受任意合法 JSON 值并以压缩 JSON 文本保存到 `LONGTEXT`，不建立 JSON 子表。
 - `oracle-tags.jsonl` 只导入 `oracle` 标签。标签主表仅保留标签 ID、名称、说明和逗号连接的别名，不保存 Scryfall URI、slug、对象类型等本系统不用的元数据。
 - `parent_ids` 和 `child_ids` 统一展开为 `oracle_tag_relation(parent_tag_id, child_tag_id)`，来自两个方向的相同关系去重；卡牌标签展开为 `oracle_tagging(oracle_id, tag_id, weight)`，`weight` 原样保存且不使用字典或枚举限制。
 - 颜色、语言、布局、卡框、卡框效果、工艺和游戏平台的代码与说明由 Scryfall 官方元数据生成小型只读字典；卡牌主表保存代码或位掩码。

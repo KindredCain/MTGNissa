@@ -209,11 +209,11 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		suffix = suffix[:12]
 	}
 	tables := allTableSpecs()
-	tempNames := make(map[string]string, len(tables))
-	backupNames := make(map[string]string, len(tables))
+	tempNames := make(map[tableName]string, len(tables))
+	backupNames := make(map[tableName]string, len(tables))
 	for _, table := range tables {
-		tempNames[table.table] = table.table + "__new_" + suffix
-		backupNames[table.table] = table.table + "__old_" + suffix
+		tempNames[table.table] = string(table.table) + "__new_" + suffix
+		backupNames[table.table] = string(table.table) + "__old_" + suffix
 	}
 	m.stage(id, StagePreparing)
 	prepareStartedAt := time.Now()
@@ -221,7 +221,7 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		tableStartedAt := time.Now()
 		q := createTableSQL(tempNames[table.table], table)
 		if _, err := m.db.ExecContext(ctx, q); err != nil {
-			return stageFail(StagePreparing, table.file, 0, err)
+			return stageFail(StagePreparing, "", 0, err)
 		}
 		m.log.Info("card data temporary table creation completed", "task_id", id, "table", table.table, "duration", time.Since(tableStartedAt))
 	}
@@ -236,7 +236,7 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 	m.stageCompleted(id, StagePreparing, "table_count", len(tables), "duration", time.Since(prepareStartedAt))
 	m.stage(id, StageImporting)
 	importStartedAt := time.Now()
-	for i, s := range specs {
+	for i, s := range sourceSpecs {
 		fileStartedAt := time.Now()
 		m.setProgress(s.file, 0, results[i].ReadRows)
 		m.log.Info("card data file import started", "task_id", id, "file", s.file, "expected_rows", results[i].ReadRows, "size_bytes", results[i].Size)
@@ -249,21 +249,21 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		m.files(id, results)
 		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration", time.Since(fileStartedAt))
 	}
-	m.stageCompleted(id, StageImporting, "file_count", len(specs), "duration", time.Since(importStartedAt))
+	m.stageCompleted(id, StageImporting, "file_count", len(sourceSpecs), "duration", time.Since(importStartedAt))
 	if taskErr := m.verifyImportedData(ctx, id, results, tempNames); taskErr != nil {
 		return taskErr
 	}
 	m.stage(id, StageSwitching)
 	switchStartedAt := time.Now()
 	for _, table := range tables {
-		q := "CREATE TABLE IF NOT EXISTS " + quote(table.table) + " LIKE " + quote(tempNames[table.table])
+		q := "CREATE TABLE IF NOT EXISTS " + quote(string(table.table)) + " LIKE " + quote(tempNames[table.table])
 		if _, err := m.db.ExecContext(ctx, q); err != nil {
-			return stageFail(StageSwitching, table.file, 0, err)
+			return stageFail(StageSwitching, "", 0, err)
 		}
 	}
 	parts := make([]string, 0, len(tables)*2)
 	for _, table := range tables {
-		parts = append(parts, quote(table.table)+" TO "+quote(backupNames[table.table]), quote(tempNames[table.table])+" TO "+quote(table.table))
+		parts = append(parts, quote(string(table.table))+" TO "+quote(backupNames[table.table]), quote(tempNames[table.table])+" TO "+quote(string(table.table)))
 	}
 	if _, err := m.db.ExecContext(ctx, "RENAME TABLE "+strings.Join(parts, ", ")); err != nil {
 		return stageFail(StageSwitching, "", 0, err)
@@ -295,7 +295,7 @@ func (m *Manager) cleanupTables(id string, names []string) error {
 	return nil
 }
 
-func (m *Manager) importFile(ctx context.Context, s spec, tableNames map[string]string, expected FileResult) (int64, *TaskError) {
+func (m *Manager) importFile(ctx context.Context, s sourceSpec, tableNames map[tableName]string, expected FileResult) (int64, *TaskError) {
 	f, err := os.Open(filepath.Join(m.dir, s.file))
 	if err != nil {
 		return 0, fail(s.file, 0, err)
@@ -305,10 +305,10 @@ func (m *Manager) importFile(ctx context.Context, s spec, tableNames map[string]
 	scanner := scannerFor(io.TeeReader(f, h))
 	const batchSize = 250
 	rows := make([]importRow, 0, batchSize)
-	derivedRowsByTable := make(map[string][]importRow)
+	derivedRowsByTable := make(map[tableName][]importRow)
 	seenSets := make(map[string]string)
 	seenTagRelations := make(map[string]struct{})
-	tableSpecs := make(map[string]spec, len(allTableSpecs()))
+	tableSpecs := make(map[tableName]spec, len(allTableSpecs()))
 	for _, table := range allTableSpecs() {
 		tableSpecs[table.table] = table
 	}
@@ -317,7 +317,7 @@ func (m *Manager) importFile(ctx context.Context, s spec, tableNames map[string]
 		if len(rows) == 0 {
 			return nil
 		}
-		if err := insertRows(ctx, m.db, tableNames[s.table], s, rows); err != nil {
+		if err := insertRows(ctx, m.db, tableNames[s.table], mustTableSpec(s.table), rows); err != nil {
 			return fail(s.file, rows[0].line, fmt.Errorf("insert batch ending at line %d: %w", rows[len(rows)-1].line, err))
 		}
 		for table, derivedRows := range derivedRowsByTable {
@@ -325,7 +325,7 @@ func (m *Manager) importFile(ctx context.Context, s spec, tableNames map[string]
 				continue
 			}
 			var err error
-			if s.table == "scryfall_oracle_ruling" && table == "zhs_ruling" {
+			if s.table == tableScryfallOracleRuling && table == tableRulingTranslation {
 				err = upsertEnglishRulings(ctx, m.db, tableNames[table], tableSpecs[table], derivedRows)
 			} else {
 				err = insertRows(ctx, m.db, tableNames[table], tableSpecs[table], derivedRows)
@@ -360,14 +360,14 @@ func (m *Manager) importFile(ctx context.Context, s spec, tableNames map[string]
 		}
 		for table, derivedRows := range derived {
 			for _, derivedRow := range derivedRows {
-				if table == "oracle_tag_relation" {
+				if table == tableOracleTagRelation {
 					relationKey := fmt.Sprint(derivedRow.values[0]) + "\x1f" + fmt.Sprint(derivedRow.values[1])
 					if _, exists := seenTagRelations[relationKey]; exists {
 						continue
 					}
 					seenTagRelations[relationKey] = struct{}{}
 				}
-				if table == "scryfall_set" {
+				if table == tableScryfallSet {
 					setID := fmt.Sprint(derivedRow.values[0])
 					signatureJSON, _ := json.Marshal(derivedRow.values[1:])
 					signature := string(signatureJSON)

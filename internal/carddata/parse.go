@@ -9,7 +9,58 @@ import (
 	"strings"
 )
 
-func parseObject(line []byte, s spec) (map[string]json.RawMessage, bool, error) {
+type sourceSpec struct {
+	table         tableName
+	file          string
+	required      []string
+	columnSources map[string]string
+	extraFields   []string
+	standardJSON  bool
+}
+
+var sourceSpecs = []sourceSpec{
+	{
+		table: tableScryfallCard, file: "scryfall_card.json",
+		required: []string{"uuid", "scryfall_id", "name", "set_code", "collector_number", "lang"},
+		columnSources: map[string]string{
+			"colors_mask":            "colors",
+			"color_identity_mask":    "color_identity",
+			"color_indicator_mask":   "color_indicator",
+			"finishes_mask":          "finishes",
+			"games_mask":             "games",
+			"attraction_lights_mask": "attraction_lights",
+		},
+		extraFields: []string{"keywords", "frame_effects", "promo_types", "set_code", "set_name", "set_type"},
+	},
+	{table: tableCardTranslation, file: "zhs_card.json", required: []string{"card_id"}},
+	{table: tableFlavorTranslation, file: "zhs_flavor.json", required: []string{"flavor_id"}},
+	{table: tableOracleTranslation, file: "zhs_oracle.json", required: []string{"face_oracle_id"}},
+	{
+		table: tableRulingTranslation, file: "zhs_ruling.json", required: []string{"ruling", "comment"},
+		columnSources: map[string]string{
+			"ruling_key":         "comment",
+			"ruling_id":          "ruling",
+			"translation_source": "source",
+			"translation_stage":  "stage",
+		},
+	},
+	{
+		table: tableScryfallOracleRuling, file: "rulings.jsonl",
+		required:      []string{"object", "oracle_id", "source", "published_at", "comment"},
+		columnSources: map[string]string{"ruling_key": "comment"},
+		extraFields:   []string{"object"}, standardJSON: true,
+	},
+	{
+		table: tableOracleTag, file: "oracle-tags.jsonl",
+		required:      []string{"object", "id", "label", "type", "parent_ids", "child_ids", "aliases", "taggings"},
+		columnSources: map[string]string{"tag_id": "id"},
+		extraFields:   []string{"object", "slug", "type", "uri", "parent_ids", "child_ids", "taggings"}, standardJSON: true,
+	},
+	{table: tableSetTranslation, file: "zhs_set.json", required: []string{"set_id"}},
+	{table: tableTypeTranslation, file: "zhs_type.json", required: []string{"type_name", "type_type"}},
+}
+
+func parseObject(line []byte, s sourceSpec) (map[string]json.RawMessage, bool, error) {
 	var obj map[string]json.RawMessage
 	if len(strings.TrimSpace(string(line))) == 0 {
 		return nil, false, errors.New("empty line")

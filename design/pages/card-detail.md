@@ -51,9 +51,9 @@ Set 名称（语言） > 卡牌名
 ### 4.3 官方释疑
 
 - “官方释疑”页签按钮只切换内容，不离开详情页。
-- 内容按 `scryfall_card.oracle_id → scryfall_oracle_ruling.oracle_id → zhs_ruling.ruling_key` 取得。
+- 内容按 `scryfall_card.oracle_id → scryfall_oracle_ruling.oracle_id → ruling_translation.ruling_key` 取得。
 - 每条释疑显示发布日期和来源；`source = wotc` 在界面显示为 `WotC`。
-- 正文优先显示 `zhs_ruling.translation`；中文缺失时显示 `zhs_ruling.comment` 英文原文。
+- 正文优先显示 `ruling_translation.translation`；翻译缺失时显示 `ruling_translation.comment` 英文原文。
 - 中文回退属于内部展示规则，标题区只显示释疑数量，不展示“中文优先”等说明文案。
 - 样例同时以较弱层级保留英文原文，用来表达中英文对应关系；正式实现可以根据最终信息密度决定默认显示或折叠英文。
 - 默认按发布日期从新到旧排列；日期相同按源记录稳定标识排序。

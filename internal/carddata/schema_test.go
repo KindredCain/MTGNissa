@@ -68,9 +68,9 @@ func TestRulingKeyNormalizesTypography(t *testing.T) {
 }
 
 func TestRulingsSpecAndEnglishFallback(t *testing.T) {
-	var rulingsSpec spec
-	for _, candidate := range specs {
-		if candidate.table == "scryfall_oracle_ruling" {
+	var rulingsSpec sourceSpec
+	for _, candidate := range sourceSpecs {
+		if candidate.table == tableScryfallOracleRuling {
 			rulingsSpec = candidate
 			break
 		}
@@ -97,20 +97,21 @@ func TestRulingsSpecAndEnglishFallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("deriveRows() error = %v", err)
 	}
-	row := derived["zhs_ruling"][0].values
+	row := derived[tableRulingTranslation][0].values
 	if row[0] != values[2] || row[1] != nil || row[3] != nil || row[6] != "2025-02-07" {
 		t.Fatalf("English fallback row = %#v", row)
 	}
 }
 
 func TestZHSRulingColumnMapping(t *testing.T) {
-	var rulingSpec spec
-	for _, candidate := range specs {
-		if candidate.table == "zhs_ruling" {
-			rulingSpec = candidate
+	var rulingSource sourceSpec
+	for _, candidate := range sourceSpecs {
+		if candidate.table == tableRulingTranslation {
+			rulingSource = candidate
 			break
 		}
 	}
+	rulingSpec := mustTableSpec(rulingSource.table)
 	if !rulingSpec.allowExtraRows || strings.Join(rulingSpec.key, ",") != "ruling_key" {
 		t.Fatalf("zhs ruling spec = %#v", rulingSpec)
 	}
@@ -123,7 +124,7 @@ func TestZHSRulingColumnMapping(t *testing.T) {
 		"last_published_at": json.RawMessage(`"2025-02-07"`),
 		"extra":             json.RawMessage(`{"release_notes":{}}`),
 	}
-	values, err := rowValues(obj, rulingSpec)
+	values, err := rowValues(obj, rulingSource)
 	if err != nil {
 		t.Fatalf("rowValues() error = %v", err)
 	}
@@ -133,22 +134,22 @@ func TestZHSRulingColumnMapping(t *testing.T) {
 }
 
 func TestProducedManaNullRemainsNull(t *testing.T) {
-	values, err := rowValues(map[string]json.RawMessage{
+	values, err := rowValuesFor(map[string]json.RawMessage{
 		"produced_mana": json.RawMessage("null"),
 	}, spec{columns: []columnSpec{
 		col("produced_mana", "VARCHAR(64) NULL", kindStringArray),
-	}})
+	}}, sourceSpec{})
 	if err != nil {
-		t.Fatalf("rowValues() error = %v", err)
+		t.Fatalf("rowValuesFor() error = %v", err)
 	}
 	if values[0] != nil {
-		t.Fatalf("rowValues() produced_mana = %#v, want nil", values[0])
+		t.Fatalf("rowValuesFor() produced_mana = %#v, want nil", values[0])
 	}
 }
 
 func TestScryfallCardStoresProducedManaAsStringArray(t *testing.T) {
 	for _, candidate := range specs {
-		if candidate.table != "scryfall_card" {
+		if candidate.table != tableScryfallCard {
 			continue
 		}
 		for _, column := range candidate.columns {
@@ -180,9 +181,9 @@ func TestMetadataArraysStayOnMainTables(t *testing.T) {
 	var cardSpec, oracleSpec spec
 	for _, candidate := range specs {
 		switch candidate.table {
-		case "scryfall_card":
+		case tableScryfallCard:
 			cardSpec = candidate
-		case "zhs_oracle":
+		case tableOracleTranslation:
 			oracleSpec = candidate
 		}
 	}
@@ -209,16 +210,16 @@ func TestMetadataArraysStayOnMainTables(t *testing.T) {
 		t.Fatalf("former_names = %q", formerNames)
 	}
 	for _, candidate := range derivedSpecs {
-		if candidate.table == "scryfall_card_artist" || candidate.table == "zhs_oracle_former_name" || candidate.table == "scryfall_card_mana_symbol" {
+		if candidate.table == "scryfall_card_artist" || candidate.table == "oracle_translation_former_name" || candidate.table == "scryfall_card_mana_symbol" {
 			t.Fatalf("obsolete derived table still exists: %s", candidate.table)
 		}
 	}
 }
 
 func TestOracleTagSpecAndDerivedRows(t *testing.T) {
-	var tagSpec spec
-	for _, candidate := range specs {
-		if candidate.table == "oracle_tag" {
+	var tagSpec sourceSpec
+	for _, candidate := range sourceSpecs {
+		if candidate.table == tableOracleTag {
 			tagSpec = candidate
 			break
 		}
@@ -245,11 +246,11 @@ func TestOracleTagSpecAndDerivedRows(t *testing.T) {
 	if err != nil {
 		t.Fatalf("deriveRows() error = %v", err)
 	}
-	relations := derived["oracle_tag_relation"]
+	relations := derived[tableOracleTagRelation]
 	if len(relations) != 2 || relations[0].values[0] != "parent-a" || relations[0].values[1] != values[0] || relations[1].values[0] != values[0] || relations[1].values[1] != "child-a" {
 		t.Fatalf("oracle tag relations = %#v", relations)
 	}
-	taggings := derived["oracle_tagging"]
+	taggings := derived[tableOracleTagging]
 	if len(taggings) != 1 || taggings[0].values[0] != "2445e58b-87ed-4ab2-8209-a5e1f566fba7" || taggings[0].values[1] != values[0] || taggings[0].values[2] != "median" {
 		t.Fatalf("oracle taggings = %#v", taggings)
 	}

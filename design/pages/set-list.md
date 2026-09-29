@@ -36,7 +36,7 @@ Set 数据来自 `scryfall_set`：
 - `name`：系列英文名称。
 - `set_type`：系列类型。
 
-中文系列名称通过 `zhs_set.set_id` 逻辑关联取得；没有中文名称时回退到 `scryfall_set.name`。
+翻译系列名称通过 `set_translation.set_id` 逻辑关联取得；没有翻译名称时回退到 `scryfall_set.name`。
 
 卡牌数量、发行日期和可用语言从该 Set 关联的 `scryfall_card` 记录聚合得到，不在页面中使用个人数据库统计。
 

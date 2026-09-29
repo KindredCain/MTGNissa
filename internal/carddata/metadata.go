@@ -23,9 +23,9 @@ var gameBits = map[string]int64{
 	"sega":   16,
 }
 
-func dictionaryRows() map[string][]importRow {
-	return map[string][]importRow{
-		"scryfall_color": rows(
+func dictionaryRows() map[tableName][]importRow {
+	return map[tableName][]importRow{
+		tableScryfallColor: rows(
 			[]any{"W", int64(1), "White", "White mana color", int64(1)},
 			[]any{"U", int64(2), "Blue", "Blue mana color", int64(2)},
 			[]any{"B", int64(4), "Black", "Black mana color", int64(3)},
@@ -33,7 +33,7 @@ func dictionaryRows() map[string][]importRow {
 			[]any{"G", int64(16), "Green", "Green mana color", int64(5)},
 			[]any{"C", int64(32), "Colorless", "Colorless; represented as a color code only where the API permits it", int64(6)},
 		),
-		"scryfall_language": rows(
+		tableScryfallLanguage: rows(
 			[]any{"en", "English"}, []any{"es", "Spanish"}, []any{"fr", "French"},
 			[]any{"de", "German"}, []any{"it", "Italian"}, []any{"pt", "Portuguese"},
 			[]any{"ja", "Japanese"}, []any{"ko", "Korean"}, []any{"ru", "Russian"},
@@ -41,7 +41,7 @@ func dictionaryRows() map[string][]importRow {
 			[]any{"he", "Hebrew"}, []any{"la", "Latin"}, []any{"grc", "Ancient Greek"},
 			[]any{"ar", "Arabic"}, []any{"sa", "Sanskrit"}, []any{"ph", "Phyrexian"},
 		),
-		"scryfall_layout": rows(
+		tableScryfallLayout: rows(
 			[]any{"normal", "Normal", "A standard Magic card with one face", "single_faced"},
 			[]any{"split", "Split", "A split-faced card", "single_sided_multi_face"},
 			[]any{"flip", "Flip", "A card that inverts vertically with the flip keyword", "single_sided_multi_face"},
@@ -67,14 +67,14 @@ func dictionaryRows() map[string][]importRow {
 			[]any{"art_series", "Art Series", "A collectible double-faced Art Series card", "double_sided"},
 			[]any{"reversible_card", "Reversible card", "A card with two unrelated sides", "reversible"},
 		),
-		"scryfall_frame": rows(
+		tableScryfallFrame: rows(
 			[]any{"1993", "1993 frame", "The original Magic card frame"},
 			[]any{"1997", "1997 frame", "The updated original frame introduced in 1997"},
 			[]any{"2003", "2003 frame", "The modern frame introduced with Eighth Edition"},
 			[]any{"2015", "2015 frame", "The modern frame with the holofoil-stamp era treatment"},
 			[]any{"future", "Future frame", "The experimental future-shifted frame"},
 		),
-		"scryfall_frame_effect": rows(
+		tableScryfallFrameEffectDef: rows(
 			[]any{"legendary", "Legendary crown"}, []any{"miracle", "Miracle frame"},
 			[]any{"nyxtouched", "Nyx-touched frame"}, []any{"draft", "Draft-matters frame"},
 			[]any{"devoid", "Devoid frame"}, []any{"tombstone", "Odyssey tombstone mark"},
@@ -88,12 +88,12 @@ func dictionaryRows() map[string][]importRow {
 			[]any{"shatteredglass", "Shattered Glass frame"}, []any{"convertdfc", "More Than Meets the Eye transform marks"},
 			[]any{"fandfc", "Fan transform marks"}, []any{"upsidedowndfc", "Upside Down transform marks"},
 		),
-		"scryfall_finish": rows(
+		tableScryfallFinish: rows(
 			[]any{"nonfoil", int64(1), "Nonfoil"},
 			[]any{"foil", int64(2), "Foil"},
 			[]any{"etched", int64(4), "Etched foil"},
 		),
-		"scryfall_game": rows(
+		tableScryfallGame: rows(
 			[]any{"paper", int64(1), "Paper"},
 			[]any{"arena", int64(2), "Magic: The Gathering Arena"},
 			[]any{"mtgo", int64(4), "Magic Online"},

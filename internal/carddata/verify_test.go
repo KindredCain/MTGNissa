@@ -6,7 +6,7 @@ import (
 )
 
 func TestAssociationSpecsReferenceDefinedColumns(t *testing.T) {
-	tables := make(map[string]map[string]struct{})
+	tables := make(map[tableName]map[string]struct{})
 	for _, table := range allTableSpecs() {
 		columns := make(map[string]struct{}, len(table.columns))
 		for _, column := range table.columns {
@@ -22,18 +22,18 @@ func TestAssociationSpecsReferenceDefinedColumns(t *testing.T) {
 
 func TestAssociationCheckSQLUsesTemporaryTablesAndStopsAtFirstOrphan(t *testing.T) {
 	association := associationSpec{
-		childTable:   "zhs_card",
+		childTable:   tableCardTranslation,
 		childColumn:  "card_id",
-		parentTable:  "scryfall_card",
+		parentTable:  tableScryfallCard,
 		parentColumn: "uuid",
 	}
-	tableNames := map[string]string{
-		"zhs_card":      "zhs_card__new_test",
-		"scryfall_card": "scryfall_card__new_test",
+	tableNames := map[tableName]string{
+		tableCardTranslation: "card_translation__new_test",
+		tableScryfallCard:    "scryfall_card__new_test",
 	}
 	query := associationCheckSQL(association, tableNames)
 	for _, fragment := range []string{
-		"FROM `zhs_card__new_test` AS child",
+		"FROM `card_translation__new_test` AS child",
 		"LEFT JOIN `scryfall_card__new_test` AS parent",
 		"parent.`uuid` = child.`card_id`",
 		"child.`card_id` IS NOT NULL",
@@ -45,7 +45,7 @@ func TestAssociationCheckSQLUsesTemporaryTablesAndStopsAtFirstOrphan(t *testing.
 	}
 }
 
-func assertAssociationColumn(t *testing.T, tables map[string]map[string]struct{}, table, column string) {
+func assertAssociationColumn(t *testing.T, tables map[tableName]map[string]struct{}, table tableName, column string) {
 	t.Helper()
 	columns, ok := tables[table]
 	if !ok {

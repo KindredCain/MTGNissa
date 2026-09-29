@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestUniqueStringsIgnoresCaseAndWhitespace(t *testing.T) {
+func TestTransformUniqueStringsIgnoresCaseAndWhitespace(t *testing.T) {
 	got := uniqueStrings([]string{
 		"Family gathering",
 		"Food",
