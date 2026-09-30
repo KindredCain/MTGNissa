@@ -120,6 +120,8 @@ func applyFile(c *Config, path string) error {
 	}
 	defer f.Close()
 	var raw fileConfig
+	raw.Databases.Card.MaxIdle = c.CardDB.MaxIdle
+	raw.Databases.App.MaxIdle = c.AppDB.MaxIdle
 	decoder := yaml.NewDecoder(f)
 	decoder.KnownFields(true)
 	if err := decoder.Decode(&raw); err != nil {
@@ -175,9 +177,7 @@ func applyFileDB(db *DB, raw fileDB, prefix string) error {
 	if raw.MaxOpen != 0 {
 		db.MaxOpen = raw.MaxOpen
 	}
-	if raw.MaxIdle != 0 {
-		db.MaxIdle = raw.MaxIdle
-	}
+	db.MaxIdle = raw.MaxIdle
 	if raw.MaxIdleTime != "" {
 		v, err := positiveDuration(prefix+".conn_max_idle_time", raw.MaxIdleTime)
 		if err != nil {
