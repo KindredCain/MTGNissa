@@ -184,7 +184,7 @@ operation_log
 
 ### 5.2 卡组拥有量与异常
 
-按 `oracle_id` 汇总收藏两列之和得到实际拥有量。计算当前卡组数量和所有卡组编辑总数时，只汇总 `section_type IN ('mainboard', 'sideboard', 'commander')` 的 `deck_card.quantity`；同一张牌出现在一副卡组的多个计数分区时，使用卡组数仍只计算一次 `COUNT(DISTINCT deck_id)`。备选区只展示，不产生数量不足或多卡组占用。当前卡组数量不足优先于多卡组占用，判断公式直接采用需求文档第 11 节，不落库存分配表。
+按 `oracle_id` 汇总收藏两列之和得到实际拥有量。计算当前卡组数量和所有卡组编辑总数时，只汇总 `section_type IN ('mainboard', 'sideboard', 'commander')` 的 `deck_card.quantity`；同一张牌出现在一副卡组的多个计数分区时，使用卡组数仍只计算一次 `COUNT(DISTINCT deck_id)`。备选区只展示，不产生数量不足或卡组占用。当前卡组数量不足优先于卡组占用，判断公式直接采用需求文档第 11 节，不落库存分配表。
 
 类型、颜色、Mana Value、曲线以及土地/非地统计从 Card DB 为每个 `oracle_id` 选择一份逻辑卡牌属性后计算。卡组列表的总数、异常数和统计均实时派生；单用户规模下无需维护容易失真的缓存列。
 

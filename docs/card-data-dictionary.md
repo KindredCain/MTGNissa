@@ -81,7 +81,7 @@
 
 `artist_ids` 不用于当前检索，按源顺序以逗号连接保存在 `scryfall_card`；`former_names` 可能包含逗号，以压缩 JSON 数组文本保存在 `oracle_translation`。两者只作为元数据保留，不拆关联表、不建立索引。
 
-系统不提供单个费用符号查询，因此不从 `mana_cost` 派生费用符号表。完整费用展示和精确值保留在 `mana_cost`，费用高低及范围查询使用 `cmc`，卡牌颜色和颜色标识查询使用对应位掩码。
+系统不提供单个费用符号查询，因此不从 `mana_cost` 派生费用符号表。完整费用保留在 `mana_cost`；展示时前端按花括号符号顺序解析，并通过 Scryfall `/symbology` 的 `symbol → svg_uri` 映射渲染图标。费用高低及范围查询使用 `cmc`，卡牌颜色和颜色标识查询使用对应位掩码。
 
 主表为 `cmc`、`mana_cost`、牌名、稀有度、发行日期、语言、布局、卡框、位掩码和印刷版本关联字段建立 B-tree 索引。当前系统不按英文规则叙述进行全文检索，因此不创建全文索引；类别筛选使用派生的 `scryfall_card_type` 表。
 
@@ -181,7 +181,7 @@
 | `nonfoil` | `BOOLEAN` | 上游兼容字段：是否存在普通不闪。 |
 | `attraction_lights_mask` | `TINYINT UNSIGNED` | 由 `attraction_lights` 生成的灯号位掩码。 |
 | `preview` | `LONGTEXT NULL` | 不参与检索的 `preview` 对象；以压缩后的合法 JSON 文本保存。 |
-| `mana_cost` | `VARCHAR(255) NULL` | 完整法术力费用；不拆分符号，直接用于展示或完整值查询。 |
+| `mana_cost` | `VARCHAR(255) NULL` | 完整法术力费用；数据库不拆分符号，前端展示时解析为 Scryfall 法术力图标，也用于完整值查询。 |
 | `flavor_id` | `CHAR(36) NULL` | 逻辑关联 `flavor_translation.flavor_id`。 |
 | `face_oracle_id` | `CHAR(36) NULL` | 逻辑关联 `oracle_translation.face_oracle_id`。 |
 | `created_at` | `DATETIME(6)` | 上游创建时间。 |
