@@ -388,6 +388,7 @@ var dictionarySpecs = []spec{
 		columns: []columnSpec{
 			col("code", "VARCHAR(8) NOT NULL", kindString),
 			col("name", "VARCHAR(64) NOT NULL", kindString),
+			col("sort_order", "TINYINT UNSIGNED NOT NULL", kindInteger),
 		},
 	},
 	{

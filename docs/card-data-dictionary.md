@@ -248,7 +248,7 @@ scryfall_card.set_id
 | 表 | 列定义 | 主键 | 使用位置 |
 | --- | --- | --- | --- |
 | `scryfall_color` | `code CHAR(1) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(32) NOT NULL`、`description VARCHAR(255) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | 三个颜色相关位掩码。 |
-| `scryfall_language` | `code VARCHAR(8) NOT NULL`、`name VARCHAR(64) NOT NULL` | `code` | `scryfall_card.lang`。 |
+| `scryfall_language` | `code VARCHAR(8) NOT NULL`、`name VARCHAR(64) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | `scryfall_card.lang`；`sort_order` 固定语言字典及产品展示顺序。完整字典包含 `qya`（Quenya）和 `dw`（Dwarvish）。 |
 | `scryfall_layout` | `code VARCHAR(64) NOT NULL`、`name VARCHAR(128) NOT NULL`、`description VARCHAR(512) NOT NULL`、`face_category VARCHAR(32) NOT NULL` | `code` | `scryfall_card.layout`。 |
 | `scryfall_frame` | `code VARCHAR(32) NOT NULL`、`name VARCHAR(128) NOT NULL`、`description VARCHAR(512) NOT NULL` | `code` | `scryfall_card.frame`。 |
 | `scryfall_frame_effect` | `code VARCHAR(64) NOT NULL`、`description VARCHAR(512) NOT NULL` | `code` | `scryfall_card_frame_effect.frame_effect`。 |
@@ -279,7 +279,7 @@ WHERE (color_identity_mask & 2) = 2;
 | --- | --- | --- | --- |
 | `uuid` | UUID | 未确认 | 当前数据集内部的卡牌记录主键；不是 Scryfall 标准 `id` 字段。 |
 | `scryfall_id` | UUID | 映射 | Scryfall Card Object 的 `id`，唯一标识一个具体印刷版本。 |
-| `face_index` | integer | 已确认/映射 | 扁平化后的 Scryfall `card_faces` 数组下标：没有 `card_faces` 的普通单面牌为 `-1`，首个牌面为 `0`，第二个牌面为 `1`。图片侧面还需结合 `layout`：`split`、`flip`、`adventure` 的多个牌面都在 `front`；`transform`、`modal_dfc`、`double_faced_token`、`art_series` 及 `reversible_card` 的 `0` 为正面、`1` 为背面。 |
+| `face_index` | integer | 已确认/映射 | 扁平化后的 Scryfall `card_faces` 数组下标：没有 `card_faces` 的普通单面牌为 `-1`，首个牌面为 `0`，第二个牌面为 `1`。图片侧面还需结合 `layout`：`split`、`flip`、`adventure` 的多个牌面都在 `front`，不显示翻面控件；`transform`、`modal_dfc`、`double_faced_token`、`art_series` 及 `reversible_card` 的 `0` 为正面、`1` 为背面，并统一复用相同的列表和详情页正反面切换交互。 |
 | `lang` | string | 官方 | 当前印刷版本的语言代码。 |
 | `oracle_id` | UUID? | 官方 | Oracle 身份 ID；同一规则身份的重印版本通常共享此值。 |
 | `layout` | string | 官方 | 卡牌版面类型，例如 `normal`、`split`、`transform`、`modal_dfc`。 |
