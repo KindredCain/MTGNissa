@@ -138,12 +138,16 @@
 | `hand_modifier` | `VARCHAR(32) NULL` | Vanguard 手牌修正。 |
 | `life_modifier` | `VARCHAR(32) NULL` | Vanguard 生命修正。 |
 | `loyalty` | `VARCHAR(32) NULL` | 忠诚值，保留非纯数字表达。 |
+| `loyalty_numeric` | `DECIMAL(12,4) NULL` | 忠诚值数值派生列；原值能完整解析为十进制数时写入，否则为 `NULL`。 |
 | `name` | `VARCHAR(512)` | 英文牌名。 |
 | `face_name` | `VARCHAR(512) NULL` | 当前牌面名称。 |
 | `oracle_text` | `LONGTEXT NULL` | Oracle 规则叙述。 |
 | `power` | `VARCHAR(32) NULL` | 力量，保留 `*` 等表达。 |
+| `power_numeric` | `DECIMAL(12,4) NULL` | 力量数值派生列；原值能完整解析为十进制数时写入，否则为 `NULL`。 |
 | `reserved` | `BOOLEAN` | 是否属于保留列表。 |
 | `toughness` | `VARCHAR(32) NULL` | 防御力，保留 `*` 等表达。 |
+| `toughness_numeric` | `DECIMAL(12,4) NULL` | 防御力数值派生列；原值能完整解析为十进制数时写入，否则为 `NULL`。 |
+| `pt_numeric` | `DECIMAL(12,4) NULL` | 同一牌面数值力量与数值防御力之和；任一数值列为空时为 `NULL`。 |
 | `type_line` | `VARCHAR(512)` | 完整英文类别栏。 |
 | `artist` | `VARCHAR(255) NULL` | 展示用画师名称。 |
 | `artist_ids` | `VARCHAR(2048) NULL` | Scryfall 画师 UUID 数组按源顺序以逗号连接；不参与检索。 |
@@ -181,13 +185,13 @@
 | `nonfoil` | `BOOLEAN` | 上游兼容字段：是否存在普通不闪。 |
 | `attraction_lights_mask` | `TINYINT UNSIGNED` | 由 `attraction_lights` 生成的灯号位掩码。 |
 | `preview` | `LONGTEXT NULL` | 不参与检索的 `preview` 对象；以压缩后的合法 JSON 文本保存。 |
-| `mana_cost` | `VARCHAR(255) NULL` | 完整法术力费用；数据库不拆分符号，前端展示时解析为 Scryfall 法术力图标，也用于完整值查询。 |
+| `mana_cost` | `VARCHAR(255) NULL` | 完整法术力费用；数据库不拆分符号，前端展示时解析为 Scryfall 法术力图标。 |
 | `flavor_id` | `CHAR(36) NULL` | 逻辑关联 `flavor_translation.flavor_id`。 |
 | `face_oracle_id` | `CHAR(36) NULL` | 逻辑关联 `oracle_translation.face_oracle_id`。 |
 | `created_at` | `DATETIME(6)` | 上游创建时间。 |
 | `updated_at` | `DATETIME(6)` | 上游更新时间。 |
 
-普通索引：`scryfall_id`、`oracle_id`、`face_oracle_id`、`flavor_id`、`set_id`、`multiverse_id`、`(set_id, collector_number, lang)`、`cmc`、`mana_cost`、`rarity`、`released_at`、`name`、`lang`、`layout`、`frame`、`colors_mask`、`color_identity_mask`、`finishes_mask`、`games_mask`。
+普通索引：`scryfall_id`、`oracle_id`、`face_oracle_id`、`flavor_id`、`set_id`、`multiverse_id`、`(set_id, collector_number, lang)`、`cmc`、`mana_cost`、`rarity`、`released_at`、`name`、`lang`、`layout`、`frame`、`colors_mask`、`color_identity_mask`、`power_numeric`、`toughness_numeric`、`loyalty_numeric`、`pt_numeric`、`finishes_mask`、`games_mask`。
 
 #### 2.2.2 系列实体与中文系列翻译
 
