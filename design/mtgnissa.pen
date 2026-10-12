@@ -23176,7 +23176,7 @@
       "x": 1460,
       "y": -1285,
       "name": "Component / Deck List Card",
-      "context": "参考 Archidekt Deck Search 的信息卡片。整张卡片均可点击并进入对应 deck_id 的卡组详情页；仅右上更多操作按钮阻止卡片跳转并打开菜单。菜单固定只包含编辑卡组、复制卡组、复制卡组代码，展开态见 Prototype / Deck List — More Actions Open。复制卡组代码成功显示非阻断自动消失提示，失败使用统一错误弹窗。",
+      "context": "参考 Archidekt Deck Search 的信息卡片。整张卡片均可点击并进入对应 deck_id 的卡组详情页；仅右上更多操作按钮阻止卡片跳转并打开菜单。菜单从上到下包含编辑卡组、复制卡组、复制卡组代码、删除卡组；删除卡组固定在最下方并打开确认弹窗。复制卡组代码成功显示非阻断自动消失提示，失败使用统一错误弹窗。",
       "reusable": true,
       "clip": true,
       "width": 328,
@@ -23408,7 +23408,7 @@
                   "type": "frame",
                   "id": "HsWzq",
                   "name": "Deck More Actions",
-                  "context": "打开卡组操作菜单：编辑卡组、复制卡组、复制卡组代码；阻止卡片跳转。展开态见 Prototype / Deck List — More Actions Open。",
+                  "context": "打开卡组操作菜单：编辑卡组、复制卡组、复制卡组代码、删除卡组；阻止卡片跳转。删除卡组固定在最下方并打开确认弹窗。",
                   "width": 28,
                   "height": 26,
                   "fill": "#F1F4F1",
@@ -23534,7 +23534,7 @@
       "x": 1547,
       "y": -1873,
       "name": "Component / Deck Detail Header",
-      "context": "卡组详情整页使用同一深绿色渐变背景，本组件只承载信息，不形成第二段背景。",
+      "context": "卡组详情整页使用同一深绿色渐变背景，本组件只承载信息，不形成第二段背景。详情态最右侧显示危险色删除卡组按钮；编辑态隐藏该按钮。",
       "reusable": true,
       "width": 1440,
       "height": 90,
@@ -23744,6 +23744,45 @@
                   "name": "Copy Deck Code Button Label",
                   "fill": "#18201D",
                   "content": "复制卡组代码",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "650"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wmKF2",
+              "name": "Delete Deck Button",
+              "context": "仅在卡组详情页显示，位于并排操作按钮最右侧。点击打开统一删除确认弹窗，不直接删除。",
+              "height": 36,
+              "fill": "#8A3F3A",
+              "cornerRadius": 7,
+              "stroke": "#73332F",
+              "strokeWidth": 1,
+              "gap": 7,
+              "padding": [
+                0,
+                13
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "qr1CJ",
+                  "name": "Delete Deck Button Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "trash-2",
+                  "library": "lucide",
+                  "fill": "#FFF8F5"
+                },
+                {
+                  "type": "text",
+                  "id": "SvOck",
+                  "name": "Delete Deck Button Label",
+                  "fill": "#FFF8F5",
+                  "content": "删除卡组",
                   "fontFamily": "Noto Sans SC",
                   "fontSize": 12,
                   "fontWeight": "650"
@@ -43356,6 +43395,9 @@
             },
             "SWBnd": {
               "enabled": false
+            },
+            "wmKF2": {
+              "enabled": false
             }
           }
         },
@@ -48963,6 +49005,9 @@
               "enabled": false
             },
             "SWBnd": {
+              "enabled": false
+            },
+            "wmKF2": {
               "enabled": false
             }
           }
@@ -57287,7 +57332,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -59033,7 +59079,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -59952,7 +59999,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -61700,7 +61748,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -62209,7 +62258,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -63957,7 +64007,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -64602,7 +64653,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -66350,7 +66402,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -66747,7 +66800,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -68495,7 +68549,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -68898,7 +68953,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -70646,7 +70702,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -71049,7 +71106,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -72797,7 +72855,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -73265,7 +73324,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -75013,7 +75073,8 @@
                           "fill": "#18201D",
                           "content": "2",
                           "fontFamily": "$font",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -75611,7 +75672,8 @@
                               "fill": "#18201D",
                               "content": "2",
                               "fontFamily": "$font",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -75763,6 +75825,9 @@
               "enabled": false
             },
             "SWBnd": {
+              "enabled": false
+            },
+            "wmKF2": {
               "enabled": false
             }
           }
@@ -81711,6 +81776,9 @@
               "enabled": false
             },
             "SWBnd": {
+              "enabled": false
+            },
+            "wmKF2": {
               "enabled": false
             }
           }
@@ -87889,9 +87957,9 @@
       "x": 2787,
       "y": -1493,
       "name": "Prototype / Deck List — More Actions Open",
-      "context": "卡组列表卡片的更多操作展开态。更多按钮和菜单项均阻止卡片详情跳转；菜单只包含编辑卡组、复制卡组、复制卡组代码。点击菜单外立即关闭，不执行任何操作。",
+      "context": "卡组列表卡片的更多操作展开态。更多按钮和菜单项均阻止卡片详情跳转；菜单从上到下包含编辑卡组、复制卡组、复制卡组代码、删除卡组。删除卡组位于最下方并打开确认弹窗。点击菜单外立即关闭，不执行任何操作。",
       "width": 420,
-      "height": 430,
+      "height": 470,
       "fill": "#F4F6F2",
       "cornerRadius": 12,
       "stroke": "#D6DBD6",
@@ -87916,7 +87984,7 @@
           "name": "Deck Card Menu Stage",
           "clip": true,
           "width": "fill_container",
-          "height": 340,
+          "height": 374,
           "fill": "#E9EEE9",
           "cornerRadius": 10,
           "stroke": "#D6DBD6",
@@ -87932,9 +88000,11 @@
               "y": 18,
               "width": 328,
               "height": 292,
+              "context": "参考 Archidekt Deck Search 的信息卡片。整张卡片均可点击并进入对应 deck_id 的卡组详情页；仅右上更多操作按钮阻止卡片跳转并打开菜单。菜单从上到下包含编辑卡组、复制卡组、复制卡组代码、删除卡组；删除卡组固定在最下方并打开确认弹窗。",
               "descendants": {
                 "HsWzq": {
-                  "fill": "#DCE5DF"
+                  "fill": "#DCE5DF",
+                  "context": "打开卡组操作菜单：编辑卡组、复制卡组、复制卡组代码、删除卡组；阻止卡片跳转。删除卡组固定在最下方并打开确认弹窗。"
                 }
               }
             },
@@ -87945,7 +88015,7 @@
               "y": 228,
               "name": "Deck More Actions Menu",
               "width": 160,
-              "height": 112,
+              "height": 146,
               "fill": "#FFFFFF",
               "cornerRadius": 9,
               "stroke": "#C8D0CA",
@@ -88072,6 +88142,44 @@
                       "fontFamily": "$font",
                       "fontSize": 12,
                       "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "T4Oze",
+                  "name": "Deck Menu Item / 删除卡组",
+                  "context": "位于更多操作菜单最下方。点击打开统一删除确认弹窗，不直接删除。",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "#FFF4F2",
+                  "cornerRadius": 6,
+                  "gap": 9,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mCJWf",
+                      "name": "Deck Menu Icon / 删除卡组",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "trash-2",
+                      "library": "lucide",
+                      "fill": "#A94747"
+                    },
+                    {
+                      "type": "text",
+                      "id": "vr2zm",
+                      "name": "Deck Menu Label / 删除卡组",
+                      "fill": "#A94747",
+                      "content": "删除卡组",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "600"
                     }
                   ]
                 }
@@ -88487,6 +88595,215 @@
               "fontFamily": "$font",
               "fontSize": 12,
               "fontWeight": "600"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "RrQCO",
+      "x": 4867,
+      "y": -1493,
+      "name": "Prototype / Delete Deck Confirmation Modal",
+      "context": "卡组列表与卡组详情共用的删除确认弹窗。删除是不可恢复操作；点击遮罩不关闭，只能选择取消或删除卡组。",
+      "width": 620,
+      "height": 460,
+      "fill": "#F4F6F2",
+      "cornerRadius": 12,
+      "stroke": "#D6DBD6",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "gap": 14,
+      "padding": 24,
+      "children": [
+        {
+          "type": "text",
+          "id": "yNIbl",
+          "name": "Delete Deck Modal Prototype Title",
+          "fill": "#18201D",
+          "content": "删除卡组 · 确认弹窗",
+          "fontFamily": "$font",
+          "fontSize": 14,
+          "fontWeight": "600"
+        },
+        {
+          "type": "frame",
+          "id": "UyvhK",
+          "name": "Delete Deck Modal Stage",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "#08100DB8",
+          "cornerRadius": 10,
+          "stroke": "#D6DBD6",
+          "strokeWidth": 1,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "LU40F",
+              "name": "Delete Deck Confirmation Modal",
+              "context": "不设置右上角关闭按钮，点击遮罩不关闭。",
+              "clip": true,
+              "width": 520,
+              "height": 260,
+              "fill": "#F1F2EC",
+              "cornerRadius": 12,
+              "stroke": "#D7DBD6",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000040",
+                "offset": {
+                  "x": 0,
+                  "y": 12
+                },
+                "blur": 32
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IAFZT",
+                  "name": "Delete Deck Confirmation Header",
+                  "width": "fill_container",
+                  "height": 68,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    24
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bfhXF",
+                      "name": "Delete Deck Confirmation Title",
+                      "fill": "#18201D",
+                      "content": "删除卡组？",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 20,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TXY8I",
+                  "name": "Delete Deck Confirmation Body",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": [
+                    18,
+                    24,
+                    12,
+                    24
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nWgwg",
+                      "name": "Delete Deck Confirmation Message",
+                      "fill": "#18201D",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "删除后无法恢复。",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "C7pUQC",
+                      "name": "Delete Deck Confirmation Note",
+                      "fill": "#6A7871",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "该卡组记录将被永久删除。",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "h6tiwt",
+                  "name": "Delete Deck Confirmation Actions",
+                  "width": "fill_container",
+                  "height": 72,
+                  "stroke": "#D7DBD6",
+                  "strokeWidth": 1,
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    24
+                  ],
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "IwRPS",
+                      "name": "Cancel Delete Deck Button",
+                      "context": "关闭弹窗并保留当前卡组。",
+                      "width": 88,
+                      "height": 36,
+                      "fill": "#F0F2EE",
+                      "cornerRadius": 8,
+                      "stroke": "#D6DBD6",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xf2yx",
+                          "name": "Cancel Delete Deck Button Label",
+                          "fill": "#18201D",
+                          "content": "取消",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nkGFl",
+                      "name": "Confirm Delete Deck Button",
+                      "context": "提交删除当前 deck_id；成功后列表移除卡组，详情页返回卡组列表。",
+                      "width": 108,
+                      "height": 36,
+                      "fill": "#8A3F3A",
+                      "cornerRadius": 8,
+                      "stroke": "#73332F",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k4JuE",
+                          "name": "Confirm Delete Deck Button Label",
+                          "fill": "#FFF8F5",
+                          "content": "删除卡组",
+                          "fontFamily": "Noto Sans SC",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
