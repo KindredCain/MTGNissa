@@ -224,6 +224,72 @@ func TestScryfallCardStoresProducedManaAsStringArray(t *testing.T) {
 	t.Fatal("scryfall_card spec not found")
 }
 
+func TestScryfallCardNumericCombatColumns(t *testing.T) {
+	cardSpec := mustTableSpec(tableScryfallCard)
+	wantColumns := map[string]bool{
+		"power_numeric":     false,
+		"toughness_numeric": false,
+		"loyalty_numeric":   false,
+		"pt_numeric":        false,
+	}
+	for _, column := range cardSpec.columns {
+		if _, ok := wantColumns[column.name]; !ok {
+			continue
+		}
+		if column.ddl != "DECIMAL(12,4) NULL" || column.kind != kindDerivedNumber {
+			t.Fatalf("%s column = %#v", column.name, column)
+		}
+		wantColumns[column.name] = true
+	}
+	for name, found := range wantColumns {
+		if !found {
+			t.Errorf("%s column is missing", name)
+		}
+	}
+
+	wantIndexes := map[string]bool{
+		"power_numeric":     false,
+		"toughness_numeric": false,
+		"loyalty_numeric":   false,
+		"pt_numeric":        false,
+	}
+	for _, index := range cardSpec.indexes {
+		if len(index.columns) == 1 {
+			if _, ok := wantIndexes[index.columns[0]]; ok {
+				wantIndexes[index.columns[0]] = true
+			}
+		}
+	}
+	for name, found := range wantIndexes {
+		if !found {
+			t.Errorf("%s index is missing", name)
+		}
+	}
+}
+
+func TestDerivedCombatNumbers(t *testing.T) {
+	tableSpec := spec{columns: []columnSpec{
+		col("power", "VARCHAR(32) NULL", kindString),
+		col("power_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+		col("toughness", "VARCHAR(32) NULL", kindString),
+		col("toughness_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+		col("loyalty", "VARCHAR(32) NULL", kindString),
+		col("loyalty_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+		col("pt_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+	}}
+	values, err := rowValuesFor(map[string]json.RawMessage{
+		"power":     json.RawMessage(`" 1.25 "`),
+		"toughness": json.RawMessage(`"2.5"`),
+		"loyalty":   json.RawMessage(`"*"`),
+	}, tableSpec, sourceSpec{})
+	if err != nil {
+		t.Fatalf("rowValuesFor() error = %v", err)
+	}
+	if values[1] != "1.25" || values[3] != "2.5" || values[5] != nil || values[6] != "3.7500" {
+		t.Fatalf("derived numeric values = %#v", values)
+	}
+}
+
 func TestRawJSONObjectColumnValue(t *testing.T) {
 	column := col("extra", "LONGTEXT NULL", kindRawJSONText)
 	got, err := columnValue(json.RawMessage(`{"release_notes": {"note": {"card_names": ["Example"]}}}`), column)

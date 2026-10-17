@@ -6,7 +6,6 @@ CREATE TABLE `deck` (
     `name` VARCHAR(255) NOT NULL,
     `source_text` LONGTEXT NOT NULL,
     `cover_oracle_id` CHAR(36) NULL,
-    `version` BIGINT UNSIGNED NOT NULL DEFAULT 1,
     `created_at` DATETIME(6) NOT NULL,
     `updated_at` DATETIME(6) NOT NULL,
     PRIMARY KEY (`id`),

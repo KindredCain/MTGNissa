@@ -47,6 +47,7 @@ const (
 	kindRawJSONText
 	kindRulingKey
 	kindAutoIncrement
+	kindDerivedNumber
 )
 
 type columnSpec struct {
@@ -106,12 +107,16 @@ var specs = []spec{
 			col("hand_modifier", "VARCHAR(32) NULL", kindString),
 			col("life_modifier", "VARCHAR(32) NULL", kindString),
 			col("loyalty", "VARCHAR(32) NULL", kindString),
+			col("loyalty_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
 			col("name", "VARCHAR(512) NOT NULL", kindString),
 			col("face_name", "VARCHAR(512) NULL", kindString),
 			col("oracle_text", "LONGTEXT NULL", kindString),
 			col("power", "VARCHAR(32) NULL", kindString),
+			col("power_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
 			col("reserved", "BOOLEAN NOT NULL", kindBoolean),
 			col("toughness", "VARCHAR(32) NULL", kindString),
+			col("toughness_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+			col("pt_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
 			col("type_line", "VARCHAR(512) NOT NULL", kindString),
 			col("artist", "VARCHAR(255) NULL", kindString),
 			col("artist_ids", "VARCHAR(2048) NULL", kindStringArray),
@@ -173,6 +178,10 @@ var specs = []spec{
 			idx("idx_scryfall_card_frame", "frame"),
 			idx("idx_scryfall_card_colors_mask", "colors_mask"),
 			idx("idx_scryfall_card_identity_mask", "color_identity_mask"),
+			idx("idx_scryfall_card_power_numeric", "power_numeric"),
+			idx("idx_scryfall_card_toughness_numeric", "toughness_numeric"),
+			idx("idx_scryfall_card_loyalty_numeric", "loyalty_numeric"),
+			idx("idx_scryfall_card_pt_numeric", "pt_numeric"),
 			idx("idx_scryfall_card_finishes_mask", "finishes_mask"),
 			idx("idx_scryfall_card_games_mask", "games_mask"),
 		},

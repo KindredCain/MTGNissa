@@ -24,8 +24,8 @@ type loadTaskResponse struct {
 	ID         string                 `json:"id"`
 	Stage      carddata.Stage         `json:"stage"`
 	StartedAt  time.Time              `json:"started_at"`
-	FinishedAt *time.Time             `json:"finished_at,omitempty"`
-	Error      *loadTaskErrorResponse `json:"error,omitempty"`
+	FinishedAt *time.Time             `json:"finished_at"`
+	Error      *loadTaskErrorResponse `json:"error"`
 }
 
 type loadTaskErrorResponse struct {
@@ -59,7 +59,7 @@ func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, 
 	r.Use(requestID(), accessLog(log), recovery(), bodyLimit(1<<20))
 	r.GET("/health/live", healthHandler.Live)
 	r.GET("/health/ready", healthHandler.Ready)
-	api := r.Group("/api/v1/card-data")
+	api := r.Group("/api/v1/card_data")
 	api.POST("/load", startLoad(loader, loadEnabled))
 	api.GET("/load/:id", getLoad(loader, loadEnabled))
 	r.NoRoute(func(c *gin.Context) {
@@ -100,7 +100,7 @@ func startLoad(manager cardDataLoader, enabled bool) gin.HandlerFunc {
 			httpresponse.WriteError(c, http.StatusInternalServerError, "internal_error", "could not start card data loading")
 			return
 		}
-		c.Header("Location", "/api/v1/card-data/load/"+task.ID)
+		c.Header("Location", "/api/v1/card_data/load/"+task.ID)
 		httpresponse.WriteJSON(c, http.StatusAccepted, newLoadTaskResponse(task))
 	}
 }

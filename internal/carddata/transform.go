@@ -5,10 +5,14 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var decimalNumberPattern = regexp.MustCompile(`^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$`)
 
 func deriveRows(s sourceSpec, obj map[string]json.RawMessage, line int64) (map[tableName][]importRow, error) {
 	switch s.table {
@@ -262,6 +266,9 @@ func rowValuesFor(obj map[string]json.RawMessage, tableSpec spec, input sourceSp
 			values[i] = nil
 			continue
 		}
+		if column.kind == kindDerivedNumber {
+			continue
+		}
 		source := column.name
 		if mapped := input.columnSources[column.name]; mapped != "" {
 			source = mapped
@@ -285,6 +292,7 @@ func rowValuesFor(obj map[string]json.RawMessage, tableSpec spec, input sourceSp
 		}
 		values[i] = value
 	}
+	populateDerivedNumbers(obj, tableSpec, values)
 	for _, name := range input.extraFields {
 		known[name] = struct{}{}
 	}
@@ -294,6 +302,56 @@ func rowValuesFor(obj map[string]json.RawMessage, tableSpec spec, input sourceSp
 		}
 	}
 	return values, nil
+}
+
+func populateDerivedNumbers(obj map[string]json.RawMessage, tableSpec spec, values []any) {
+	power, hasPower := decimalString(obj, "power")
+	toughness, hasToughness := decimalString(obj, "toughness")
+	loyalty, hasLoyalty := decimalString(obj, "loyalty")
+	for i, column := range tableSpec.columns {
+		if column.kind != kindDerivedNumber {
+			continue
+		}
+		switch column.name {
+		case "power_numeric":
+			if hasPower {
+				values[i] = power
+			}
+		case "toughness_numeric":
+			if hasToughness {
+				values[i] = toughness
+			}
+		case "loyalty_numeric":
+			if hasLoyalty {
+				values[i] = loyalty
+			}
+		case "pt_numeric":
+			if hasPower && hasToughness {
+				values[i] = addDecimalStrings(power, toughness)
+			}
+		}
+	}
+}
+
+func decimalString(obj map[string]json.RawMessage, field string) (string, bool) {
+	raw, ok := obj[field]
+	if !ok || string(raw) == "null" {
+		return "", false
+	}
+	var value string
+	if json.Unmarshal(raw, &value) != nil {
+		return "", false
+	}
+	value = strings.TrimSpace(value)
+	return value, decimalNumberPattern.MatchString(value)
+}
+
+func addDecimalStrings(left, right string) string {
+	leftValue, _ := new(big.Rat).SetString(strings.TrimPrefix(left, "+"))
+	rightValue, _ := new(big.Rat).SetString(strings.TrimPrefix(right, "+"))
+	leftRounded, _ := new(big.Rat).SetString(leftValue.FloatString(4))
+	rightRounded, _ := new(big.Rat).SetString(rightValue.FloatString(4))
+	return new(big.Rat).Add(leftRounded, rightRounded).FloatString(4)
 }
 
 func columnValue(raw json.RawMessage, column columnSpec) (any, error) {

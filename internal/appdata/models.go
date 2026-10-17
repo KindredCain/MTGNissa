@@ -86,13 +86,12 @@ type WishlistItem struct {
 	CreatedAt  time.Time `db:"created_at"`
 }
 
-// Deck stores a deck definition, its selected cover card, source text, and optimistic-lock version.
+// Deck stores a deck definition, its selected cover card, and normalized source text.
 type Deck struct {
 	ID            uint64    `db:"id"`
 	Name          string    `db:"name"`
 	SourceText    string    `db:"source_text"`
 	CoverOracleID *string   `db:"cover_oracle_id"`
-	Version       uint64    `db:"version"`
 	CreatedAt     time.Time `db:"created_at"`
 	UpdatedAt     time.Time `db:"updated_at"`
 }
