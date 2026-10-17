@@ -47,7 +47,7 @@ GET /health/ready
 启动全量加载任务：
 
 ```http
-POST /api/v1/card-data/load
+POST /api/v1/card_data/load
 Content-Type: application/json
 
 {"confirmation":"LOAD_CARD_DATA"}
@@ -56,7 +56,7 @@ Content-Type: application/json
 成功返回 `202` 和任务 ID；同一时间已有任务时返回 `409`。任务状态可通过以下接口查询：
 
 ```http
-GET /api/v1/card-data/load/{task-id}
+GET /api/v1/card_data/load/{task_id}
 ```
 
 卡牌加载是维护接口，只操作 Card DB，不写入个人数据库，也不计入用户操作日志。完整校验、原子换表和安全限制见功能需求文档。
@@ -64,6 +64,9 @@ GET /api/v1/card-data/load/{task-id}
 ## 文档索引
 
 - [功能需求](docs/requirements.md)：页面行为、查询规则、卡组规则、日志规则和卡牌数据加载要求。
+- [API 契约](docs/api-contract.md)：接口路径、请求参数、响应 DTO、错误码、分页与服务端排序约定。
+- [搜索语法支持矩阵](docs/search-syntax-support.md)：首版必须实现的查询关键字、别名、比较符和值域。
 - [技术架构设计](docs/architecture.md)：系统边界、技术选型、生命周期、配置与部署约束。
 - [卡牌数据字典](docs/card-data-dictionary.md)：原始卡牌文件、字段含义、关联关系和 Card DB 物理模型。
 - [个人数据库设计](docs/app-data-schema.md)：App DB 表结构、索引、一致性规则和迁移落地方式。
+- [原型与页面说明](design/README.md)：原型文件入口、页面说明索引及统一交互约定。

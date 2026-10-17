@@ -22,7 +22,7 @@
 ```json
 {
   "status": 200,
-  "data": {"deck_id": "12", "name": "Superfriends", "version": "3"},
+  "data": {"deck_id": "12", "name": "Superfriends"},
   "error": null,
   "request_id": "20261009T120000.000000000"
 }
@@ -70,14 +70,14 @@
 - 客户端可发送不超过 128 字符的 `X-Request-ID`；服务端始终在响应头和信封中返回最终请求 ID。
 - 时间戳在数据库中统一以 UTC 保存，并在接口中使用 RFC 3339 UTC 表示，例如 `2026-10-09T04:00:00Z`；自然日使用 `YYYY-MM-DD`，其时区语义由具体端点声明。
 - 业务资源标识作为不透明字符串返回；前端只用于回传、路由和缓存键，不解析其来源或结构。
-- MySQL `BIGINT UNSIGNED` 标识和版本统一按十进制字符串返回，避免 JavaScript 精度丢失。
+- MySQL `BIGINT UNSIGNED` 标识统一按十进制字符串返回，避免 JavaScript 精度丢失。
 - 多选查询参数使用重复参数，例如 `language=en&language=ja`，不使用逗号拼接。
 - 空白查询关键字按未提供处理。除 Set 名称和卡组名称查询外，所有卡名模糊查询都直接对 `scryfall_card.name` 执行去除首尾空白后、不区分大小写的文字包含匹配；不查询翻译名、`printed_name` 或 `flavor_name`，用户输入中的数据库通配符按普通文字转义。命中具体记录后再应用各接口自己的范围和去重规则。
-- 除卡牌数据维护任务外，会改变业务状态的 `POST` 必须携带 `Idempotency-Key` 请求头。客户端为一次用户意图生成一个 RFC 4122 UUID，并使用 36 字符规范文本形式；同一次请求发生超时或连接中断时复用原值，新的用户操作必须生成新值。
-- 服务端必须持久化幂等键。请求指纹由方法、含实际资源标识的规范化路径和解码后 DTO 的规范 JSON 计算，JSON 空白和对象字段顺序不影响指纹。相同请求使用同一键重放时不得再次改变状态或重复写日志，返回首次请求已经提交的相同 HTTP 状态、`data` 和 `Location`，并增加响应头 `Idempotency-Replayed: true`；响应信封使用本次请求的新 `request_id`。同一键对应不同请求时返回 `409 idempotency_conflict`。
-- 两个相同幂等请求并发到达时只能有一个执行 mutation；另一个等待首个事务提交后按重放处理。首个事务回滚时不保留已完成幂等结果，后续重试可以重新执行。
-- 只持久化已经成功提交的业务结果。请求解析、字段校验、版本冲突、依赖故障和内部错误不占用幂等键；客户端修正请求后应使用新的幂等键提交。
-- 需要幂等键的接口包括收藏调整、愿望单状态、创建／保存／复制／删除卡组。只读 `GET`、只读的卡组编辑上下文批量查询、卡组代码解析和卡牌数据维护任务不使用该键。
+- 只有收藏调整、愿望单状态、创建卡组和复制卡组四类操作必须携带 `Idempotency-Key` 请求头。客户端为一次用户意图生成一个 RFC 4122 UUID，并使用 36 字符规范文本形式；同一次请求发生超时或连接中断时复用原值，新的用户操作必须生成新值。保存卡组、删除卡组、只读 `GET`、只读的卡组编辑上下文批量查询、卡组代码解析和卡牌数据维护任务不使用该键。
+- 幂等只保证同一业务意图在当前单实例服务进程和缓存有效期内不被重复执行，不保证逐字重放首次 HTTP 响应。服务端在有界内存缓存中保存幂等键、请求指纹、`executing`／`completed` 状态、创建或复制操作产生的新 `deck_id` 等必要资源标识及过期时间；不得为此在 App DB 建表，也不要求缓存完整响应信封、HTTP 状态、`data` 或 `Location`。完成记录保留 30 分钟；服务进程重启后记录允许丢失，首版不提供跨实例幂等保证。
+- 请求指纹由方法、含实际资源标识的规范化路径和解码后 DTO 的规范 JSON 计算，JSON 空白和对象字段顺序不影响指纹。相同键对应不同请求时返回 `409 idempotency_conflict`。两个相同请求并发到达时只能有一个执行 mutation；另一个等待首次请求结束。
+- 首次请求成功提交后将内存记录标记为 `completed`。缓存有效期内的相同请求不得再次改变状态或重复写日志，而是重新查询该操作对应资源的当前权威状态并返回；响应可以反映首次提交之后发生的其他合法变化，不要求与首次响应逐字一致，并增加响应头 `Idempotency-Deduplicated: true`。创建或复制卡组的重复请求使用记录中的新 `deck_id` 查询该卡组并重新生成 `Location`；如果该卡组后来已被删除，则返回 `404 deck_not_found`，不得再次创建或复制。
+- 请求解析、字段校验、依赖故障、内部错误以及未成功提交的业务结果不保留为 `completed`；等待中的相同请求收到同一次失败，之后允许使用同一键重新发起。客户端修正请求内容后必须使用新的幂等键。
 
 ### 2.3 游标分页
 
@@ -104,15 +104,16 @@ Set、全局卡牌搜索、我的卡牌、愿望单、卡组列表和增加卡�
 ```text
 finish_kind: normal | foil
 deck_section: commander | mainboard | sideboard | maybeboard
+deck_card_type_group: land | creature | planeswalker | instant | sorcery | enchantment | artifact | other
 operation_type:
   add_card | remove_card | add_wishlist | remove_wishlist |
   create_deck | delete_deck | copy_deck | modify_deck
 color_group: W | U | B | R | G | multicolor | colorless
-mana_value_group: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7_plus
+mana_value_group: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8_plus
 rarity: common | uncommon | rare | mythic | special | bonus
 ```
 
-公开工艺枚举有意只保留 `normal` 与 `foil`。Card DB 中的普通工艺映射为 `normal`；传统闪和蚀刻闪都映射为 `foil`，收藏数量、日志和 `available_finishes` 不再区分传统闪与蚀刻闪。只有蚀刻闪而没有传统闪的印刷仍必须在 `available_finishes` 中返回 `foil`。
+公开收藏工艺枚举有意只保留 `normal` 与 `foil`，分别表示同一具体卡牌记录上的平卡和闪卡两个独立收藏计数桶。每个 `scryfall_id` 均允许维护这两个计数，不根据 Card DB 中该印刷的原始工艺属性限制收藏调整。需要映射外部工艺值时，普通工艺归入 `normal`，传统闪和蚀刻闪统一归入 `foil`；收藏数量和日志不再区分传统闪与蚀刻闪。
 
 ### 2.5 公共 DTO
 
@@ -154,7 +155,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
     "released_at": "2016-09-30"
   },
   "collector_number": "163",
-  "language": {"code": "ja", "name": "日文", "sort_order": 3},
+  "language": {"code": "ja", "display_name": "日文", "sort_order": 7},
   "released_at": "2016-09-30",
   "cmc": 5,
   "mana_cost": "{3}{G}{G}",
@@ -178,7 +179,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | DTO | 字段 | 类型 | 可空 | 说明 |
 | --- | --- | --- | --- | --- |
 | `LanguageDTO` | `code` | string | 否 | 语言代码 |
-|  | `name` | string | 否 | 与前端全站固定语言代码映射一致的 UI 展示名称；日志响应只返回代码 |
+|  | `display_name` | string | 否 | 直接取 `scryfall_language.display_name`；前端原样展示 |
 |  | `sort_order` | integer | 否 | 字典顺序 |
 | `CardImageDTO` | `front_url` | string | 是 | 数据源没有卡图时为 `null`，客户端使用统一占位图 |
 |  | `back_url` | string | 是 | 没有独立背面时为 `null` |
@@ -205,16 +206,18 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 所有 DTO 属性本身都必须出现；“可空”只表示属性值可以为 `null`，不表示可以省略属性。空集合使用 `[]`，不得以 `null` 代替。具名字段表优先于示例；没有单独字段表的端点以成功示例中的全部键作为完整属性集，JSON 值类型即字段类型，只有示例明确使用 `null` 或正文明确声明可空的字段才允许 `null`。示例中的 `...` 只是字符串内容缩写，不表示省略属性；空 `items` 只表示合法零结果，其元素类型由相邻正文指定。
 
+`CardSummaryDTO` 的 `cmc`、`mana_cost` 和 `colors` 使用当前具体印刷的主牌面记录：普通单面牌取 `face_index = -1`，多牌面牌取 `face_index = 0`。不得因为同一 `scryfall_id` 存在其他牌面而随机选择数据库第一行或合并这些字段。该规则只约束摘要、筛选和排序使用的单组属性，不改变全局语法搜索在逻辑卡层“任一牌面满足单个条件”的既定语义。
+
 ### 2.6 输入边界
 
 | 输入 | 约束 |
 | --- | --- |
 | `scryfall_id`、`set_id` | 规范 UUID 字符串，只能使用服务端此前返回的原值 |
 | 响应中的 `oracle_id` | 规范 UUID 字符串或 `null`；只读，不能作为请求参数 |
-| `deck_id`、`version` | 十进制正整数字符串，最长 20 位 |
+| `deck_id` | 十进制正整数字符串，最长 20 位 |
 | 列表和搜索 `q` | 去除首尾空白后最长 512 个 Unicode 字符；全空白按未提供处理，全局搜索的非空 `q` 必填 |
 | 卡组名称 | 去除首尾空白后 1–255 个 Unicode 字符；保存规范化后的值 |
-| 卡组代码 | UTF-8 文本，最长 768 KiB、最多 10,000 行 |
+| 卡组代码 | UTF-8 文本，最长 768 KiB、最多 1,000 行 |
 | JSON 请求体 | 全局最大 1 MiB；超过限制返回 `413 request_too_large` |
 | 单条卡组数量 | 1–4,294,967,295 的整数；同分区合并后仍不得超过上限 |
 | 收藏 `delta` | 只能为 `1` 或 `-1` |
@@ -279,13 +282,13 @@ rarity: common | uncommon | rare | mythic | special | bonus
 ```json
 {
   "languages": [
-    {"code": "en", "name": "英文", "sort_order": 1}
+    {"code": "en", "display_name": "英文", "sort_order": 1}
   ],
   "set_types": ["commander", "core", "expansion"]
 }
 ```
 
-`languages` 固定按 `sort_order` 升序只返回前 11 项；`set_types` 返回当前 Card DB 中全部非空去重值并稳定排序。
+`languages` 固定按 `sort_order` 升序、`code` 升序兜底后只返回前 11 项；`set_types` 返回当前 Card DB 中全部非空去重值，并按产生该值的最小 `set_id` 升序排列；最小 `set_id` 相同时按 `set_type` 升序兜底。
 
 ### 5.2 `GET /api/v1/sets`
 
@@ -301,6 +304,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 `language` 与 `set_type` 之间使用 AND。
 
+所有 Set 排序在主排序值相同时统一按 `set_id` 升序兜底；游标必须包含该最终唯一键对应的位置。
+
 列表项：
 
 ```json
@@ -313,7 +318,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
   "card_count": 405,
   "released_at": "2021-02-05",
   "languages": [
-    {"code": "en", "name": "英文", "sort_order": 1, "available": true}
+    {"code": "en", "display_name": "英文", "sort_order": 1, "available": true}
   ],
   "default_language": "en",
   "parent_set_id": null
@@ -323,6 +328,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 `default_language` 必须是返回语言数组中从左到右第一项 `available = true` 的代码；不得使用隐藏的语言优先级。不能可靠确定父子关系时 `parent_set_id` 返回 `null`。
 
 `SetListItemDTO` 的 `set_id`、`code`、`name`、`display_name`、`set_type`、`card_count` 和 `languages` 不可为 `null`；`released_at`、`default_language`、`parent_set_id` 可为 `null`。`card_count` 为非负整数。`languages` 元素在 `LanguageDTO` 基础上增加不可空的 `available: boolean`；没有任何可用的前 11 种语言时 `default_language = null`，整行不提供跳转目标。
+
+`released_at` 直接读取导入时按 `set_id` 汇总并校验一致的 `scryfall_set.released_at`。`card_count` 直接读取导入任务在全部源文件完成后一次性回填的 `scryfall_set.card_count`；该列的计算口径固定为该 Set 的不同 `collector_number` 数量，即 `COUNT(DISTINCT scryfall_card.collector_number)`，同一收藏编号的不同语言及多个牌面只计一次。业务接口不得在请求期间重新聚合卡牌数量。发行日期和卡牌数量排序均使用这两个权威列，并在相同时继续按 `set_id` 升序兜底。
 
 ### 5.3 `GET /api/v1/cards`
 
@@ -345,13 +352,13 @@ rarity: common | uncommon | rare | mythic | special | bonus
     "display_name": "卡拉德许",
     "released_at": "2016-09-30"
   },
-  "language": {"code": "en", "name": "英文", "sort_order": 1},
+  "language": {"code": "en", "display_name": "英文", "sort_order": 1},
   "items": [],
   "total": 0
 }
 ```
 
-每个 `items` 元素为 `CardSummaryDTO`。前端在完整结果上执行颜色、法术力、稀有度筛选和收藏编号／法术力／名称排序，并自行分批创建卡图节点。
+每个 `items` 元素为 `CardSummaryDTO`。前端在完整结果上执行颜色、法术力、稀有度筛选和收藏编号／法术力／名称排序，并自行分批创建卡图节点。所有前端排序在主排序值相同时继续按收藏编号自然升序，最终按 `scryfall_id` 升序兜底。
 
 ### 5.4 `GET /api/v1/cards/{scryfall_id}`
 
@@ -372,7 +379,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
       "released_at": "2016-09-30"
     },
     "collector_number": "163",
-    "language": {"code": "ja", "name": "日文", "sort_order": 3},
+    "language": {"code": "ja", "display_name": "日文", "sort_order": 7},
     "released_at": "2016-09-30",
     "cmc": 5,
     "mana_cost": "{3}{G}{G}",
@@ -402,18 +409,17 @@ rarity: common | uncommon | rare | mythic | special | bonus
   "collection": {"normal_quantity": 0, "foil_quantity": 1},
   "logical_collection": {"normal_quantity": 2, "foil_quantity": 1, "total_quantity": 3},
   "wishlist": {"included": true},
-  "available_finishes": ["normal", "foil"],
   "rulings": [
     {"published_at": "2016-09-20", "source": "WotC", "text": "..."}
   ],
   "oracle_tags": [
-    {"tag_id": "...", "label": "Ramp", "query": "otag:\"Ramp\""}
+    {"tag_id": "...", "query": "otag:\"Ramp\""}
   ],
   "languages": [
     {
       "scryfall_id": "00000000-0000-0000-0000-000000000002",
       "oracle_id": "00000000-0000-0000-0000-000000000010",
-      "language": {"code": "en", "name": "英文", "sort_order": 1},
+      "language": {"code": "en", "display_name": "英文", "sort_order": 1},
       "normal_quantity": 0,
       "foil_quantity": 0
     }
@@ -429,7 +435,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
         {
           "scryfall_id": "00000000-0000-0000-0000-000000000003",
           "oracle_id": "00000000-0000-0000-0000-000000000010",
-          "language": {"code": "en", "name": "英文", "sort_order": 1},
+          "language": {"code": "en", "display_name": "英文", "sort_order": 1},
           "normal_quantity": 0,
           "foil_quantity": 0
         }
@@ -458,12 +464,15 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `power`、`toughness`、`loyalty` | string | 是 | 不适用或缺失时为 `null`，保留原始符号文本 |
 | `image_url` | string | 是 | 当前牌面没有独立图片时为 `null` |
 
-详情顶层的 `card` 为 `CardSummaryDTO`，`faces` 至少一项且按 `face_index` 排序。`collection` 表示当前 `scryfall_id` 的数量；`logical_collection` 表示同一 `oracle_id` 下全部系列、收藏编号和语言的权威合计，没有 `oracle_id` 时只汇总当前 `scryfall_id`。上述数量均为非负整数。`wishlist.included` 为 boolean；`available_finishes` 只含 `finish_kind` 且至少一项，数据源的蚀刻闪能力按公共映射返回 `foil`。`rulings`、`oracle_tags`、`languages`、`other_versions` 和 `deck_usage.decks` 无结果时返回 `[]`。
+详情顶层的 `card` 为 `CardSummaryDTO`，`faces` 至少一项且按 `face_index` 排序。`collection` 表示当前 `scryfall_id` 的平卡和闪卡数量；`logical_collection` 表示同一 `oracle_id` 下全部系列、收藏编号和语言的权威合计，没有 `oracle_id` 时只汇总当前 `scryfall_id`。上述数量均为非负整数；平卡和闪卡是始终存在的两个独立收藏计数桶，不受 Card DB 原始工艺属性限制。`wishlist.included` 为 boolean；`rulings`、`oracle_tags`、`languages`、`other_versions` 和 `deck_usage.decks` 无结果时返回 `[]`。
 
-- `languages` 返回当前系列和收藏编号下的实际语言选项；每项包含可直接进入详情的 `scryfall_id`、语言和当前拥有数量。
-- `other_versions` 以 `set_id + collector_number` 为分组键，排除当前正在查看的版本分组，不按语言重复版本行。每项返回系列、收藏编号、该版本全部语言的拥有数量合计，以及实际存在的完整 `languages` 数组；语言项携带可直接进入详情的 `scryfall_id`。版本按需求中的发行日期规则排序，发布日期相同时按 Set 缩写、收藏编号和内部稳定卡牌标识兜底。
+- `languages` 返回当前系列和收藏编号下的实际语言选项；每项包含可直接进入详情的 `scryfall_id`、语言和当前拥有数量。顶层 `languages` 及每个 `other_versions[].languages` 均按 `language.sort_order` 升序，`sort_order` 相同时按 `language.code` 升序；不应用 Set 列表“只取前 11 项”的范围限制。
+- `other_versions` 以 `set_id + collector_number` 为分组键，排除当前正在查看的版本分组，不按语言重复版本行。每项返回系列、收藏编号、该版本全部语言的拥有数量合计，以及实际存在的完整 `languages` 数组；语言项携带可直接进入详情的 `scryfall_id`。版本按发行日期从新到旧排序，发布日期相同时按 Set 缩写、收藏编号和该版本分组 `languages[].scryfall_id` 中的最小值升序兜底。
 - `rulings`、`oracle_tags` 和 `deck_usage` 随详情一次返回，不另设分页接口。
-- `oracle_tags[].query` 由后端生成为可直接提交给全局搜索的规范查询，固定格式为 `otag:"<escaped label>"`。标签中的反斜杠先转义为 `\\`，双引号转义为 `\"`；即使标签不含空格也保留双引号。前端不得自行拼接、去引号或再次转义。
+- `rulings` 固定按 `published_at` 从新到旧返回；发布日期相同时按源记录稳定标识升序兜底。前端直接保持该顺序，不再自行排序。
+- `oracle_tags` 固定按 `tag_id` 升序返回；前端直接保持该顺序，不按 `query` 重新排序。
+- `deck_usage.decks` 固定按卡组 `updated_at` 从新到旧返回，更新时间相同时按 `deck_id` 升序兜底；排序使用后端卡组记录的更新时间，不要求为了排序向响应额外暴露 `updated_at`。
+- `oracle_tags[]` 的每项固定包含不可空的 `tag_id` 和 `query`，不再另行返回与查询语法重复的展示字段。`query` 由后端生成为可直接提交给全局搜索的规范查询，固定格式为 `otag:"<escaped label>"`；标签中的反斜杠先转义为 `\\`，双引号转义为 `\"`，即使标签不含空格也保留双引号。该字符串同时是前端的展示值和点击查询值：前端必须原样显示，并在点击时将同一值作为 `GET /api/v1/search` 的 `q` 参数提交，不得自行拼接、去引号、规范化或再次转义。
 - 翻译字段已经由后端按“简体中文优先，缺失回退英文”生成；前端不再实现语言选择逻辑。
 
 ## 6. 全局搜索
@@ -480,7 +489,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 {
   "input": "function:tutor",
   "mode": "syntax",
-  "executed_query": "otag:tutor",
+  "executed_query": "otag:\"tutor\"",
   "items": [],
   "total": 0,
   "next_cursor": null
@@ -489,13 +498,15 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 - `mode` 为 `syntax` 或 `name`。
 - 只有完整识别首版语法时才使用 `syntax`；否则将完整输入按 `scryfall_card.name` 模糊查询并返回 `name`，不得返回语法错误。
-- 后端先按 `oracle_id` 去重，再按 `oracle_id` 稳定排序和生成游标；`oracle_id` 作为 `CardSummaryDTO` 的只读属性正常返回，游标本身仍是不透明字符串。
-- 每个命中的 `oracle_id` 由后端选择任意一条具体记录作为 `CardSummaryDTO`、卡图和详情目标；不要求选择最新发行版本，也不保证重复查询或重新导入后仍选择相同版本。代表记录的版本、系列、语言和发行日期不得参与结果顺序计算，客户端不得再次选择展示记录。
+- 名称模式先在具体卡牌记录上应用名称条件，只保留具有非空 `oracle_id` 的命中记录，再按 `oracle_id` 去重。语法模式必须先为每个原子条件分别计算满足条件的 `oracle_id` 集合：名称、类型、关键字异能、费用和数值等牌面属性只要同一逻辑卡任一牌面满足该原子条件，该 `oracle_id` 就进入对应集合；系列、稀有度等印刷属性只要任一具体印刷满足该原子条件，该 `oracle_id` 就进入对应集合。隐式 `AND`、`OR` 和括号组合必须在 `oracle_id` 集合层执行，不得要求同一牌面或同一具体印刷同时满足完整表达式。取得最终 `oracle_id` 集合后，后端再为每项选择代表记录，按逻辑卡的 `scryfall_card.name` 不区分大小写 A–Z 排序，同名时按 `oracle_id` 升序兜底，最后执行游标分页。不得先从全表任意选取代表印刷再应用原子条件，以免丢失仅由其他牌面或印刷记录满足的结果。服务端游标必须编码规范化后的英文卡名排序值与 `oracle_id` 位置，以完整延续该复合顺序；`oracle_id` 作为 `CardSummaryDTO` 的只读属性正常返回，游标对客户端仍是不透明字符串。
+- 每个命中的 `oracle_id` 由后端在其全部具体记录中按 `scryfall_id` 升序选择第一条，作为唯一的 `CardSummaryDTO`、卡图和详情目标；不按发行日期选择最新版本。该选择必须由同一次数据库查询中的聚合、窗口或等价关系运算完成，不得按结果逐条追加查询。代表记录的版本、系列、语言和发行日期不得参与结果列表顺序计算，客户端不得再次选择展示记录。
 - 全局搜索只以具有非空 `oracle_id` 的卡牌为逻辑结果；`oracle_id = null` 的记录不进入全局名称或语法搜索结果。具体 Set 卡牌列表仍可按 `scryfall_id` 展示这类记录。
 
 ## 7. 收藏与愿望单
 
 ### 7.1 `POST /api/v1/cards/{scryfall_id}/collection_adjustments`
+
+本接口必须使用 `Idempotency-Key`。缓存有效期内的重复请求不再次应用 `delta`；服务端重新查询当前具体印刷及语言记录、整个收藏和所属系列的权威汇总后返回同一响应结构。响应不返回本次应用的增量；调用方必须始终以响应中的 `group`、`collection` 和 `set_summary` 更新显示。
 
 请求：
 
@@ -510,7 +521,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 - `delta` 只能是 `1` 或 `-1`。
 - 本接口始终只调整路径 `scryfall_id` 对应的具体印刷及语言记录，不得按 `oracle_id`、Set、收藏编号、语言筛选或收藏列表合并键扩大操作范围。增加和减少都作用于该记录的指定 `finish`；数量不足时返回 `409 collection_underflow`，不得改扣其他印刷或语言记录，也不得只应用部分增量。
 - 卡牌详情页始终可以调用本接口。“我的卡牌”列表仅在 `merge_sets = false` 且 `merge_languages = false` 时显示加减控件；任一合并开关开启时卡位为只读合计，不得调用本接口。
-- 后端必须锁定当前收藏记录，校验工艺可用性和新数量不小于 0，在同一 App DB 事务中更新收藏并写一条操作日志。
+- 后端必须锁定当前收藏记录并校验新数量不小于 0，在同一 App DB 事务中更新收藏并写一条操作日志；不得根据 Card DB 原始工艺属性拒绝对 `normal` 或 `foil` 计数桶的调整。
 - 两种数量都归零时删除 `collection_item`；响应仍返回两个零值。
 
 响应 `200`：
@@ -519,7 +530,6 @@ rarity: common | uncommon | rare | mythic | special | bonus
 {
   "scryfall_id": "00000000-0000-0000-0000-000000000000",
   "oracle_id": "00000000-0000-0000-0000-000000000010",
-  "applied_delta": 1,
   "group": {
     "normal_quantity": 3,
     "foil_quantity": 1,
@@ -541,6 +551,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 ### 7.2 `POST /api/v1/cards/{scryfall_id}/wishlist_state`
 
+本接口必须使用 `Idempotency-Key`。缓存有效期内的重复请求不再次写愿望单或日志，服务端重新查询并返回当前 `included` 状态。
+
 请求以目标状态表达加入或移出愿望单：
 
 ```json
@@ -561,12 +573,14 @@ rarity: common | uncommon | rare | mythic | special | bonus
 ```json
 {
   "sets": [{"set_id": "...", "code": "khm", "display_name": "凯德海姆"}],
-  "languages": [{"code": "en", "name": "英文", "sort_order": 1}],
+  "languages": [{"code": "en", "display_name": "英文", "sort_order": 1}],
   "colors": ["W", "U", "B", "R", "G", "multicolor", "colorless"],
-  "mana_values": ["0", "1", "2", "3", "4", "5", "6", "7_plus"],
+  "mana_values": ["0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
   "rarities": ["common", "uncommon", "rare", "mythic", "special", "bonus"]
 }
 ```
+
+`sets` 按系列发行时间从新到旧排列，发行时间相同或缺失时按 `set_id` 升序兜底；无发行时间的系列排在有发行时间的系列之后。`languages` 按 `sort_order` 升序、`code` 升序兜底。`colors`、`mana_values` 和 `rarities` 使用响应示例所列固定顺序。
 
 ### 7.4 `GET /api/v1/collection`
 
@@ -580,6 +594,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `merge_sets` | boolean | 默认 `false`；`sort=set` 时必须为 `false` |
 | `merge_languages` | boolean | 默认 `true` |
 | `cursor` | string? | 下一批游标 |
+
+`mana_value=0` 至 `mana_value=7` 分别匹配 `scryfall_card.cmc` 等于对应数值，`mana_value=8_plus` 匹配 `cmc >= 8`。稀有度请求值保持 `common`、`uncommon`、`rare`、`mythic`、`special`、`bonus`；前端依次显示为“铁、银、金、秘稀、特殊、额外”。
 
 收藏分组键固定如下。表中的括号表示带首项类型标记的概念元组，不是把字段直接拼接成一个字符串：
 
@@ -613,13 +629,15 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `total` | integer | 否 | 应用筛选和合并后的列表项总数，用于结果计数和游标列表控件 |
 | `next_cursor` | string | 是 | 后续批次游标；加载完毕为 `null` |
 
-展示卡图和详情目标由后端在当前分组候选中按发行日期从新到旧、同日按内部稳定卡牌标识选择。前端使用返回的 `card.scryfall_id` 进入具体版本详情，并可用只读 `card.oracle_id` 判断逻辑卡身份。`group_set` 和 `group_summary` 在 `sort=set` 时共同提供系列标头信息。列表筛选先作用于收藏明细，再严格按上表对应的分组键求和；合并不会重复或丢失数量。系列标头汇总和页头汇总不随筛选缩小，分别表达该系列和整个收藏的真实持有量。
+展示卡图和详情目标由后端在当前分组候选中按发行日期从新到旧、同日按 `scryfall_id` 升序选择。前端使用返回的 `card.scryfall_id` 进入具体版本详情，并可用只读 `card.oracle_id` 判断逻辑卡身份。`group_set` 和 `group_summary` 在 `sort=set` 时共同提供系列标头信息。列表筛选先作用于收藏明细，再严格按上表对应的分组键求和；合并不会重复或丢失数量。系列标头汇总和页头汇总不随筛选缩小，分别表达该系列和整个收藏的真实持有量。
+
+排序规则固定为：`set` 按系列发行日期从新到旧、系列内收藏编号自然升序；`color` 按白、蓝、黑、红、绿、多色、无色，颜色相同按英文卡名不区分大小写 A–Z；`mana_value` 按 `cmc` 从低到高，数值相同按英文卡名不区分大小写 A–Z；`name` 按英文卡名不区分大小写 A–Z。所有规则最终均以返回展示卡的 `card.scryfall_id` 升序兜底。
 
 只有 `merged_sets = false` 且 `merged_languages = false` 的卡位渲染普通／闪卡数量加减控件，并以该项 `card.scryfall_id` 调用 7.1。任一字段为 `true` 时，卡位仍显示合并后的 `normal_quantity` 和 `foil_quantity`，但数量条只读，必须完全隐藏减号、加号及其热区；不得仅以禁用外观保留控件，也不得从合并代表卡的 `scryfall_id` 发起调整。由于 `merged_*` 表示当前有效视图开关，即使某个合并分组当前恰好只有一条明细，也仍按合并卡位处理。
 
 ### 7.5 `GET /api/v1/wishlist/options`
 
-结构与收藏选项相同，但只从当前愿望项生成系列和语言选项。
+结构与收藏选项相同。系列和语言只从当前愿望项生成；`sets` 仍按系列发行时间从新到旧、`set_id` 升序兜底，`languages` 仍按 `sort_order` 升序、`code` 升序兜底。颜色、法术力和稀有度使用与收藏相同的固定选项、值域和顺序。
 
 ### 7.6 `GET /api/v1/wishlist`
 
@@ -629,9 +647,10 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | --- | --- | --- |
 | `q` | string? | 按关联的 `scryfall_card.name` 模糊查询 |
 | `set_id`、`language`、`color`、`mana_value`、`rarity` | string[] | 使用同名重复参数传递；同字段 OR，不同字段 AND |
+| `sort` | enum | `set`（默认）、`color`、`mana_value`、`name` |
 | `cursor` | string? | 下一批游标 |
 
-排序固定为系列发行日期从新到旧、系列内收藏编号自然升序，不接受 `sort` 和合并参数。每个 `WishlistItemDTO` 包含 `card: CardSummaryDTO`、`group_set: SetRefDTO` 和恒为 `true` 的 `included: boolean`；三个字段均不可为 `null`。页面响应使用通用游标结构。
+筛选值域和四种排序规则与收藏列表相同；愿望单不接受合并参数。`sort=set` 时按系列分组，`group_set` 返回对应 `SetRefDTO`；其他排序使用连续平铺，`group_set` 为 `null`。每个 `WishlistItemDTO` 还包含 `card: CardSummaryDTO` 和恒为 `true` 的 `included: boolean`，二者不可为 `null`。页面响应使用通用游标结构。
 
 ## 8. 卡组
 
@@ -645,39 +664,57 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `sort` | enum | `updated_desc`（默认）、`created_desc`、`name_asc`、`card_count_desc` |
 | `cursor` | string? | 下一批游标 |
 
+所有卡组排序在主排序值相同时统一按 `deck_id` 升序兜底；游标必须包含该最终唯一键对应的位置。
+
 列表项：
 
 ```json
 {
   "deck_id": "12",
   "name": "Superfriends",
-  "version": "3",
   "created_at": "2026-10-01T04:00:00Z",
   "updated_at": "2026-10-09T04:00:00Z",
   "cover_card": null,
   "section_counts": {"commander": 1, "mainboard": 99, "sideboard": 0, "maybeboard": 4},
   "counted_total": 100,
-  "color_distribution": {"W": 10, "U": 20, "B": 20, "R": 10, "G": 30, "C": 10},
+  "color_distribution": {"W": 12, "U": 7, "B": 0, "R": 3, "G": 9, "C": 2},
   "exception": {"type": "shortage", "distinct_cards": 2, "missing_quantity": 3}
 }
 ```
 
-`cover_card` 类型为 `CardSummaryDTO | null`；空卡组为 `null`，非空卡组由后端按详情页相同规则选定。`section_counts` 必须包含四个固定分区，空分区为 0。`exception` 类型为 `object | null`：没有异常时为 `null`；存在异常时 `type` 为 `shortage` 或 `deck_usage`，数量不足优先，`distinct_cards` 和 `missing_quantity` 均为非负整数。
+`section_counts` 必须包含 `commander`、`mainboard`、`sideboard`、`maybeboard` 四个固定键；每个值是数据库已保存状态下该分区全部 `deck_card.quantity` 之和，不是不同逻辑卡数量或明细行数，空分区为 0。`counted_total` 是非负整数，并固定满足：
+
+```text
+counted_total
+= section_counts.commander
+  + section_counts.mainboard
+  + section_counts.sideboard
+```
+
+`maybeboard` 不计入 `counted_total`。`cover_card` 类型为 `CardSummaryDTO | null`：后端读取已保存的 `deck.cover_oracle_id`，再按统一展示版本规则选取具体印刷并返回；未配置封面时为 `null`，不得从指挥官或主牌自动补选。前端在 `null` 时显示统一无卡图占位。
+
+`color_distribution` 固定返回 `W`、`U`、`B`、`R`、`G`、`C` 六个键及非负整数值，值是各颜色分类的原始计权张数，不是百分比。计算范围只包含已保存的 `commander` 与 `mainboard`，不包含 `sideboard` 或 `maybeboard`；每条卡牌按 `deck_card.quantity` 计权。`W/U/B/R/G` 从具体展示印刷主牌面的 `colors_mask` 读取，多色牌的完整数量分别计入其包含的每一种颜色；`colors_mask = 0` 的牌不计入任何颜色，也不得据此计入 `C`。只有主牌面的 `mana_cost` 明确包含 `{C}` 或包含 `C` 的复合符号时，该牌的完整数量才计入 `C`；同一张牌出现多个此类符号也只按牌张数计一次。没有数量的键仍返回 `0`。因此六个值之和可能大于统计范围内的实际卡牌总张数，也不要求等于 `counted_total`。前端以六个值之和为分母计算比例带宽度；六个值全为 `0` 时不得计算比例或绘制任何颜色段，比例带只保留未填充的容器背景。这里的 `C` 是明确的无色法术力分类，不表示“任意颜色”，也不表示通用法术力。
+
+`exception` 类型为 `object | null`：没有异常时为 `null`；存在异常时 `type` 为 `shortage` 或 `deck_usage`，数量不足优先，`distinct_cards` 和 `missing_quantity` 均为非负整数。
+
+卡组列表项中的 `section_counts`、`counted_total`、`color_distribution`、`cover_card` 和 `exception` 全部基于请求发生时 App DB 中的卡组已保存状态生成，不读取或合并任何浏览器中的未保存编辑态。编辑页的本地加减数量、拖拽、增加卡牌和代码导入结果，只有保存成功并在后续列表请求中读取到新状态后，才影响这些字段。
 
 ### 8.2 `POST /api/v1/decks`
+
+本接口必须使用 `Idempotency-Key`。缓存有效期内的重复请求不得再次创建卡组；服务端使用内存记录中的新 `deck_id` 查询并返回该卡组当前的名称，同时重新生成指向该卡组的 `Location`。首次创建返回 `201`；去重后的重复请求返回 `200`。如果新卡组后来已被删除，重复请求返回 `404 deck_not_found`。
 
 创建空白卡组并写“创建卡组”日志。请求：
 
 ```json
-{"name": "新卡组"}
+{"name": "新建卡组"}
 ```
 
-`name` 必填，并按公共卡组名称边界校验。
+`name` 必填，并按公共卡组名称边界校验。卡组列表的“新建卡组”操作固定以 `{"name":"新建卡组"}` 调用本接口；这是新建空白卡组的初始名称。创建成功后前端进入编辑页并允许用户修改名称，修改后的名称通过保存接口提交。
 
 响应 `201`，设置 `Location: /api/v1/decks/{deck_id}`：
 
 ```json
-{"deck_id":"12","name":"新卡组","version":"1"}
+{"deck_id":"12","name":"新建卡组"}
 ```
 
 ### 8.3 `GET /api/v1/decks/{deck_id}`
@@ -688,14 +725,19 @@ rarity: common | uncommon | rare | mythic | special | bonus
 {
   "deck_id": "12",
   "name": "Superfriends",
-  "version": "3",
   "source_text": "About\nName Superfriends\n...",
+  "cover_scryfall_id": "00000000-0000-0000-0000-000000000000",
   "created_at": "2026-10-01T04:00:00Z",
   "updated_at": "2026-10-09T04:00:00Z",
   "sections": [
     {
+      "type": "commander",
+      "quantity": 0,
+      "cards": []
+    },
+    {
       "type": "mainboard",
-      "quantity": 99,
+      "quantity": 1,
       "cards": [
         {
           "scryfall_id": "00000000-0000-0000-0000-000000000000",
@@ -709,7 +751,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
             "display_name": "生机妮莎",
             "set": {"set_id":"00000000-0000-0000-0000-000000000001","code":"kld","name":"Kaladesh","display_name":"卡拉德许","released_at":"2016-09-30"},
             "collector_number": "163",
-            "language": {"code":"en","name":"英文","sort_order":1},
+            "language": {"code":"en","display_name":"英文","sort_order":1},
             "released_at": "2016-09-30",
             "cmc": 5,
             "mana_cost": "{3}{G}{G}",
@@ -732,17 +774,28 @@ rarity: common | uncommon | rare | mythic | special | bonus
             "produced_mana": [],
             "type_groups": ["planeswalker"],
             "oracle_tags": ["Card Advantage"],
-            "is_land": false
+            "is_land": false,
+            "can_be_commander": true
           },
           "exception": {"type": "shortage", "missing_quantity": 1}
         }
       ]
+    },
+    {
+      "type": "sideboard",
+      "quantity": 0,
+      "cards": []
+    },
+    {
+      "type": "maybeboard",
+      "quantity": 0,
+      "cards": []
     }
   ],
   "summary": {
-    "counted_total": 100,
-    "collection_rate": 0.91,
-    "shortage": {"distinct_cards": 2, "missing_quantity": 3},
+    "counted_total": 1,
+    "collection_rate": 0,
+    "shortage": {"distinct_cards": 1, "missing_quantity": 1},
     "deck_usage": {"distinct_cards": 1, "missing_quantity": 1}
   }
 }
@@ -758,7 +811,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `DeckCardDTO` | `scryfall_id` | string | 否 | 与内嵌 `card.scryfall_id` 相同；请求回传该字段 |
 |  | `oracle_id` | string | 否 | 与内嵌 `card.oracle_id` 相同；只读，不得放入保存请求 |
 |  | `quantity` | integer | 否 | 当前分区编辑数量，最小为 1 |
-|  | `type_group` | string | 否 | 后端确定的稳定类型分组代码 |
+|  | `type_group` | `deck_card_type_group` | 否 | 后端确定的单一牌列归类；只用于决定非指挥官牌显示在哪个固定类型列 |
 |  | `card` | `CardSummaryDTO` | 否 | 自动选定的展示版本及详情入口 |
 |  | `translated_type_line` | string | 否 | 翻译缺失时回退英文 |
 |  | `translated_oracle_text` | string | 是 | 卡牌没有规则叙述时为 `null` |
@@ -771,27 +824,44 @@ rarity: common | uncommon | rare | mythic | special | bonus
 |  | `exception` | object | 是 | 无异常为 `null`；否则含 `type` 和非负 `missing_quantity` |
 | `DeckCardStatisticsDTO` | `cmc` | number | 否 | 法术力值 |
 |  | `mana_cost` | string | 是 | 无费用时为 `null` |
-|  | `colors`、`produced_mana`、`type_groups`、`oracle_tags` | string[] | 否 | 无值时为 `[]` |
+|  | `colors`、`produced_mana`、`oracle_tags` | string[] | 否 | 无值时为 `[]` |
+|  | `type_groups` | `deck_card_type_group[]` | 否 | 用于统计的多值类型集合；至少一项，去重后按类型归类优先级返回 |
 |  | `is_land` | boolean | 否 | 是否为地牌 |
+|  | `can_be_commander` | boolean | 否 | 是否符合本期“传奇生物、传奇鹏洛客或传奇载具可以进入指挥官区”的业务规则；不是“是否为传奇”的属性值 |
 
-顶层 `sections` 必须按 `commander`、`mainboard`、`sideboard`、`maybeboard` 顺序返回四项。`summary.counted_total` 统计指挥官、主牌和备牌，备选不计入；`collection_rate` 范围为 0 至 1，`counted_total = 0` 时固定为 0。两个异常汇总对象均包含非负的 `distinct_cards` 和 `missing_quantity`，没有对应异常时仍返回两个零值。统计范围由前端根据外层 `DeckSectionDTO.type` 选择，不能通过删除非统计分区的原始属性来表达；同一逻辑卡同时位于不同分区时，各分区中的 `DeckCardDTO` 独立携带本区数量和同一份统计属性。
+顶层 `cover_scryfall_id` 类型为 `string | null`。后端读取数据库中的 `deck.cover_oracle_id`，按与卡组牌张相同的统一展示版本规则选择具体印刷，并把选中记录的 `scryfall_id` 返回；未配置封面时为 `null`。非空值必须与 `sections` 中该封面逻辑卡对应的 `DeckCardDTO.scryfall_id` 一致，前端直接用它标记当前封面并初始化待提交值，不再接收或处理封面的 `oracle_id`。用户重新选择封面时，将待提交值改为被点击卡牌的 `scryfall_id`；保存成功返回的 `cover_scryfall_id` 可能因后端重新选择展示版本而与请求值不同，前端以响应为准。顶层 `sections` 必须按 `commander`、`mainboard`、`sideboard`、`maybeboard` 顺序返回四项。`summary.counted_total` 统计指挥官、主牌和备牌，备选不计入；`collection_rate` 范围为 0 至 1，`counted_total = 0` 时固定为 0。两个异常汇总对象均包含非负的 `distinct_cards` 和 `missing_quantity`，没有对应异常时仍返回两个零值。统计范围由前端根据外层 `DeckSectionDTO.type` 选择，不能通过删除非统计分区的原始属性来表达；同一逻辑卡同时位于不同分区时，各分区中的 `DeckCardDTO` 独立携带本区数量和同一份统计属性。
+
+界面中的主牌可见区域同时承载 `commander` 和 `mainboard` 两个真实分区：`commander` 只显示在固定指挥官列，`mainboard` 显示在其余类型列；备牌、备选分别对应 `sideboard`、`maybeboard`。视觉上的同区展示不得合并或改写 API 分区，保存时仍提交四个真实分区。
+
+`type_group` 与 `statistics.type_groups` 使用同一套后端权威派生结果，但职责不同。后端先合并同一逻辑卡全部牌面的英文 Oracle 类型：任一牌面命中 `Land`、`Creature`、`Planeswalker`、`Instant`、`Sorcery`、`Enchantment`、`Artifact` 时，分别把对应枚举加入 `statistics.type_groups`；多个牌面或同一牌面命中的结果去重。若全部牌面都没有命中上述七类，则返回唯一的 `other`。因此双面牌按复合类型处理，例如一面为 `Sorcery`、另一面为 `Land` 时，`statistics.type_groups = ["land", "sorcery"]`。
+
+`DeckCardStatisticsDTO` 的 `cmc`、`mana_cost`、`colors` 和 `produced_mana` 固定取后端为该逻辑卡选定的具体展示印刷之主牌面记录，主牌面的判定与 `CardSummaryDTO` 相同：单面牌取 `face_index = -1`，多牌面牌取 `face_index = 0`。`is_land` 是例外：只要该逻辑卡任一牌面的英文 Oracle 主类型包含 `Land` 就返回 `true`，不能只检查主牌面。卡组详情、编辑上下文和代码解析补齐上下文必须使用同一规则。
+
+`type_group` 从上述统计集合中按 `land → creature → planeswalker → instant → sorcery → enchantment → artifact → other` 的固定优先级取第一项。该优先级同时适用于单牌面多类型牌和多牌面牌，例如神器生物归入 `creature`，神器地归入 `land`。`commander` 分区中的牌在界面上始终进入指挥官列，不使用 `type_group` 决定当前位置；两个类型字段仍必须正常返回，用于统计以及牌张离开指挥官分区后的本地归列。前端不得解析 `type_line`、牌面或 `statistics.type_groups` 重新推导 `type_group`。
+
+普通牌列按神器、生物、结界、瞬间、法术、鹏洛客、地的既定显示顺序排列，`other` 固定追加在地之后。页面中没有任何 `type_group = other` 的牌时不渲染该列；任一可见区域出现该类型时，三个区域共同保留最右侧 `other` 列坐标，仅在实际有牌的区域渲染标题和牌张。可用宽度足够时内容区向右扩展；不足时保持既定列宽和间距并启用区域横向滚动，不得换行、压缩卡图或缩小交互目标。编辑状态中加入或移除最后一张 `other` 牌时，前端同步显示或隐藏该列并重新计算溢出。
+
+`can_be_commander` 由后端按卡面计算：同一个 `card_uuid` 对应的英文 Oracle 类型栏必须包含 `Legendary`，并且同时包含 `Creature`、`Planeswalker`、`Vehicle` 三个类型词元中的至少一个，才返回 `true`。不得把不同卡面的类型词元合并判断，也不得由前端解析英文或中文类型栏。该字段只表达本期允许进入 `commander` 分区的条件，不等同于完整的 Commander 赛制合法性校验。
 
 - 卡组牌张使用具体展示版本的 `scryfall_id` 发起请求，同时把 `oracle_id` 作为只读属性返回。前端用 `oracle_id` 在本地判断同一逻辑卡、合并同分区数量，用 `scryfall_id` 展示、跳转和保存；后端保存前再次把 `scryfall_id` 解析为 `oracle_id`，不得信任客户端回传逻辑身份。
-- 后端按“拥有版本 → 愿望单版本 → 最新印刷版本；同层发行日期降序；同日内部稳定标识”选择用于展示和详情跳转的 `card`。
+- 后端按“拥有版本 → 愿望单版本 → 最新印刷版本；同层发行日期降序；同日 `scryfall_id` 升序”选择用于展示和详情跳转的 `card`。
 - 每个 `DeckCardDTO.statistics` 都返回前端计算统计图、概率表和分组所需的原始属性，包括备牌和备选区；前端当前只用指挥官和主牌的 `quantity` 计权。备牌或备选拖入主牌后直接使用随卡牌已有的属性重算，不得为拖拽再次请求后端或 Card DB。
-- 各区和各类型列的排序由后端按需求规则确定，前端保持返回顺序。
+- 详情统计中的整体法术力曲线及其类型、颜色、功能标签子曲线必须排除 `statistics.is_land = true` 的牌；因此任一牌面为地的多牌面牌整体排除，平均法术力值同样排除。颜色子曲线与颜色数量分布中的 `W/U/B/R/G` 读取主牌面的 `statistics.colors`，空数组不进入任何颜色；只有主牌面的 `statistics.mana_cost` 明确包含 `{C}` 或包含 `C` 的复合符号时才按牌张数进入无色，同一张牌含多个无色符号也只计一次。费用颜色同样由前端解析主牌面的 `statistics.mana_cost`：混血、非瑞克西亚等复合符号按其中包含的全部 `W/U/B/R/G/C` 分别各计 1 点；只有 `{C}` 或明确包含 `C` 的复合符号计入无色，通用数字、变量符号和“任意颜色”不得计入 `C`。产费颜色只按主牌面的 `statistics.produced_mana` 中明确返回的各颜色分别计权，只有数组明确包含 `C` 时才计入无色。
+- 前端在首次加载响应、增加卡牌、数量变化、拖拽换区和代码导入成功后，统一对各区的每个类型列按“法术力值从低到高 → 颜色组合固定顺序 → 英文卡名不区分大小写 A–Z → `DeckCardDTO.scryfall_id` 升序”重新排序。后端不以响应数组顺序承担页面排序职责；前端编辑过程中不得依赖后端重新排序。
 - `other_decks_quantity` 和 `other_decks_count` 是编辑页的稳定基线。前端按 `oracle_id` 汇总当前未保存编辑态中的指挥官、主牌和备牌数量，备选区不计入，然后计算 `all_decks_quantity = other_decks_quantity + current_edit_quantity`；`using_decks = other_decks_count + 1` 仅在 `current_edit_quantity > 0` 时成立，否则等于 `other_decks_count`。数量加减和分区拖拽只重算上述前端值，不重新请求后端。
 - 响应中的 `all_decks_quantity`、`using_decks` 和 `exception` 只描述请求发生时当前卡组的已保存状态，供只读详情页直接展示；编辑页产生未保存修改后必须改用上述基线公式，不得继续把这三个已保存值当作当前编辑结果。
 - `GET /api/v1/decks` 的列表项及其 `exception` 不使用上述前端编辑公式，也不增加 `other_decks_quantity` 或 `other_decks_count`。卡组列表始终由后端基于各卡组已保存内容计算最终异常，现有响应结构和异常优先级不变。
 
 ### 8.4 `POST /api/v1/decks/{deck_id}/save`
 
+本接口不使用 `Idempotency-Key`。保存是用户主动确认的完整覆盖操作，不使用版本号或乐观锁阻断旧编辑态；旧页面提交的内容也视为用户可能有意恢复的卡组状态。
+
 请求提交完整当前编辑态，不提交原始导入文本：
 
 ```json
 {
-  "version": "3",
   "name": "Superfriends upgraded",
+  "cover_scryfall_id": "00000000-0000-0000-0000-000000000000",
   "sections": [
     {
       "type": "commander",
@@ -805,34 +875,35 @@ rarity: common | uncommon | rare | mythic | special | bonus
 }
 ```
 
-- 顶层 `version`、`name`、`sections` 必填；每个分区对象的 `type`、`cards` 必填，每个卡牌对象的 `scryfall_id`、`quantity` 必填。四种分区类型可以不全部出现，缺少的分区按空处理；同一分区内映射到相同 `oracle_id` 的多个 `scryfall_id` 不得形成重复明细，后端按逻辑卡合并数量并校验上限；数量必须为正整数。
-- 请求中的 `scryfall_id` 只用于解析和验证对应 `oracle_id`，不会作为 `deck_card` 的持久化字段，也不承诺保存后继续展示该具体印刷。后端验证全部标识仍有效且具有 `oracle_id`，再按当前名称和真实分区内容生成标准 `source_text`；请求体不接受 `oracle_id`。成功响应中的展示 `scryfall_id` 仍由后端按统一展示版本规则重新选择，因此可以与保存请求提交的值不同。这是卡组不保存具体印刷版本的有意产品行为。
+- 顶层 `name`、`cover_scryfall_id`、`sections` 必填；`cover_scryfall_id` 类型为 `string | null`，`null` 表示不设置封面。每个分区对象的 `type`、`cards` 必填，每个卡牌对象的 `scryfall_id`、`quantity` 必填。四种分区类型可以不全部出现，缺少的分区按空处理；`commander` 允许缺少或 `cards: []`，保存不得要求至少存在一张指挥官。同一分区内映射到相同 `oracle_id` 的多个 `scryfall_id` 不得形成重复明细，后端按逻辑卡合并数量并校验上限；数量必须为正整数。
+- 后端必须把非空 `cover_scryfall_id` 解析为对应 `oracle_id`，并确认该逻辑卡同时存在于本次 `sections` 解析出的任一分区中，可以来自指挥官、主牌、备牌或备选区。封面逻辑卡不在本次卡组内容中时返回 `422 validation_failed`，`details[].field` 为 `cover_scryfall_id`、`reason` 为 `cover_card_not_in_deck`，不得自动改选其他牌或部分保存。前端删除封面逻辑卡在全部分区中的最后一条记录时必须把本地 `cover_scryfall_id` 同步清为 `null`。
+- `sections[].cards[]` 和顶层 `cover_scryfall_id` 都只提交后端此前返回的具体卡牌 `scryfall_id`，由后端解析并验证对应 `oracle_id`。这些具体印刷标识不会作为 `deck_card` 或封面的持久化身份，也不承诺保存后继续展示该具体印刷。后端验证全部标识仍有效且具有 `oracle_id`，再按当前名称和真实分区内容生成标准 `source_text`，并把封面解析结果保存为 `deck.cover_oracle_id`；请求不接受客户端提供任何 `oracle_id`。成功响应中的展示 `scryfall_id` 仍由后端按统一展示版本规则重新选择，因此可以与保存请求提交的值不同。这是卡组不保存具体印刷版本的有意产品行为。
+- 保存请求中的 `cover_scryfall_id` 不存在或已经失效时返回 `422 card_reference_invalid`，`details[].field` 为 `cover_scryfall_id`；记录存在但没有 `oracle_id` 时返回 `422 deck_card_not_supported` 并使用同一字段路径。任一失败都不允许部分保存。
 - 保存请求中任一 `scryfall_id` 不存在或已经失效时返回 `422 card_reference_invalid`，以 `sections[n].cards[m].scryfall_id` 定位；记录存在但没有 `oracle_id` 时返回 `422 deck_card_not_supported` 并使用相同字段路径。任一失败都不允许部分保存。
-- 使用 `version` 乐观锁。同一事务中替换 `deck_card`、更新名称和标准代码、递增版本；规范化后的名称、分区和数量均未变化时不替换明细、不更新 `updated_at`、不递增版本，也不写“修改卡组”日志，直接返回当前完整详情。
+- 保存前，后端必须按与 `can_be_commander` 相同的权威规则重新校验 `commander` 分区中的每张牌。任一牌不符合“传奇生物、传奇鹏洛客或传奇载具”条件时返回 `422 validation_failed`，以 `sections[n].cards[m].scryfall_id` 定位，并在该明细中返回 `reason: "commander_card_not_eligible"`；不得自动移入主牌，也不得部分保存。客户端回传内容不能绕过该校验。
+- 不检查客户端读取卡组后的数据库状态，也不判断提交内容是否来自旧页面。同一 App DB 事务中锁定目标卡组、替换 `deck_card` 并更新名称、封面逻辑卡和标准代码；并发保存按取得目标卡组写锁的顺序串行执行，最后一次成功提交的完整编辑态成为当前权威状态。
+- 规范化后的名称、封面逻辑卡、分区和数量均与当前权威状态相同时，不替换明细、不更新 `updated_at`，也不写“修改卡组”日志，直接返回当前完整详情。
 - 成功返回更新后的完整卡组详情。
-- 版本不匹配返回 `409 deck_version_conflict`，不得覆盖数据库或清空客户端编辑态。
 
 ### 8.5 `POST /api/v1/decks/{deck_id}/copies`
 
-无请求体。复制卡组及全部分区，名称以固定前缀 `复制 ` 开始，写一条“复制卡组”日志。名称最长 255 个 Unicode 码点；若 `复制 ` 加原名称超过上限，保留完整前缀并从原名称末尾截断至总长 255，不拆分 Unicode 码点。重复复制继续在当次原名称前增加前缀并应用相同截断规则，不要求名称唯一。
+本接口必须使用 `Idempotency-Key`。缓存有效期内的重复请求不得再次复制卡组；服务端使用内存记录中的新 `deck_id` 查询并返回该副本当前的名称，同时重新生成指向该副本的 `Location`。首次复制返回 `201`；去重后的重复请求返回 `200`。如果副本后来已被删除，重复请求返回 `404 deck_not_found`。
 
-响应 `201`，`Location` 指向新卡组，并返回新卡组的 `deck_id`、名称和版本。
+无请求体。复制卡组、已保存的 `cover_oracle_id` 及全部分区，名称以固定前缀 `复制 ` 开始，写一条“复制卡组”日志。名称最长 255 个 Unicode 码点；若 `复制 ` 加原名称超过上限，保留完整前缀并从原名称末尾截断至总长 255，不拆分 Unicode 码点。重复复制继续在当次原名称前增加前缀并应用相同截断规则，不要求名称唯一。
+
+响应 `201`，`Location` 指向新卡组，并返回新卡组的 `deck_id` 和名称。
 
 ### 8.6 `POST /api/v1/decks/{deck_id}/delete`
 
-请求：
+本接口不使用 `Idempotency-Key`。
 
-```json
-{"version":"3"}
-```
+无请求体。服务端不校验版本；在同一 App DB 事务中锁定并删除卡组及级联明细，同时写“删除卡组”日志，日志保留删除前名称快照。
 
-服务端必须使用 `deck_id + version` 校验用户确认删除的仍是当前版本。版本不匹配返回 `409 deck_version_conflict`，不得删除已经被其他页面修改的卡组。在同一事务中删除卡组及级联明细并写“删除卡组”日志，日志保留删除前名称快照。
-
-请求字段 `version` 必填。
+保存和删除并发操作同一 `deck_id` 时按取得目标卡组写锁的顺序串行执行：删除先成功提交时，随后的保存返回 `404 deck_not_found`；保存先成功提交时，随后的删除删除该次保存后的卡组。
 
 响应 `200`：`{"deck_id":"12","deleted":true}`。
 
-相同 `Idempotency-Key` 重放时即使卡组已经不存在，也重放首次成功结果；使用新幂等键再次删除则返回 `404 deck_not_found`。
+删除成功后再次请求同一 `deck_id` 时返回 `404 deck_not_found`，不缓存或重放首次删除结果。
 
 ### 8.7 `POST /api/v1/decks/{deck_id}/parse_code`
 
@@ -867,7 +938,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
             "display_name":"阳光戒",
             "set":{"set_id":"00000000-0000-0000-0000-000000000001","code":"cmm","name":"Commander Masters","display_name":"指挥官大师","released_at":"2023-08-04"},
             "collector_number":"396",
-            "language":{"code":"en","name":"英文","sort_order":1},
+            "language":{"code":"en","display_name":"英文","sort_order":1},
             "released_at":"2023-08-04",
             "cmc":1,
             "mana_cost":"{1}",
@@ -897,17 +968,17 @@ rarity: common | uncommon | rare | mythic | special | bonus
 }
 ```
 
-失败不得返回部分解析结果。成功时固定返回四个分区且空分区为 `[]`；顺序与输入文本无关，固定为 `commander`、`mainboard`、`sideboard`、`maybeboard`。卡牌行中的 Set 代码、收藏编号和 `*F*` 被有意忽略，不能指定具体印刷、语言或工艺；后端只按数量、标准卡名和分区解析逻辑卡，再按统一规则选择展示印刷。
+失败不得返回部分解析结果。成功时固定返回四个分区且空分区为 `[]`；顺序与输入文本无关，固定为 `commander`、`mainboard`、`sideboard`、`maybeboard`。输入代码可以省略 `Commander` 段，解析结果中的 `commander.cards` 此时为 `[]`，不得因为没有指挥官而报错。卡牌行中的 Set 代码、收藏编号和 `*F*` 被有意忽略，不能指定具体印刷、语言或工艺；后端只按数量、标准卡名和分区解析逻辑卡，再按统一规则选择展示印刷。`Commander` 分区中的每张牌都必须按 `can_be_commander` 的同一权威规则校验；不符合“传奇生物、传奇鹏洛客或传奇载具”条件时整次解析返回 `422 deck_parse_failed`，对应行的 `reason` 为 `commander_card_not_eligible`，不得返回或应用部分解析结果。
 
 响应 `name` 类型为 `string | null`。代码中存在合法、非空且未超出长度上限的 `About`／`Name ` 行时返回解析出的规范化名称；没有 `Name ` 行，或 `Name ` 后为空白、超出长度上限时返回 `null`。`null` 表示“未提供有效的名称覆盖”，前端必须保留读取前的当前名称输入值，不得把名称设为 `null`，也不得清空或回退为已保存名称。名称元数据无效不得影响卡牌解析，也不得导致整次解析失败。
 
-解析响应只负责表达卡名解析结果、分区、数量和后端选定的展示印刷，不返回拥有量、其他卡组占用或完整统计属性。前端收到成功结果后，使用响应中的全部 `scryfall_id` 调用 `POST /api/v1/decks/{deck_id}/card_contexts` 批量取得尚未缓存的编辑上下文；上下文请求也成功后才一次性替换当前未保存编辑态。任一请求失败都不得部分覆盖原编辑内容。
+解析响应只负责表达卡名解析结果、分区、数量和后端选定的展示印刷，不返回拥有量、其他卡组占用或完整统计属性。前端收到成功结果后，对响应中的 `scryfall_id` 去重并排除已经缓存的编辑上下文，再按每批最多 200 项调用 `POST /api/v1/decks/{deck_id}/card_contexts`。只有所有批次均成功且返回项完整时，前端才一次性替换当前未保存编辑态；解析请求或任一上下文批次失败时均不得部分覆盖原编辑内容。
 
 ### 8.8 `GET /api/v1/decks/{deck_id}/cards/search`
 
-查询参数：`q` 必填、`cursor` 可选。直接按 `scryfall_card.name` 模糊匹配具有非空 `oracle_id`、可加入卡组的具体记录，再由后端按 `oracle_id` 去重，用于当前卡组的增加卡牌弹窗；`deck_id` 不存在时返回 `404 deck_not_found`。
+查询参数：`q` 必填、`cursor` 可选。直接按 `scryfall_card.name` 模糊匹配具有非空 `oracle_id`、可加入卡组的具体记录，再由后端按 `oracle_id` 去重，用于当前卡组的增加卡牌悬浮窗；`deck_id` 不存在时返回 `404 deck_not_found`。
 
-响应使用通用游标结构；每项为 `DeckCardCandidateDTO`：`card` 是后端选定展示版本的 `CardSummaryDTO`，其中包含只读 `oracle_id`；`display_type_line` 是翻译缺失时回退英文的非空字符串，`display_oracle_text` 在没有规则叙述时为 `null`。展示卡图选择规则与卡组详情一致。搜索结果按 `oracle_id` 去重，前端使用返回的只读 `oracle_id` 判断主牌中是否已经存在同一逻辑卡。
+响应使用通用游标结构；每项为 `DeckCardCandidateDTO`：`card` 是后端选定展示版本的 `CardSummaryDTO`，其中包含只读 `oracle_id`；`display_type_line` 是翻译缺失时回退英文的非空字符串，`display_oracle_text` 在没有规则叙述时为 `null`。展示卡图选择规则与卡组详情一致。搜索结果先按 `oracle_id` 去重，再按 `scryfall_card.name` 不区分大小写 A–Z 排序，同名时按 `oracle_id` 升序兜底并生成游标；前端使用返回的只读 `oracle_id` 判断主牌中是否已经存在同一逻辑卡。
 
 候选搜索保持轻量，不返回拥有量、其他卡组占用或完整统计属性。用户首次点击某个尚无编辑上下文的候选项“加入”时，前端先以该项 `card.scryfall_id` 调用下述批量上下文接口；成功后把牌加入本地编辑态，失败时不加入并打开统一错误弹窗。已经缓存上下文的逻辑卡再次加入时不重复请求。
 
@@ -946,7 +1017,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
         "produced_mana": ["C"],
         "type_groups": ["artifact"],
         "oracle_tags": ["Mana Rock"],
-        "is_land": false
+        "is_land": false,
+        "can_be_commander": false
       }
     }
   ]
@@ -957,7 +1029,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 - 任一请求数组元素不存在或已经失效时，整个请求返回 `422 card_reference_invalid`，并以 `scryfall_ids[n]` 定位原始元素，不返回部分结果。记录存在但 `oracle_id` 为空时返回 `422 deck_card_not_supported`，使用相同字段路径定位。
 - `owned_quantity` 是当前逻辑卡实际拥有量；`other_decks_quantity` 和 `other_decks_count` 明确排除当前 `deck_id`，作为前端计算当前未保存编辑态下所有卡组合计及使用卡组数的稳定基线。
 - `statistics` 直接复用 `DeckCardStatisticsDTO`；数量不属于该 DTO，前端始终使用卡牌在当前分区的 `quantity` 计权。卡组详情、代码解析后批量补齐上下文和首次增加卡牌三条路径取得的统计属性结构必须一致。
-- 前端负责本地维护分区数量、同分区 `oracle_id` 合并、固定排序、总张数、标准代码预览、异常、收集率和统计结果。上下文只在代码解析成功、首次加入尚未缓存的逻辑卡，或缓存被明确失效时批量取得；加减数量、拖拽分区和重复加入已缓存卡牌不得逐次请求后端。
+- 前端负责本地维护分区数量、同分区 `oracle_id` 合并、固定排序、总张数、异常、收集率和统计结果。卡组代码输入框只作为读取卡组配置的输入入口：读取成功后由解析结果生成前端卡牌列表，后续列表编辑不得反向更新输入框，前端也不维护标准代码预览。保存时后端以请求中的名称和四个真实分区为权威内容，重新生成标准 `source_text` 并入库。上下文只在代码解析成功、首次加入尚未缓存的逻辑卡，或缓存被明确失效时批量取得；加减数量、拖拽分区和重复加入已缓存卡牌不得逐次请求后端。
 - Card DB 或 App DB 查询失败时返回统一错误信封；前端保留请求前的未保存编辑态。
 
 ## 9. 操作日志
@@ -994,7 +1066,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
 }
 ```
 
-排序固定为日期降序，同日按八种动作的枚举顺序。
+排序固定为 `operation_date DESC`，同一日期内按 `action_type` 的八种操作类型枚举顺序。
 
 ### 9.2 `GET /api/v1/operation_logs`
 
@@ -1015,6 +1087,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
         "set_code": "m11",
         "collector_number": "146",
         "language": "en",
+        "language_display_name": "英文",
         "finish": "normal",
         "quantity_delta": 1
       }
@@ -1027,7 +1100,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
 }
 ```
 
-愿望单日志的 `finish` 和 `quantity_delta` 为 `null`。卡牌日志的 `language` 返回操作时快照的语言代码，不额外保存或返回语言名称；前端使用与 Set 列表完全相同的一份固定语言代码展示映射，例如 `en → 英文`，未知代码直接显示原代码。卡组动作将 `kind` 设为 `deck`，并以 `deck: {"deck_id":"12","name":"Superfriends"}` 代替 `card`。除语言名称由前端固定映射外，其余展示字段使用日志快照，不依赖当前 Card DB 或卡组仍然存在。
+愿望单日志的 `finish` 和 `quantity_delta` 为 `null`。卡牌日志的 `language` 返回操作时快照的语言代码，`language_display_name` 返回同一次写入时从 `scryfall_language.display_name` 取得的展示名快照；两者均不可为空，前端直接原样展示 `language_display_name`，不得维护语言代码映射或在读取日志时重新查询当前 Card DB。卡组动作将 `kind` 设为 `deck`，并以 `deck: {"deck_id":"12","name":"Superfriends"}` 代替 `card`。所有展示字段均使用日志快照，不依赖当前 Card DB 或卡组仍然存在。
 
 ## 10. 卡牌数据维护接口
 
@@ -1071,7 +1144,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
 | 400 | `invalid_cursor` | 游标无效、过期或与当前查询条件不匹配 |
 | 400 | `invalid_date_range` | 开始日期晚于结束日期 |
 | 400 | `confirmation_required` | 卡牌加载确认文本错误 |
-| 400 | `idempotency_key_required` | 状态变更接口缺少或未正确填写 `Idempotency-Key` |
+| 400 | `idempotency_key_required` | 收藏调整、愿望单状态、创建卡组或复制卡组缺少或未正确填写 `Idempotency-Key` |
 | 403 | `load_disabled` | 卡牌数据加载未启用 |
 | 404 | `not_found` | 路由不存在 |
 | 404 | `set_not_found` | Set 不存在 |
@@ -1080,14 +1153,12 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
 | 404 | `task_not_found` | 加载任务不存在 |
 | 409 | `load_in_progress` | 已有加载任务运行 |
 | 409 | `collection_underflow` | 收藏减少后将小于零 |
-| 409 | `deck_version_conflict` | 卡组乐观锁版本不匹配 |
-| 409 | `idempotency_conflict` | 同一幂等键已用于不同方法、路径或请求体 |
+| 409 | `idempotency_conflict` | 缓存有效期内同一幂等键已用于不同方法、路径或请求体 |
 | 405 | `method_not_allowed` | 路径存在但 HTTP 方法不受支持 |
 | 413 | `request_too_large` | 请求体超过服务端限制 |
 | 415 | `unsupported_media_type` | 带请求体的接口未使用 `application/json` |
 | 422 | `validation_failed` | 字段值或业务规则不合法 |
 | 422 | `card_reference_invalid` | 保存卡组或查询编辑上下文时，请求体中的 `scryfall_id` 不存在或已失效；`details[].field` 定位具体元素 |
-| 422 | `finish_not_available` | 当前印刷不支持请求的工艺 |
 | 422 | `deck_parse_failed` | 卡组代码存在无法识别或歧义行 |
 | 422 | `deck_card_not_supported` | 请求的 `scryfall_id` 没有逻辑卡牌身份，不能加入卡组 |
 | 500 | `internal_error` | 未预期服务端错误 |

@@ -347,10 +347,14 @@ var derivedSpecs = []spec{
 			col("code", "VARCHAR(32) NOT NULL", kindString),
 			col("name", "VARCHAR(255) NOT NULL", kindString),
 			col("set_type", "VARCHAR(64) NOT NULL", kindString),
+			col("released_at", "DATE NOT NULL", kindDate),
+			col("card_count", "BIGINT UNSIGNED NOT NULL", kindInteger),
 		},
 		indexes: []indexSpec{
 			idx("idx_scryfall_set_code", "code"),
 			idx("idx_scryfall_set_type", "set_type"),
+			idx("idx_scryfall_set_released_at", "released_at"),
+			idx("idx_scryfall_set_card_count", "card_count"),
 		},
 	},
 	{
@@ -388,6 +392,7 @@ var dictionarySpecs = []spec{
 		columns: []columnSpec{
 			col("code", "VARCHAR(8) NOT NULL", kindString),
 			col("name", "VARCHAR(64) NOT NULL", kindString),
+			col("display_name", "VARCHAR(64) NOT NULL", kindString),
 			col("sort_order", "TINYINT UNSIGNED NOT NULL", kindInteger),
 		},
 	},

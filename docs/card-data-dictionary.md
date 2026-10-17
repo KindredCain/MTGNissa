@@ -50,7 +50,7 @@
 
 ### 2.1 字典、位掩码与检索关联
 
-颜色、语言、布局、卡框、卡框效果、工艺和游戏平台是小型说明性字典。字典的代码及英文说明来自 Scryfall 官方 Colors、Languages、Layouts、Frames 和 Card Object 元数据：
+颜色、语言、布局、卡框、卡框效果、工艺和游戏平台是小型说明性字典。字典的代码及英文说明来自 Scryfall 官方 Colors、Languages、Layouts、Frames 和 Card Object 元数据；语言字典另维护产品 UI 使用的展示名：
 
 | 字典表 | 卡牌表关联 |
 | --- | --- |
@@ -77,7 +77,7 @@
 | `scryfall_oracle_ruling` | `rulings.jsonl` | 保存 Oracle 身份与规则内容之间的多对多关联、来源和发布日期。 |
 | `oracle_tagging` | `oracle-tags.jsonl` | 保存 Oracle 身份与功能标签之间的多对多关联及关联强度。 |
 
-`scryfall_set` 从卡牌文件中的 `set_id`、`set_code`、`set_name` 和 `set_type` 动态汇总，卡牌主表仅保留 `set_id`。`preview` 不参与检索，以规范 JSON 文本存入主表的可空 `LONGTEXT` 列。Oracle Tag 只导入本系统需要的名称、说明、别名、层级与卡牌关联，不保留 Tagger URI 等外部站点展示信息。
+`scryfall_set` 从卡牌文件中的 `set_id`、`set_code`、`set_name`、`set_type` 和 `released_at` 动态汇总，卡牌主表仅保留 `set_id`。同一 `set_id` 的代码、名称、类型和发行日期必须一致，任一字段不一致时终止导入，不通过最早或最晚日期静默归并。全部源文件导入完成后，导入任务按 `set_id` 对 `scryfall_card` 的不同 `collector_number` 计数，并一次性回填 `scryfall_set.card_count`；语言和牌面展开不得重复增加数量，业务查询不得再次实时聚合。`preview` 不参与检索，以规范 JSON 文本存入主表的可空 `LONGTEXT` 列。Oracle Tag 只导入本系统需要的名称、说明、别名、层级与卡牌关联，不保留 Tagger URI 等外部站点展示信息。
 
 `artist_ids` 不用于当前检索，按源顺序以逗号连接保存在 `scryfall_card`；`former_names` 可能包含逗号，以压缩 JSON 数组文本保存在 `oracle_translation`。两者只作为元数据保留，不拆关联表、不建立索引。
 
@@ -104,7 +104,7 @@
 
 ### 2.2 数据库物理模型
 
-本节记录导入器当前实际创建的正式表。所有表使用 `InnoDB`、`utf8mb4` 和 `utf8mb4_unicode_ci`。除明确标记为 `NULL` 的列外均为 `NOT NULL`；当前列均未声明数据库默认值。`BOOLEAN` 使用 MySQL 布尔类型语法，实际等价于 `TINYINT(1)`。
+本节记录导入器当前实际创建的正式表。所有表使用 `InnoDB`、`utf8mb4` 和 `utf8mb4_unicode_ci`。除明确标记为 `NULL` 的列外均为 `NOT NULL`；当前列均未声明数据库默认值。`BOOLEAN` 使用 MySQL 布尔类型语法，实际等价于 `TINYINT(1)`。所有 `DATETIME(6)` 字段在入库前统一转换为 UTC，数据库不保存来源时区或服务器本地时区值；接口展示需要本地时间时再按应用配置时区转换。
 
 为了支持整套表通过一次 `RENAME TABLE` 原子切换，当前不创建跨表物理外键。下文“关联”均为由导入校验和业务查询维护的逻辑外键；主键和普通索引仍会实际创建。
 
@@ -197,7 +197,7 @@
 
 | 表 | 列 | 主键 | 索引及关联 |
 | --- | --- | --- | --- |
-| `scryfall_set` | `set_id CHAR(36) NOT NULL`、`code VARCHAR(32) NOT NULL`、`name VARCHAR(255) NOT NULL`、`set_type VARCHAR(64) NOT NULL` | `set_id` | 索引 `code`、`set_type`；从卡牌源字段动态汇总。 |
+| `scryfall_set` | `set_id CHAR(36) NOT NULL`、`code VARCHAR(32) NOT NULL`、`name VARCHAR(255) NOT NULL`、`set_type VARCHAR(64) NOT NULL`、`released_at DATE NOT NULL`、`card_count BIGINT UNSIGNED NOT NULL` | `set_id` | 索引 `code`、`set_type`、`released_at`、`card_count`；元数据从卡牌源字段动态汇总，卡牌数量在全部导入完成后回填。 |
 | `set_translation` | `set_id CHAR(36) NOT NULL`、`code VARCHAR(32) NULL`、`name VARCHAR(255) NULL`、`source VARCHAR(128) NULL`、`stage INT NULL` | `set_id` | 索引 `code`；`set_id` 逻辑关联 `scryfall_set.set_id`，只提供翻译元数据。 |
 
 系列查询的标准关联链为：
@@ -208,7 +208,7 @@ scryfall_card.set_id
     -> set_translation.set_id
 ```
 
-展示名称优先使用非空的 `set_translation.name`，否则回退 `scryfall_set.name`。不得使用 `set_translation` 创建卡牌或英文系列实体。
+展示名称优先使用非空的 `set_translation.name`，否则回退 `scryfall_set.name`。不得使用 `set_translation` 创建卡牌或英文系列实体。`scryfall_set.card_count` 在临时表的全部源文件导入完成后通过 `COUNT(DISTINCT scryfall_card.collector_number)` 一次性计算并回填，再随整套临时表原子切换为活动数据；日常 Set 列表查询直接读取该列。
 
 #### 2.2.3 中文翻译和本地化表
 
@@ -252,7 +252,7 @@ scryfall_card.set_id
 | 表 | 列定义 | 主键 | 使用位置 |
 | --- | --- | --- | --- |
 | `scryfall_color` | `code CHAR(1) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(32) NOT NULL`、`description VARCHAR(255) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | 三个颜色相关位掩码。 |
-| `scryfall_language` | `code VARCHAR(8) NOT NULL`、`name VARCHAR(64) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | `scryfall_card.lang`；`sort_order` 固定语言字典及产品展示顺序。完整字典包含 `qya`（Quenya）和 `dw`（Dwarvish）。 |
+| `scryfall_language` | `code VARCHAR(8) NOT NULL`、`name VARCHAR(64) NOT NULL`、`display_name VARCHAR(64) NOT NULL`、`sort_order TINYINT UNSIGNED NOT NULL` | `code` | `scryfall_card.lang`；`name` 保存英文名称，`display_name` 保存产品 UI 使用的内置展示名；`sort_order` 固定语言字典及产品展示顺序。 |
 | `scryfall_layout` | `code VARCHAR(64) NOT NULL`、`name VARCHAR(128) NOT NULL`、`description VARCHAR(512) NOT NULL`、`face_category VARCHAR(32) NOT NULL` | `code` | `scryfall_card.layout`。 |
 | `scryfall_frame` | `code VARCHAR(32) NOT NULL`、`name VARCHAR(128) NOT NULL`、`description VARCHAR(512) NOT NULL` | `code` | `scryfall_card.frame`。 |
 | `scryfall_frame_effect` | `code VARCHAR(64) NOT NULL`、`description VARCHAR(512) NOT NULL` | `code` | `scryfall_card_frame_effect.frame_effect`。 |
@@ -260,6 +260,30 @@ scryfall_card.set_id
 | `scryfall_game` | `code VARCHAR(32) NOT NULL`、`bit_value TINYINT UNSIGNED NOT NULL`、`name VARCHAR(64) NOT NULL` | `code` | `scryfall_card.games_mask`。 |
 
 字典元数据由导入器在每次加载时写入临时字典表并随其他表一起切换，不从卡牌记录反向推测。卡牌、系列和多值关联数据仍全部来自导入文件。
+
+`scryfall_language` 的内容如下；Set 列表、卡牌详情和操作日志中的语言名称均使用 `display_name`：
+
+| `sort_order` | `code` | `name` | `display_name` |
+| ---: | --- | --- | --- |
+| 1 | `en` | English | 英文 |
+| 2 | `es` | Spanish | 西语 |
+| 3 | `fr` | French | 法语 |
+| 4 | `de` | German | 德语 |
+| 5 | `it` | Italian | 意语 |
+| 6 | `pt` | Portuguese | 葡语 |
+| 7 | `ja` | Japanese | 日文 |
+| 8 | `ko` | Korean | 韩文 |
+| 9 | `ru` | Russian | 俄语 |
+| 10 | `zhs` | Simplified Chinese | 简中 |
+| 11 | `zht` | Traditional Chinese | 繁中 |
+| 12 | `he` | Hebrew | 希伯 |
+| 13 | `la` | Latin | 拉丁 |
+| 14 | `grc` | Ancient Greek | 古希 |
+| 15 | `ar` | Arabic | 阿语 |
+| 16 | `sa` | Sanskrit | 梵文 |
+| 17 | `ph` | Phyrexian | 非瑞 |
+| 18 | `qya` | Quenya | 昆雅 |
+| 19 | `dw` | Dwarvish | 矮人 |
 
 #### 2.2.6 位掩码查询约定
 
@@ -290,6 +314,8 @@ WHERE (color_identity_mask & 2) = 2;
 | `face_oracle_id` | UUID? | Schema | MTGCH 使用的牌面级 Oracle 关联 ID；业务仅按等值关联使用，将其视为不透明标识，不依赖生成规则。 |
 | `created_at` | datetime | 未确认 | 当前数据集记录的创建时间，不是 Scryfall Card Object 字段。 |
 | `updated_at` | datetime | 未确认 | 当前数据集记录的更新时间，不是 Scryfall Card Object 字段。 |
+
+面向列表摘要和卡组统计生成单组属性时，普通单面牌以 `face_index = -1` 为主牌面，多牌面牌以 `face_index = 0` 为主牌面；`cmc`、`mana_cost`、`colors_mask` 和 `produced_mana` 均从该记录读取。`is_land` 是跨牌面派生值：同一逻辑卡任一牌面的 `scryfall_card_type.type_group = 'main'` 且 `type_name = 'Land'` 时即为真。卡牌详情的 `faces[]` 保留每个牌面自己的 `mana_cost`，前端切换正反面时使用当前牌面值，不受摘要主牌面规则限制。
 
 ### 3.2 外部平台标识
 
@@ -507,7 +533,7 @@ scryfall_card.oracle_id
 | --- | --- | --- |
 | `object` | string | 必须为 `tag`，仅用于校验，不入库。 |
 | `id` | UUID | 写入 `oracle_tag.tag_id`，作为标签稳定主键。 |
-| `label` | string | 写入 `oracle_tag.label`，用于标签展示和检索。 |
+| `label` | string | 写入 `oracle_tag.label`，用于功能标签检索，并由后端生成同时供前端展示和查询提交的规范 `otag:` 字符串。 |
 | `slug` | string | Scryfall URL 标识，本系统不使用，不入库。 |
 | `type` | string | 当前文件必须为 `oracle`，仅用于拒绝误放的 illustration 标签，不入库。 |
 | `uri` | string | Scryfall Tagger 页面地址，本系统不使用，不入库。 |

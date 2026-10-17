@@ -38,7 +38,7 @@ Set 数据来自 `scryfall_set`：
 
 翻译系列名称通过 `set_translation.set_id` 逻辑关联取得；没有翻译名称时回退到 `scryfall_set.name`。
 
-卡牌数量、发行日期和可用语言从该 Set 关联的 `scryfall_card` 记录聚合得到，不在页面中使用个人数据库统计。
+发行日期直接使用导入时按 `set_id` 汇总并校验一致的 `scryfall_set.released_at`。卡牌数量直接使用全部源文件导入完成后按不同 `collector_number` 一次性回填的 `scryfall_set.card_count`；同一收藏编号的不同语言和多个牌面只计一次，页面请求期间不再实时聚合。可用语言从该 Set 关联的 `scryfall_card` 记录聚合得到。上述字段均不使用个人数据库统计。
 
 ### 3.2 系列类型
 
@@ -49,16 +49,16 @@ Set 数据来自 `scryfall_set`：
 
 ### 3.3 可用语言（卡牌原语言）
 
-语言枚举来自 `scryfall_language`，不得在前端硬编码语言列表。UI 表头、筛选器和按钮统一显示“语言”或“可用语言”，不暴露“原语言”术语。Set 列表页面固定按 `sort_order` 升序只取前 11 个语言；其余特殊语言仍保存在字典中，但不出现在本页按钮和筛选项中。该范围是数量规则，不得通过判断具体语言代码确定截止位置。
+语言枚举来自 `scryfall_language`，不得在前端硬编码语言列表。UI 表头、筛选器和按钮统一显示“语言”或“可用语言”，具体选项和按钮直接原样展示 `display_name`，不暴露语言代码或“原语言”术语。Set 列表页面固定按 `sort_order` 升序、`code` 升序兜底后只取前 11 个语言；其余特殊语言仍保存在字典中，但不出现在本页按钮和筛选项中。该范围是数量规则，不得通过判断具体语言代码确定截止位置。
 
 某个 Set 的可用语言按以下规则派生：
 
-1. 查询 `scryfall_language`，按 `sort_order` 升序排列并只取前 11 个语言代码和名称。
+1. 查询 `scryfall_language`，按 `sort_order` 升序、`code` 升序兜底后只取前 11 个语言代码和 `display_name`。
 2. 按当前 `set_id` 对 `scryfall_card.lang` 去重，得到该 Set 实际存在的语言。
 3. 将上述页面展示语言与 Set 实际语言做左连接。
 4. 存在对应卡牌记录的语言正常显示；不存在的语言置灰。
 
-顶部语言下拉框使用与语言按钮相同的 `ORDER BY sort_order ASC LIMIT 11` 范围和顺序。选择语言后，只展示至少存在一张该语言卡牌的 Set。
+顶部语言下拉框使用与语言按钮相同的 `ORDER BY sort_order ASC, code ASC LIMIT 11` 范围和顺序。选择语言后，只展示至少存在一张该语言卡牌的 Set。
 
 语言状态同时承担导航作用：
 
@@ -108,8 +108,8 @@ Set 数据来自 `scryfall_set`：
 
 打开多选下拉框时，以当前已提交条件初始化一份临时选择；用户在下拉框内勾选或取消选项时只更新临时选择，不立即查询。点击下拉框外任意区域时，下拉框立即关闭并提交最终选择；只有选择发生变化时，才在关闭完成后发起一次查询、废弃旧游标并从首批结果重新加载。选择未变化时关闭不发请求。下拉框不提供“确定”或“取消”按钮。对应展开态见 `.pen` 中的 `Prototype / Multi-select Filter Dropdown — Open`。
 
-- 语言：选项为 `scryfall_language` 按 `sort_order` 升序排列后的前 11 个语言代码和名称，不在前端写死列表；选择后只保留至少存在一种所选语言的 Set。
-- 系列类型：选项为当前 `scryfall_set.set_type` 的全部非空去重值，例如数据中存在的 `core`、`expansion`、`commander`；完整集合随导入数据生成。
+- 语言：选项为 `scryfall_language` 按 `sort_order` 升序、`code` 升序兜底后的前 11 个语言代码和 `display_name`，不在前端写死列表；界面原样展示 `display_name`，查询仍提交语言代码；选择后只保留至少存在一种所选语言的 Set。
+- 系列类型：选项为当前 `scryfall_set.set_type` 的全部非空去重值，例如数据中存在的 `core`、`expansion`、`commander`；完整集合随导入数据生成。各去重值按产生该值的最小 `set_id` 升序排列，最小 `set_id` 相同时按 `set_type` 升序兜底。
 - 同一筛选器内多项使用 OR，不同筛选器之间使用 AND。
 
 ## 6. 排序
@@ -121,6 +121,7 @@ Set 数据来自 `scryfall_set`：
   - 系列缩写：A 到 Z、Z 到 A。
   - 卡牌数量：多到少、少到多。
 - 不提供 Block/Group 排序，因为当前 `scryfall_set` 数据模型没有对应字段。
+- 所有排序在主排序值相同时统一按 `set_id` 升序兜底，保证游标分页顺序稳定。
 - 排序由后端作用于完整查询结果集，而不是当前已加载部分。
 - 切换排序后重新查询，清空当前行并重置分页游标。
 

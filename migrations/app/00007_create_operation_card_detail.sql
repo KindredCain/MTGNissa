@@ -9,6 +9,7 @@ CREATE TABLE `operation_card_detail` (
     `set_code` VARCHAR(32) NOT NULL,
     `collector_number` VARCHAR(64) NOT NULL,
     `lang` VARCHAR(16) NOT NULL,
+    `lang_display_name` VARCHAR(64) NOT NULL,
     `finish_kind` TINYINT UNSIGNED NULL,
     `quantity_delta` BIGINT NULL,
     PRIMARY KEY (`operation_id`),

@@ -249,6 +249,9 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		m.files(id, results)
 		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration", time.Since(fileStartedAt))
 	}
+	if err := populateSetCardCounts(ctx, m.db, tempNames); err != nil {
+		return stageFail(StageImporting, "", 0, fmt.Errorf("populate set card counts: %w", err))
+	}
 	m.stageCompleted(id, StageImporting, "file_count", len(sourceSpecs), "duration", time.Since(importStartedAt))
 	if taskErr := m.verifyImportedData(ctx, id, results, tempNames); taskErr != nil {
 		return taskErr
@@ -278,6 +281,16 @@ func (m *Manager) load(id string, results []FileResult) *TaskError {
 		return stageFail(StageCleaning, "", 0, fmt.Errorf("card data tables switched but cleanup failed: %w", err))
 	}
 	return nil
+}
+
+func populateSetCardCounts(ctx context.Context, db *sql.DB, tableNames map[tableName]string) error {
+	query := "UPDATE " + quote(tableNames[tableScryfallSet]) + " AS sets" +
+		" JOIN (SELECT `set_id`, COUNT(DISTINCT `collector_number`) AS `card_count`" +
+		" FROM " + quote(tableNames[tableScryfallCard]) + " GROUP BY `set_id`) AS counts" +
+		" ON counts.`set_id` = sets.`set_id`" +
+		" SET sets.`card_count` = counts.`card_count`"
+	_, err := db.ExecContext(ctx, query)
+	return err
 }
 
 func (m *Manager) cleanupTables(id string, names []string) error {

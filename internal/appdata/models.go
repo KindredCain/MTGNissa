@@ -86,14 +86,15 @@ type WishlistItem struct {
 	CreatedAt  time.Time `db:"created_at"`
 }
 
-// Deck stores a deck definition, its source text, and optimistic-lock version.
+// Deck stores a deck definition, its selected cover card, source text, and optimistic-lock version.
 type Deck struct {
-	ID         uint64    `db:"id"`
-	Name       string    `db:"name"`
-	SourceText string    `db:"source_text"`
-	Version    uint64    `db:"version"`
-	CreatedAt  time.Time `db:"created_at"`
-	UpdatedAt  time.Time `db:"updated_at"`
+	ID            uint64    `db:"id"`
+	Name          string    `db:"name"`
+	SourceText    string    `db:"source_text"`
+	CoverOracleID *string   `db:"cover_oracle_id"`
+	Version       uint64    `db:"version"`
+	CreatedAt     time.Time `db:"created_at"`
+	UpdatedAt     time.Time `db:"updated_at"`
 }
 
 // DeckCard stores a card quantity and name snapshot within a deck section.
@@ -107,10 +108,9 @@ type DeckCard struct {
 
 // OperationLog records the type and time of a collection, wishlist, or deck change.
 type OperationLog struct {
-	ID            uint64     `db:"id"`
-	ActionType    ActionType `db:"action_type"`
-	OperationDate time.Time  `db:"operation_date"`
-	OccurredAt    time.Time  `db:"occurred_at"`
+	ID         uint64     `db:"id"`
+	ActionType ActionType `db:"action_type"`
+	OccurredAt time.Time  `db:"occurred_at"`
 }
 
 // OperationCardDetail stores the card-specific snapshot and quantity change for an operation.
@@ -122,6 +122,7 @@ type OperationCardDetail struct {
 	SetCode         string      `db:"set_code"`
 	CollectorNumber string      `db:"collector_number"`
 	Lang            string      `db:"lang"`
+	LangDisplayName string      `db:"lang_display_name"`
 	FinishKind      *FinishKind `db:"finish_kind"`
 	QuantityDelta   *int64      `db:"quantity_delta"`
 }

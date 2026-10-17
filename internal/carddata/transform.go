@@ -164,7 +164,11 @@ func deriveScryfallRows(obj map[string]json.RawMessage, line int64) (map[tableNa
 	if err != nil {
 		return nil, err
 	}
-	result[tableScryfallSet] = append(result[tableScryfallSet], importRow{[]any{setID, setCode, setName, setType}, line})
+	setReleasedAt, err := stringField(obj, "released_at")
+	if err != nil {
+		return nil, err
+	}
+	result[tableScryfallSet] = append(result[tableScryfallSet], importRow{[]any{setID, setCode, setName, setType, setReleasedAt, int64(0)}, line})
 
 	return result, nil
 }

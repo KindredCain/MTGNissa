@@ -2,9 +2,40 @@ package carddata
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestLanguageDictionaryDisplayNames(t *testing.T) {
+	languages := dictionaryRows()[tableScryfallLanguage]
+	if len(languages) != 19 {
+		t.Fatalf("language row count = %d, want 19", len(languages))
+	}
+
+	wantNames := map[string]string{
+		"en":  "英文",
+		"ja":  "日文",
+		"zhs": "简中",
+		"zht": "繁中",
+	}
+	for _, language := range languages {
+		if len(language.values) != 4 {
+			t.Fatalf("language row = %#v, want code, name, display_name, sort_order", language.values)
+		}
+		code, ok := language.values[0].(string)
+		if !ok {
+			t.Fatalf("language code = %#v, want string", language.values[0])
+		}
+		displayName, ok := language.values[2].(string)
+		if !ok || strings.TrimSpace(displayName) == "" {
+			t.Errorf("language %q display_name = %#v, want non-empty string", code, language.values[2])
+		}
+		if want, exists := wantNames[code]; exists && displayName != want {
+			t.Errorf("language %q display_name = %q, want %q", code, displayName, want)
+		}
+	}
+}
 
 func TestStringArrayColumnValue(t *testing.T) {
 	tests := []struct {
@@ -144,6 +175,34 @@ func TestProducedManaNullRemainsNull(t *testing.T) {
 	}
 	if values[0] != nil {
 		t.Fatalf("rowValuesFor() produced_mana = %#v, want nil", values[0])
+	}
+}
+
+func TestScryfallSetDerivationIncludesReleaseDate(t *testing.T) {
+	obj := map[string]json.RawMessage{
+		"uuid":          json.RawMessage(`"11111111-1111-1111-1111-111111111111"`),
+		"keywords":      json.RawMessage(`[]`),
+		"frame_effects": json.RawMessage(`[]`),
+		"promo_types":   json.RawMessage(`[]`),
+		"type_line":     json.RawMessage(`"Creature — Elf"`),
+		"set_id":        json.RawMessage(`"22222222-2222-2222-2222-222222222222"`),
+		"set_code":      json.RawMessage(`"tst"`),
+		"set_name":      json.RawMessage(`"Test Set"`),
+		"set_type":      json.RawMessage(`"expansion"`),
+		"released_at":   json.RawMessage(`"2026-10-17"`),
+	}
+
+	derived, err := deriveScryfallRows(obj, 3)
+	if err != nil {
+		t.Fatalf("deriveScryfallRows() error = %v", err)
+	}
+	setRows := derived[tableScryfallSet]
+	if len(setRows) != 1 {
+		t.Fatalf("set rows = %#v", setRows)
+	}
+	want := []any{"22222222-2222-2222-2222-222222222222", "tst", "Test Set", "expansion", "2026-10-17", int64(0)}
+	if !reflect.DeepEqual(setRows[0].values, want) {
+		t.Fatalf("set row = %#v, want %#v", setRows[0].values, want)
 	}
 }
 

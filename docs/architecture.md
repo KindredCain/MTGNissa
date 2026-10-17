@@ -66,7 +66,7 @@ MTGNissa Docker 容器
 | 复杂编辑状态 | 普通页面使用 React 本地状态；卡组未保存编辑态使用 Zustand |
 | 前端样式 | CSS Modules、CSS Custom Properties、Grid/Flex、媒体查询和容器查询 |
 | 无样式交互组件 | Radix UI Primitives，按需用于弹窗、下拉框、气泡和表单控件 |
-| 卡组拖拽 | dnd-kit，统一支持 Pointer、Touch 和 Keyboard Sensor |
+| 卡组拖拽 | dnd-kit；首版使用 Pointer Sensor 和 Touch Sensor，Keyboard Sensor 及其他非拖拽换区方式列入后续版本计划 |
 | 图表 | Apache ECharts，按页面懒加载并响应容器尺寸变化 |
 | 长列表 | 优先使用游标分批加载；需要窗口化时使用 TanStack Virtual |
 | 前端表单 | React Hook Form + Zod；只负责客户端输入与类型校验，不代替后端业务校验 |
@@ -80,7 +80,6 @@ MTGNissa Docker 容器
 - 是否使用 `goqu` 或其他动态 SQL Builder
 - OpenAPI 契约的发布、校验和后端同步流程
 - 业务模块划分
-- API 设计
 
 当前代码只包含数据库连接、卡牌数据初始化和 App DB 迁移，因此直接使用 `database/sql`。开始实现收藏、愿望单、卡组和查询等业务数据访问时，统一引入 `sqlx`，使用其结构体映射、命名参数和查询辅助能力；动态筛选是否再配合 SQL Builder，按实际复杂度决定。
 
@@ -97,7 +96,7 @@ MTGNissa Docker 容器
 
 前端源代码统一放置在根目录 `web`。开发环境由 Vite Dev Server 提供页面，并把 `/api` 和 `/health` 代理到 Go 服务；生产环境执行 Vite 构建，由 Go `embed` 嵌入静态产物并与 API 同源提供。Go 服务必须为非 `/api`、非 `/health` 且未命中静态文件的浏览器路由返回前端 `index.html`，保证详情页等深层路由可以直接访问和刷新。生产部署不依赖独立 Node.js 进程。
 
-基础交互组件使用 Radix UI Primitives 封装为项目内部组件，视觉样式仍以原型和项目设计令牌为准，不直接引入带有完整视觉体系的组件库。卡组统计图表使用 Apache ECharts，并按页面进行代码拆分；图表通过容器尺寸而不是固定视口尺寸决定宽度。卡组拖拽使用 dnd-kit，但所有改变分区的业务能力必须同时提供非拖拽操作路径。
+基础交互组件使用 Radix UI Primitives 封装为项目内部组件，视觉样式仍以原型和项目设计令牌为准，不直接引入带有完整视觉体系的组件库。卡组统计图表使用 Apache ECharts，并按页面进行代码拆分；图表通过容器尺寸而不是固定视口尺寸决定宽度。首版卡组分区移动使用 dnd-kit 实现拖拽，不提供按钮、菜单或键盘等非拖拽换区方式；非拖拽换区入口列入后续版本计划。
 
 ### 移动兼容开发约束
 
@@ -107,7 +106,7 @@ MTGNissa Docker 容器
 2. 不得使用 User-Agent 判断桌面或手机。布局使用 CSS 媒体查询或容器查询，交互能力使用 Pointer、Touch、Hover 等能力查询或事件模型判断。
 3. 指针交互统一优先使用 Pointer Events，不得把核心能力只绑定到鼠标事件。拖拽必须配置触屏激活约束，避免与页面滚动和系统长按手势冲突。
 4. 任何通过 Hover 展示的信息都必须同时存在点击、键盘焦点或详情入口；不得存在手机和键盘用户无法访问的只悬停内容。
-5. 卡组分区移动、排序等拖拽操作必须提供按钮、菜单或其他非拖拽替代方式。手机支持不得依赖精确拖放才能完成核心任务。
+5. 首版沿用桌面原型，仅提供拖拽完成卡组分区移动，不实现按钮、菜单或键盘等非拖拽替代方式。拖拽状态和分区变更逻辑必须与具体展示组件解耦，为后续版本增加非拖拽入口以及正式手机布局复用同一编辑状态预留边界。
 6. 页面布局使用 Grid、Flex、流式容器和设计令牌，不得使用整页 `transform: scale()` 或根据单一设计稿坐标绝对定位整个页面。
 7. 卡图组件必须保留固定宽高比和加载占位，并支持延迟加载。无限列表只为已进入当前加载或渲染窗口的卡牌创建图片请求，避免手机端累计大量 DOM 和图片解码任务。
 8. 弹窗、抽屉和气泡的业务内容不得依赖固定桌面坐标。桌面可以显示居中弹窗或悬浮层，未来手机布局必须能够复用同一业务组件并切换为全屏页或底部抽屉。
@@ -203,8 +202,15 @@ mtgnissa/
 ├── docs/
 │   ├── requirements.md
 │   ├── architecture.md
+│   ├── api-contract.md
+│   ├── search-syntax-support.md
 │   ├── card-data-dictionary.md
 │   └── app-data-schema.md
+├── design/
+│   ├── mtgnissa.pen
+│   ├── README.md
+│   ├── assets/
+│   └── pages/
 ├── internal/
 │   ├── appdata/
 │   │   ├── migrations.go
@@ -361,8 +367,8 @@ HTTP 层应保留未来接入统一认证中间件的能力。
 
 - 业务模块边界
 - SQL 管理和动态查询方案
-- API 设计
 - OpenAPI 契约的发布、校验和后端同步流程
+- 卡组分区移动的按钮、菜单或键盘等非拖拽操作路径
 - 平板和手机页面的具体原型、断点验收值及正式交付范围
 - 认证扩展
 - 多用户或多实例策略
