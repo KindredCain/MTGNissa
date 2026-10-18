@@ -215,11 +215,13 @@ mtgnissa/
 │   ├── appdata/
 │   │   ├── migrations.go
 │   │   └── models.go
+│   ├── apperror/
 │   ├── bootstrap/
 │   ├── config/
 │   ├── database/
 │   ├── health/
-│   └── httpapi/
+│   ├── httpapi/
+│   └── httpresponse/
 ├── migrations/
 │   ├── app/
 │   └── embed.go
@@ -230,6 +232,8 @@ mtgnissa/
 ```
 
 根目录 `migrations` 统一保存并嵌入数据库版本文件，当前仅包含 App DB 迁移；`internal/appdata` 负责执行个人数据库迁移和定义持久化结构对象。Card DB 仍由卡牌数据加载器管理，不进入 Goose。后续收藏、愿望单和卡组业务逻辑按模块继续拆分，不堆叠在迁移执行代码中。
+
+`internal/httpapi` 作为同一个 HTTP 适配层包按职责和业务能力拆文件：`router.go` 只组装全局中间件、健康检查、API 路由与兜底路由，`middleware.go` 保存通用中间件，`request.go` 保存请求解码辅助，每个业务模块使用 `<module>_handler.go`、`<module>_dto.go` 和对应测试文件。业务路由默认直接在 `router.go` 注册，不以路由数量作为拆分依据；只有模块存在复杂模块级中间件时，才增加 `<module>_routes.go`。接口 DTO 默认保持未导出，不为每个小型业务模块提前创建子包；只有单个模块明显膨胀且能够通过小型公开接口独立时再拆分子包。
 
 ## HTTP 基础能力
 
@@ -242,9 +246,13 @@ mtgnissa/
 - `/health/live`
 - `/health/ready`
 
-业务接口继续使用统一 JSON 错误格式。请求超时和开发阶段需要的 CORS 尚未实现，在实际接入前端时补充。
+HTTP 响应采用“固定响应信封、业务错误类型、HTTP 层统一映射、边界日志”四层结构。`internal/apperror` 定义与 HTTP 无关的稳定错误码、安全文案、字段或行级详情及仅供日志使用的底层 `Cause`；`internal/httpresponse` 把错误码集中映射为 HTTP 状态并生成统一信封。Handler 和中间件成功时只能调用 `WriteJSON`，失败时只能调用 `WriteAppError`；实际写入错误信封的 `writeError` 保持为包内实现，不允许业务代码直接调用 Gin 的 JSON 输出。数据库模型不得直接作为响应 DTO，底层 SQL、堆栈、文件系统路径和原始异常对象不得进入客户端响应。
 
-`/health/live` 只用于判断进程和 HTTP 服务是否正常。`/health/ready` 用于判断初始化是否完成；数据库检查策略在实现部署流程时确定。
+请求边界只记录一次错误日志，并携带请求 ID、方法、路径、状态码、错误码、耗时和底层 `Cause`；普通成功请求记录信息日志，可预期的 4xx 拒绝记录警告日志，5xx 与依赖故障记录错误日志。后台任务查询成功但任务执行失败时仍返回 HTTP 200，执行错误保留在 `data.error`，不进入顶层 HTTP `error`。
+
+HTTP 基础层统一处理不存在路由、错误方法、请求体大小、JSON 媒体类型、未知查询参数和 Panic。请求超时和开发阶段需要的 CORS 尚未实现，在实际接入前端时补充。
+
+`/health/live` 只用于判断进程和 HTTP 服务是否正常。`/health/ready` 使用两秒超时依次检查 Card DB 与 App DB；任一数据库不可用时通过统一错误链路返回 `503 dependency_unavailable`。
 
 ## 生命周期
 
