@@ -22,6 +22,7 @@ type Config struct {
 	DisplayName     string
 	TimeZone        string
 	HTTPAddr        string
+	CursorPageSize  int
 	LogLevel        string
 	ShutdownTimeout time.Duration
 	CardDB          DB
@@ -38,6 +39,7 @@ type fileConfig struct {
 	HTTP struct {
 		Addr            string `yaml:"addr"`
 		ShutdownTimeout string `yaml:"shutdown_timeout"`
+		CursorPageSize  int    `yaml:"cursor_page_size"`
 	} `yaml:"http"`
 	Log struct {
 		Level string `yaml:"level"`
@@ -71,7 +73,7 @@ func Load() (Config, error) {
 // LoadFile applies defaults, an optional YAML file, then environment overrides.
 func LoadFile(path string) (Config, error) {
 	db := DB{Host: "127.0.0.1", Port: 3306, MaxOpen: 5, MaxIdle: 1, MaxIdleTime: 5 * time.Minute, MaxLifetime: 30 * time.Minute}
-	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", LogLevel: "info", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
+	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", CursorPageSize: 50, LogLevel: "info", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
 	if path != "" {
 		if err := applyFile(&c, path); err != nil {
 			return Config{}, err
@@ -91,6 +93,9 @@ func LoadFile(path string) (Config, error) {
 	}
 	if c.CardDB.Name == c.AppDB.Name {
 		return Config{}, fmt.Errorf("card and app database names must differ")
+	}
+	if c.CursorPageSize <= 0 || c.CursorPageSize > 500 {
+		return Config{}, fmt.Errorf("http.cursor_page_size must be between 1 and 500")
 	}
 	if c.LoadEnabled && c.CardDataDir == "" {
 		return Config{}, fmt.Errorf("card_data.dir is required when card data loading is enabled")
@@ -135,6 +140,9 @@ func applyFile(c *Config, path string) error {
 	}
 	if raw.HTTP.Addr != "" {
 		c.HTTPAddr = raw.HTTP.Addr
+	}
+	if raw.HTTP.CursorPageSize != 0 {
+		c.CursorPageSize = raw.HTTP.CursorPageSize
 	}
 	if raw.Log.Level != "" {
 		c.LogLevel = raw.Log.Level
@@ -202,6 +210,9 @@ func applyEnvironment(c *Config) error {
 	setString("APP_DISPLAY_NAME", &c.DisplayName)
 	setString("APP_TIMEZONE", &c.TimeZone)
 	setString("HTTP_ADDR", &c.HTTPAddr)
+	if err := setInt("CURSOR_PAGE_SIZE", &c.CursorPageSize); err != nil {
+		return err
+	}
 	setString("LOG_LEVEL", &c.LogLevel)
 	setString("CARD_DATA_DIR", &c.CardDataDir)
 	if err := setDuration("SHUTDOWN_TIMEOUT", &c.ShutdownTimeout); err != nil {

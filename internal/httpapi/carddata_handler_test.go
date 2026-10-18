@@ -28,7 +28,7 @@ func (loaderStub) Get(id string) (carddata.Task, bool) {
 
 func TestLoadCardDataRoutes(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := New(log, health.Handler{}, loaderStub{}, true)
+	router := New(log, health.Handler{}, loaderStub{}, true, setListerStub{})
 
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/card_data/load", bytes.NewBufferString(`{"confirmation":"LOAD_CARD_DATA"}`))
 	request.Header.Set("Content-Type", "application/json")

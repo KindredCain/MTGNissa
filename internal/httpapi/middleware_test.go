@@ -13,7 +13,7 @@ import (
 
 func TestHTTPErrorInterception(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := New(log, health.Handler{}, loaderStub{}, true)
+	router := New(log, health.Handler{}, loaderStub{}, true, setListerStub{})
 	tests := []struct {
 		name        string
 		method      string

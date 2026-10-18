@@ -6,6 +6,7 @@ app:
 http:
   addr: ":8080"
   shutdown_timeout: 10s
+  cursor_page_size: 50
 
 log:
   level: info

@@ -2,18 +2,18 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/config"
 )
 
-// Databases contains the independent card-data and application-data connections.
-type Databases struct{ Card, App *sql.DB }
+// Databases contains the independent card-data and application-data connection pools.
+type Databases struct{ Card, App *sqlx.DB }
 
 func Open(ctx context.Context, cardCfg, appCfg config.DB) (*Databases, error) {
 	card, err := open(ctx, cardCfg)
@@ -28,7 +28,7 @@ func Open(ctx context.Context, cardCfg, appCfg config.DB) (*Databases, error) {
 	return &Databases{Card: card, App: app}, nil
 }
 
-func open(ctx context.Context, c config.DB) (*sql.DB, error) {
+func open(ctx context.Context, c config.DB) (*sqlx.DB, error) {
 	mysqlConfig := mysql.NewConfig()
 	mysqlConfig.User = c.User
 	mysqlConfig.Passwd = c.Password
@@ -39,7 +39,7 @@ func open(ctx context.Context, c config.DB) (*sql.DB, error) {
 	mysqlConfig.Loc = time.UTC
 	mysqlConfig.Collation = "utf8mb4_unicode_ci"
 	dsn := mysqlConfig.FormatDSN()
-	db, err := sql.Open("mysql", dsn)
+	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}

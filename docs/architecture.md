@@ -52,6 +52,7 @@ MTGNissa Docker 容器
 | MySQL 驱动 | `go-sql-driver/mysql` |
 | 底层连接池 | Go 标准库 `database/sql` |
 | 业务 SQL 访问 | `sqlx`，在业务数据访问层开始实现时引入 |
+| 动态 SQL 组装 | `goqu`，仅用于 Set、全局搜索、收藏和愿望单列表 |
 | 数据库迁移 | Goose，仅用于个人数据库 |
 | 日志 | 标准库 `slog` |
 | 配置 | YAML 文件，支持环境变量覆盖 |
@@ -77,11 +78,10 @@ MTGNissa Docker 容器
 
 以下技术选项仍待确定：
 
-- 是否使用 `goqu` 或其他动态 SQL Builder
 - OpenAPI 契约的发布、校验和后端同步流程
 - 业务模块划分
 
-当前代码只包含数据库连接、卡牌数据初始化和 App DB 迁移，因此直接使用 `database/sql`。开始实现收藏、愿望单、卡组和查询等业务数据访问时，统一引入 `sqlx`，使用其结构体映射、命名参数和查询辅助能力；动态筛选是否再配合 SQL Builder，按实际复杂度决定。
+业务数据访问统一使用 `sqlx` 的结构体映射、事务和查询辅助能力。动态 SQL 组装固定使用 `goqu`，范围只包括 `GET /api/v1/sets`、`GET /api/v1/search`、`GET /api/v1/collection` 和 `GET /api/v1/wishlist`；这四个接口的筛选、搜索表达式、分组、排序和游标条件由 Builder 组合，再交给 `sqlx` 执行。具体 Set 卡牌列表、选项、详情、卡组、日志和所有业务写入继续使用手写 SQL；迁移与卡牌数据导入也不使用 `goqu`。不得为了形式统一把结构固定的 SQL 改写为 Builder。
 
 ## 前端架构
 
@@ -142,7 +142,7 @@ MTGNissa Docker 容器
 
 ## 连接池设计
 
-应用启动时创建两个长期存在的数据库连接池句柄。业务数据访问层引入后，对外提供 `sqlx.DB`：
+应用启动时为两个数据库各创建一个长期存在的 `sqlx.DB` 权威句柄：
 
 ```go
 type Databases struct {
@@ -151,7 +151,7 @@ type Databases struct {
 }
 ```
 
-`sqlx.DB` 包装并复用底层的 `database/sql` 连接池，不表示一条固定的 MySQL 连接。连接由连接池按需创建、复用和回收。当前初始化阶段的代码仍直接保存 `*sql.DB`；引入业务数据访问层时再切换为 `*sqlx.DB`，不提前增加未使用的依赖。
+`sqlx.DB` 包装并复用底层的 `database/sql` 连接池，不表示一条固定的 MySQL 连接，也不另外创建连接池。业务 Store 接收对应的 `*sqlx.DB`；迁移、卡牌数据导入和健康检查只接收其内嵌的 `*sql.DB`，这些底层模块不依赖 `sqlx`。连接由底层连接池按需创建、复用和回收，并由唯一的 `sqlx.DB` 权威句柄统一关闭。
 
 个人部署的初始建议值：
 
@@ -306,6 +306,7 @@ HTTP Server 停止接收新请求
 CONFIG_FILE
 HTTP_ADDR
 SHUTDOWN_TIMEOUT
+CURSOR_PAGE_SIZE
 LOG_LEVEL
 APP_DISPLAY_NAME
 APP_TIMEZONE
