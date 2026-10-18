@@ -70,3 +70,9 @@ GET /api/v1/card_data/load/{task_id}
 - [卡牌数据字典](docs/card-data-dictionary.md)：原始卡牌文件、字段含义、关联关系和 Card DB 物理模型。
 - [个人数据库设计](docs/app-data-schema.md)：App DB 表结构、索引、一致性规则和迁移落地方式。
 - [原型与页面说明](design/README.md)：原型文件入口、页面说明索引及统一交互约定。
+
+## 数据来源
+
+- `AllPrintings.sqlite`：[MTGJSON](https://mtgjson.com/)
+- `oracle-tags.jsonl`：[Scryfall Bulk Data API](https://scryfall.com/docs/api/bulk-data)
+- `scryfall_card.json` 及其他 `zhs_*` 数据：[HeliumOctahelide/magic-cards-zhs](https://github.com/HeliumOctahelide/magic-cards-zhs)
