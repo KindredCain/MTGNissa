@@ -73,6 +73,6 @@ GET /api/v1/card_data/load/{task_id}
 
 ## 数据来源
 
-- `AllPrintings.sqlite`：[MTGJSON](https://mtgjson.com/)
+- `AllPrintings.json`：[MTGJSON](https://mtgjson.com/)
 - `oracle-tags.jsonl`：[Scryfall Bulk Data API](https://scryfall.com/docs/api/bulk-data)
 - `scryfall_card.json` 及其他 `zhs_*` 数据：[HeliumOctahelide/magic-cards-zhs](https://github.com/HeliumOctahelide/magic-cards-zhs)
