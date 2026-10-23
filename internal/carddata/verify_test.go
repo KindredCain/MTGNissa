@@ -20,6 +20,17 @@ func TestAssociationSpecsReferenceDefinedColumns(t *testing.T) {
 	}
 }
 
+func TestRulingTablesHaveNoRequiredAssociation(t *testing.T) {
+	for _, association := range associationSpecs {
+		if association.childTable == tableScryfallOracleRuling && association.parentTable == tableRulingTranslation {
+			t.Fatalf("oracle ruling must not require a translation: %#v", association)
+		}
+		if association.childTable == tableRulingTranslation && association.parentTable == tableScryfallOracleRuling {
+			t.Fatalf("ruling translation must not require current Oracle metadata: %#v", association)
+		}
+	}
+}
+
 func TestAssociationCheckSQLUsesTemporaryTablesAndStopsAtFirstOrphan(t *testing.T) {
 	association := associationSpec{
 		childTable:   tableCardTranslation,

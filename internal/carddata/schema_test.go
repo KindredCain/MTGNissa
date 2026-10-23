@@ -37,6 +37,32 @@ func TestLanguageDictionaryDisplayNames(t *testing.T) {
 	}
 }
 
+func TestMTGJSONTableColumnCountsMatchDictionary(t *testing.T) {
+	want := map[tableName]int{
+		tableScryfallCard:         59,
+		tableMTGNissaToken:        38,
+		tableScryfallSet:          9,
+		tableMTGNissaCardPrinting: 7,
+		tableOracleLegality:       23,
+		tableScryfallOracleRuling: 4,
+		tableCardFlavorMapping:    2,
+		tableCardOracleMapping:    2,
+	}
+	for table, count := range want {
+		if got := len(mustTableSpec(table).columns); got != count {
+			t.Errorf("%s column count = %d, want %d", table, got, count)
+		}
+	}
+}
+
+func TestCardUUIDBridgeIsNotPersistentSchema(t *testing.T) {
+	for _, table := range allTableSpecs() {
+		if strings.HasPrefix(string(table.table), "card_uuid_bridge") {
+			t.Fatalf("task bridge table must not be a persistent schema table: %s", table.table)
+		}
+	}
+}
+
 func TestStringArrayColumnValue(t *testing.T) {
 	tests := []struct {
 		name string
@@ -98,39 +124,24 @@ func TestRulingKeyNormalizesTypography(t *testing.T) {
 	}
 }
 
-func TestRulingsSpecAndEnglishFallback(t *testing.T) {
-	var rulingsSpec sourceSpec
-	for _, candidate := range sourceSpecs {
-		if candidate.table == tableScryfallOracleRuling {
-			rulingsSpec = candidate
-			break
+func TestRulingsComeOnlyFromAllPrintings(t *testing.T) {
+	for _, source := range sourceSpecs {
+		if source.file == "rulings.jsonl" {
+			t.Fatal("discarded rulings.jsonl is still an import source")
 		}
 	}
-	if rulingsSpec.file != "rulings.jsonl" || !rulingsSpec.standardJSON {
-		t.Fatalf("rulings spec = %#v", rulingsSpec)
-	}
-	line := []byte(`{"object":"ruling","oracle_id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","source":"wotc","published_at":"2025-02-07","comment":"They’re affected."}`)
-	obj, normalized, err := parseObject(line, rulingsSpec)
+	obj, err := decodeObject(json.RawMessage(`{"rulings":[{"date":"2025-02-07","text":"They're affected."}]}`))
 	if err != nil {
-		t.Fatalf("parseObject() error = %v", err)
+		t.Fatalf("decodeObject() error = %v", err)
 	}
-	if normalized {
-		t.Fatal("standard JSON input must not use legacy escape normalization")
-	}
-	values, err := rowValues(obj, rulingsSpec)
+	state := newImportState(&loadPlan{})
+	derived, err := rulingRows(obj, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", 1, state)
 	if err != nil {
-		t.Fatalf("rowValues() error = %v", err)
+		t.Fatalf("rulingRows() error = %v", err)
 	}
-	if values[0] != nil || values[2] != rulingKey("They're affected.") {
-		t.Fatalf("mapping values = %#v", values)
-	}
-	derived, err := deriveRows(rulingsSpec, obj, 1)
-	if err != nil {
-		t.Fatalf("deriveRows() error = %v", err)
-	}
-	row := derived[tableRulingTranslation][0].values
-	if row[0] != values[2] || row[1] != nil || row[3] != nil || row[6] != "2025-02-07" {
-		t.Fatalf("English fallback row = %#v", row)
+	ruling := derived[tableScryfallOracleRuling][0].values
+	if ruling[0] != "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" || ruling[1] != rulingKey("They're affected.") || ruling[2] != "2025-02-07" {
+		t.Fatalf("oracle ruling row = %#v", ruling)
 	}
 }
 
@@ -143,7 +154,7 @@ func TestZHSRulingColumnMapping(t *testing.T) {
 		}
 	}
 	rulingSpec := mustTableSpec(rulingSource.table)
-	if !rulingSpec.allowExtraRows || strings.Join(rulingSpec.key, ",") != "ruling_key" {
+	if rulingSpec.allowExtraRows || strings.Join(rulingSpec.key, ",") != "ruling_key" {
 		t.Fatalf("zhs ruling spec = %#v", rulingSpec)
 	}
 	obj := map[string]json.RawMessage{
@@ -178,31 +189,22 @@ func TestProducedManaNullRemainsNull(t *testing.T) {
 	}
 }
 
-func TestScryfallSetDerivationIncludesReleaseDate(t *testing.T) {
-	obj := map[string]json.RawMessage{
-		"uuid":          json.RawMessage(`"11111111-1111-1111-1111-111111111111"`),
-		"keywords":      json.RawMessage(`[]`),
-		"frame_effects": json.RawMessage(`[]`),
-		"promo_types":   json.RawMessage(`[]`),
-		"type_line":     json.RawMessage(`"Creature — Elf"`),
-		"set_id":        json.RawMessage(`"22222222-2222-2222-2222-222222222222"`),
-		"set_code":      json.RawMessage(`"tst"`),
-		"set_name":      json.RawMessage(`"Test Set"`),
-		"set_type":      json.RawMessage(`"expansion"`),
-		"released_at":   json.RawMessage(`"2026-10-17"`),
-	}
-
-	derived, err := deriveScryfallRows(obj, 3)
+func TestMTGJSONSetRowsIncludeTokenSet(t *testing.T) {
+	releaseDate := "2026-10-17"
+	set := mtgjsonSet{Code: "TST", Name: "Test Set", Type: "expansion", ReleaseDate: &releaseDate, Languages: []string{"English"}, Cards: make([]json.RawMessage, 2), Tokens: make([]json.RawMessage, 1)}
+	derived, err := mtgjsonSetRows(set, "TTST", 3)
 	if err != nil {
-		t.Fatalf("deriveScryfallRows() error = %v", err)
+		t.Fatalf("mtgjsonSetRows() error = %v", err)
 	}
-	setRows := derived[tableScryfallSet]
-	if len(setRows) != 1 {
-		t.Fatalf("set rows = %#v", setRows)
+	if len(derived) != 2 {
+		t.Fatalf("set rows = %#v", derived)
 	}
-	want := []any{"22222222-2222-2222-2222-222222222222", "tst", "Test Set", "expansion", "2026-10-17", int64(0)}
-	if !reflect.DeepEqual(setRows[0].values, want) {
-		t.Fatalf("set row = %#v, want %#v", setRows[0].values, want)
+	want := []any{"TST", "Test Set", "2026-10-17", "expansion", int64(2), nil, "en", nil, nil}
+	if !reflect.DeepEqual(derived[0].values, want) {
+		t.Fatalf("set row = %#v, want %#v", derived[0].values, want)
+	}
+	if derived[1].values[0] != "TTST" || derived[1].values[3] != "token" || derived[1].values[6] != nil || derived[1].values[8] != "TST" {
+		t.Fatalf("token set row = %#v", derived[1].values)
 	}
 }
 
@@ -213,7 +215,7 @@ func TestScryfallCardStoresProducedManaAsStringArray(t *testing.T) {
 		}
 		for _, column := range candidate.columns {
 			if column.name == "produced_mana" {
-				if column.kind != kindStringArray || column.ddl != "VARCHAR(64) NULL" {
+				if column.kind != kindStringArray || column.ddl != "VARCHAR(32) NULL" {
 					t.Fatalf("produced_mana column = %#v", column)
 				}
 				return
@@ -236,7 +238,11 @@ func TestScryfallCardNumericCombatColumns(t *testing.T) {
 		if _, ok := wantColumns[column.name]; !ok {
 			continue
 		}
-		if column.ddl != "DECIMAL(12,4) NULL" || column.kind != kindDerivedNumber {
+		wantDDL := "DECIMAL(8,2) NULL"
+		if column.name == "pt_numeric" {
+			wantDDL = "DECIMAL(12,4) NULL"
+		}
+		if column.ddl != wantDDL || column.kind != kindDerivedNumber {
 			t.Fatalf("%s column = %#v", column.name, column)
 		}
 		wantColumns[column.name] = true
@@ -244,25 +250,6 @@ func TestScryfallCardNumericCombatColumns(t *testing.T) {
 	for name, found := range wantColumns {
 		if !found {
 			t.Errorf("%s column is missing", name)
-		}
-	}
-
-	wantIndexes := map[string]bool{
-		"power_numeric":     false,
-		"toughness_numeric": false,
-		"loyalty_numeric":   false,
-		"pt_numeric":        false,
-	}
-	for _, index := range cardSpec.indexes {
-		if len(index.columns) == 1 {
-			if _, ok := wantIndexes[index.columns[0]]; ok {
-				wantIndexes[index.columns[0]] = true
-			}
-		}
-	}
-	for name, found := range wantIndexes {
-		if !found {
-			t.Errorf("%s index is missing", name)
 		}
 	}
 }

@@ -201,18 +201,19 @@
 
 ## 3. 翻译表
 
-翻译表、既有翻译关联表及其物理字段、主键和翻译优先级均沿用原设计；本次变化仅发生在导入映射。`mtgnissa_card` 不新增任何翻译桥字段，继续仅保留本身已有的 `uuid` 与 `scryfall_id`。导入过程建立只在本次加载事务内存在的映射索引，不新增项目持久化表：
+翻译表、既有翻译关联表及其物理字段、主键和翻译优先级均沿用原设计；本次变化仅发生在导入映射。`mtgnissa_card` 不新增任何翻译桥字段，继续仅保留本身已有的 `uuid` 与 `scryfall_id`。导入器在处理 `scryfall_card.json` 前建立任务级普通暂存表 `card_uuid_bridge__stage_<task_id>`；该表不属于目标数据字典、不在 `schema.go` 中定义、不参与正式表换表。全部源文件及两张翻译映射表写入完成后立即删除桥接表，再进入临时数据验证：
 
-1. 从旧 `scryfall_card.json` 建立 `(scryfall_id, 卡面定位) -> 旧 uuid` 的只读索引。
-2. 从 `AllPrintings.json` 分别建立 `(cards[].identifiers.scryfallId, 卡面定位) -> 新 cards[].uuid` 的普通卡索引和 `tokens[].identifiers.scryfallId -> tokens[].uuid` 的 Token 识别索引，并先写入新的 `mtgnissa_card` 与 `mtgnissa_token`。
-3. 先按下述过滤规则排除 Token 和 `A-` 再平衡牌，再通过普通卡索引将原 `card_translation.card_id`、`card_flavor_translation_mapping.card_uuid` 和 `card_oracle_translation_mapping.card_uuid` 的关联值重写为新卡 UUID 后写入原表。
+1. 先从 `AllPrintings.json` 写入新的 `mtgnissa_card` 与 `mtgnissa_token`；预览系列及其子系列整体跳过，不为其中的卡牌或 Token 建立内存识别索引。
+2. 流式读取旧 `scryfall_card.json`，按 `(scryfall_id, 卡面定位)` 分批查询新的 `mtgnissa_card`，将成功匹配的 `(旧 uuid, 新 uuid, flavor_id, face_oracle_id)` 写入任务级暂存表；未命中的记录正常跳过。
+3. 流式读取 `zhs_card.json` 时，每批查询暂存表并把旧 `card_id` 替换为新 UUID 后直接写入 `card_translation`；不得先写入旧 UUID 再更新主键，也不得逐行查询暂存表。
+4. `card_flavor_translation_mapping` 和 `card_oracle_translation_mapping` 通过暂存表执行集合查询生成，不在 Go 内存中长期保留完整映射集合。
 
 翻译映射过滤规则：
 
-- 旧卡的 `scryfall_id` 目标位于 AllPrintings `tokens[]` 而非 `cards[]` 时，将其视为 Token 数据：不写入 `card_translation`，也不为该旧卡生成 `card_flavor_translation_mapping` 或 `card_oracle_translation_mapping`。不得仅按 `layout` 猜测 Token，应以 AllPrintings Token 识别索引的实际命中结果为准。
+- 只有能通过 `(scryfall_id, 卡面定位)` 命中新 `mtgnissa_card` 的旧记录才写入桥接暂存表。Token、预览系列记录、已删除记录及其他无法映射的旧记录统一视为缺少可用翻译关联，正常跳过且不终止元数据导入，不再区分具体未命中原因。
 - 旧 `scryfall_card.json` 中英文 `name` 或卡面 `face_name` 去除首尾空白后以 `A-` 开头的炼金再平衡牌直接跳过，不写入卡牌翻译及两张翻译映射表。
-- 因上述两类规则被跳过不属于导入错误。其 `flavor_translation`、`oracle_translation` 等独立翻译源记录仍可按各自主键导入，但不得为被跳过的卡生成卡牌关联。
-- 除 Token 和 `A-` 再平衡牌外，其余旧卡若不能唯一映射到 `mtgnissa_card`，不得猜测或静默跳过；必须记录导入错误并保留旧 UUID、`scryfall_id`、卡面定位和失败原因等可追溯信息。
+- 未命中的旧记录不写入 `card_translation`，也不生成 `card_flavor_translation_mapping` 或 `card_oracle_translation_mapping`；其 `flavor_translation`、`oracle_translation` 等独立翻译源记录仍可按各自主键导入。
+- 导入日志只记录 `scryfall_card.json` 的读取数、成功映射数、显式跳过的 `A-` 数和未命中跳过数，以及 `zhs_card.json` 的读取数、成功写入数和未命中跳过数；不打印未命中记录样例。
 
 多面卡共享 `scryfall_id` 时，卡面定位必须参与匹配：统一以 `side=a/b/c/d/e` 对应 `face_index=0/1/2/3/4`，普通单面牌、没有 `side` 的记录和 Meld 独立牌使用 `face_index=-1`；必要时再以 `face_name` 等可验证字段核对。不得按单个 `scryfall_id` 覆盖映射。也就是说，翻译源表不以 AllPrintings UUID 作为源标识，但原翻译表及其两张关联表中写入 `card_id`、`card_uuid` 的关联值必须是新的 AllPrintings 卡面 UUID。
 
@@ -331,17 +332,17 @@
 
 作用：保存英文裁定的中文翻译。
 
-关键约束：保持既有翻译表设计，`ruling_key` 为主键；`oracle_ruling` 通过同名 `ruling_key` 关联该表。英文裁定改从 AllPrintings 读取不改变翻译表字段；已有翻译记录优先，不被英文导入覆盖。
+关键约束：保持既有翻译表设计，`ruling_key` 为主键；本表只读取 `zhs_ruling.json` 中实际存在的翻译记录，AllPrintings 不向本表补写英文兜底行。`oracle_ruling` 与本表通过同名 `ruling_key` 可选关联，两个方向均不要求对方必须存在。
 
 | 列名 | 列类型 | 列说明 | 数据来源 |
 | --- | --- | --- | --- |
 | ruling_key | CHAR(64) | 规范化英文裁定正文哈希，主键。 | 由 `zhs_ruling.json: rulings[].comment` 计算 |
 | ruling_id | CHAR(36) NULL | 原裁定记录 ID，仅供追溯。 | `zhs_ruling.json: rulings[].ruling` |
-| comment | LONGTEXT | 英文裁定正文。 | `zhs_ruling.json: rulings[].comment`；缺失时由 AllPrintings 裁定补充 |
+| comment | LONGTEXT | 翻译记录携带的英文裁定正文。 | `zhs_ruling.json: rulings[].comment` |
 | translation | LONGTEXT NULL | 中文裁定翻译。 | `zhs_ruling.json: rulings[].translation` |
 | translation_source | VARCHAR(128) NULL | 翻译来源。 | `zhs_ruling.json: rulings[].source` |
 | translation_stage | INT NULL | 翻译阶段。 | `zhs_ruling.json: rulings[].stage` |
-| last_published_at | DATE NULL | 最近发布日期。 | `zhs_ruling.json: rulings[].last_published_at`；可由 AllPrintings 裁定日期更新 |
+| last_published_at | DATE NULL | 翻译记录携带的最近发布日期。 | `zhs_ruling.json: rulings[].last_published_at` |
 | extra | LONGTEXT NULL | 压缩后的补充 JSON。 | `zhs_ruling.json: rulings[].extra` |
 
 ## 4. 映射表
@@ -396,7 +397,7 @@
 
 作用：保存 Oracle 级别的官方英文裁定。
 
-关键约束：只读取 `AllPrintings.json: sets[].cards[].rulings[]`；`rulings` 缺失、为 `null` 或空数组时不插入。以 `(oracle_id, ruling_key, published_at)` 为主键，其中 `ruling_key` 为规范化裁定文本的哈希；不保存 `source` 字段。相同 Oracle、相同规范化文本、相同日期只保留一条。
+关键约束：只读取 `AllPrintings.json: sets[].cards[].rulings[]`；`rulings` 缺失、为 `null` 或空数组时不插入。以 `(oracle_id, ruling_key, published_at)` 为主键，其中 `ruling_key` 为规范化裁定文本的哈希；不保存 `source` 字段。相同 Oracle、相同规范化文本、相同日期只保留一条。英文正文以本表 `text` 为准；`ruling_translation` 仅作可选翻译关联，两个方向均不设置必须命中的关联约束。
 
 | 列名 | 列类型 | 列说明 | 数据来源 |
 | --- | --- | --- | --- |
@@ -632,4 +633,4 @@
 - 默认卡牌展示：`mtgnissa_card` 通过其保留的 `scryfall_id` 直接关联翻译和图片业务；不需要经过语言变体表。
 - 指定印刷语言时：`mtgnissa_card_printing -> mtgnissa_card`，使用该行的印刷文字与 `scryfall_id`；语言变体没有图片 ID 时回退到基础卡面的 `scryfall_id`。
 - 系列语言列表只描述普通系列可用语言；Token 不以系列语言维度区分。
-- 赛制查询以 `oracle_legality` 为准，裁定查询以 `oracle_ruling` 为准。
+- 赛制查询以 `oracle_legality` 为准，裁定查询以 `oracle_ruling` 为准；显示正文时可选关联 `ruling_translation`，优先使用非空 `translation`，否则回退到 `oracle_ruling.text`。

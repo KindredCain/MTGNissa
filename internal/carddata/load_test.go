@@ -45,32 +45,29 @@ func TestManagerStartClearsFinishedTaskHistory(t *testing.T) {
 	}
 }
 
-func TestValidateFilePreservesRepublishedRulings(t *testing.T) {
-	var rulingSource sourceSpec
-	for _, candidate := range sourceSpecs {
-		if candidate.table == tableScryfallOracleRuling {
-			rulingSource = candidate
-			break
-		}
-	}
-	rulingSpec := mustTableSpec(rulingSource.table)
-	if !rulingSpec.autoIncrementKey || len(rulingSpec.key) != 1 || rulingSpec.key[0] != "id" {
-		t.Fatalf("rulings spec must use an auto-increment primary key: %#v", rulingSpec)
-	}
-
-	content := "" +
-		`{"object":"ruling","oracle_id":"0056fc91-4398-471c-b561-7ff99750ac8a","source":"wotc","published_at":"2024-02-02","comment":"Once blocked, it stays blocked."}` + "\n" +
-		`{"object":"ruling","oracle_id":"0056fc91-4398-471c-b561-7ff99750ac8a","source":"wotc","published_at":"2026-01-27","comment":"Once blocked, it stays blocked."}` + "\n"
+func TestInspectAllPrintingsRecursivelyExcludesPartialPreviewSets(t *testing.T) {
+	content := `{"meta":{"version":"test"},"data":{` +
+		`"AAA":{"code":"AAA","isPartialPreview":true},` +
+		`"AAB":{"code":"AAB","parentCode":"AAA"},` +
+		`"BBB":{"code":"BBB"}}}`
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, rulingSource.file), []byte(content), 0o600); err != nil {
-		t.Fatalf("write rulings fixture: %v", err)
+	if err := os.WriteFile(filepath.Join(dir, "AllPrintings.json"), []byte(content), 0o600); err != nil {
+		t.Fatalf("write AllPrintings fixture: %v", err)
 	}
-	result, taskErr := validateFile(context.Background(), dir, rulingSource, func(int64) {
+	result, plan, taskErr := inspectAllPrintings(context.Background(), dir, func(int64) {
 	})
 	if taskErr != nil {
-		t.Fatalf("validateFile() error = %v", taskErr)
+		t.Fatalf("inspectAllPrintings() error = %v", taskErr)
 	}
-	if result.ReadRows != 2 {
-		t.Fatalf("validateFile() rows = %d, want 2", result.ReadRows)
+	if result.ReadRows != 3 {
+		t.Fatalf("inspectAllPrintings() rows = %d, want 3", result.ReadRows)
+	}
+	for _, code := range []string{"AAA", "AAB"} {
+		if _, excluded := plan.excludedSets[code]; !excluded {
+			t.Errorf("set %s was not excluded", code)
+		}
+	}
+	if _, excluded := plan.excludedSets["BBB"]; excluded {
+		t.Fatal("complete set BBB was excluded")
 	}
 }

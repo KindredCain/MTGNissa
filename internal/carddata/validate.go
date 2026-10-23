@@ -14,19 +14,32 @@ import (
 	"time"
 )
 
-func (m *Manager) validateAll(id string) ([]FileResult, *TaskError) {
+func (m *Manager) validateAll(id string) ([]FileResult, *loadPlan, *TaskError) {
 	m.stage(id, StageValidating)
 	stageStartedAt := time.Now()
 	results := make([]FileResult, 0, len(sourceSpecs))
+	plan := &loadPlan{excludedSets: make(map[string]struct{})}
 	for _, s := range sourceSpecs {
 		fileStartedAt := time.Now()
 		m.setProgress(s.file, 0, 0)
-		result, err := validateFile(m.ctx, m.dir, s, func(rows int64) {
-			m.setProgress(s.file, rows, 0)
-		})
+		var result FileResult
+		var err *TaskError
+		if s.kind == sourceAllPrintings {
+			var inspectedPlan *loadPlan
+			result, inspectedPlan, err = inspectAllPrintings(m.ctx, m.dir, func(rows int64) {
+				m.setProgress(s.file, rows, 0)
+			})
+			if inspectedPlan != nil {
+				plan = inspectedPlan
+			}
+		} else {
+			result, err = validateFile(m.ctx, m.dir, s, func(rows int64) {
+				m.setProgress(s.file, rows, 0)
+			})
+		}
 		if err != nil {
 			err.Stage = StageValidating
-			return nil, err
+			return nil, nil, err
 		}
 		results = append(results, result)
 		m.setProgress(s.file, result.ReadRows, result.ReadRows)
@@ -34,7 +47,7 @@ func (m *Manager) validateAll(id string) ([]FileResult, *TaskError) {
 		m.log.Info("card data file validation completed", "task_id", id, "file", s.file, "rows", result.ReadRows, "normalized_rows", result.NormalizedRows, "size_bytes", result.Size, "duration", time.Since(fileStartedAt))
 	}
 	m.stageCompleted(id, StageValidating, "file_count", len(results), "duration", time.Since(stageStartedAt))
-	return results, nil
+	return results, plan, nil
 }
 
 func validateFile(ctx context.Context, dir string, s sourceSpec, progress func(int64)) (FileResult, *TaskError) {
@@ -67,17 +80,29 @@ func validateFile(ctx context.Context, dir string, s sourceSpec, progress func(i
 		if err != nil {
 			return FileResult{}, fail(s.file, line, err)
 		}
-		values, err := rowValues(obj, s)
-		if err != nil {
-			return FileResult{}, fail(s.file, line, err)
-		}
-		if _, err := deriveRows(s, obj, line); err != nil {
-			return FileResult{}, fail(s.file, line, err)
+		var values []any
+		if s.kind == sourceLegacyCardBridge {
+			uuid, err := stringField(obj, "uuid")
+			if err != nil {
+				return FileResult{}, fail(s.file, line, err)
+			}
+			values = []any{uuid}
+		} else {
+			values, err = rowValues(obj, s)
+			if err != nil {
+				return FileResult{}, fail(s.file, line, err)
+			}
+			if _, err := deriveRows(s, obj, line); err != nil {
+				return FileResult{}, fail(s.file, line, err)
+			}
 		}
 		if normalized {
 			normalizedRows++
 		}
-		tableSpec := mustTableSpec(s.table)
+		tableSpec := spec{key: []string{"uuid"}, columns: []columnSpec{col("uuid", "CHAR(36) NOT NULL", kindString)}}
+		if s.kind != sourceLegacyCardBridge {
+			tableSpec = mustTableSpec(s.table)
+		}
 		if !tableSpec.autoIncrementKey {
 			key, err := relationalKey(values, tableSpec)
 			if err != nil {

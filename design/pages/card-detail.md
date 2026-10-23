@@ -55,11 +55,11 @@ Set 名称（语言） > 卡牌名
 ### 4.3 官方释疑
 
 - “官方释疑”页签按钮只切换内容，不离开详情页。
-- 内容按 `scryfall_card.oracle_id → scryfall_oracle_ruling.oracle_id → ruling_translation.ruling_key` 取得。
+- 内容按 `mtgnissa_card.oracle_id → oracle_ruling.oracle_id` 取得，并按 `ruling_key` 可选关联 `ruling_translation`。
 - 每条释疑显示发布日期和来源；`source = wotc` 在界面显示为 `WotC`。
-- 正文优先显示 `ruling_translation.translation`；翻译缺失时显示 `ruling_translation.comment` 英文原文。
+- 正文优先显示 `ruling_translation.translation`；翻译记录不存在或翻译为空时显示 `oracle_ruling.text` 英文原文。
 - 翻译后语言回退属于内部展示规则，标题区只显示释疑数量，不展示语言优先级说明文案。
-- 每条释疑只显示一份正文：存在翻译时只显示翻译，不并列、折叠或附带英文原文；仅当翻译为空时才回退显示 `comment` 英文原文。
+- 每条释疑只显示一份正文：存在翻译时只显示翻译，不并列、折叠或附带英文原文；翻译记录不存在或翻译为空时才回退显示 `oracle_ruling.text` 英文原文。
 - 默认按发布日期从新到旧排列；日期相同按源记录稳定标识排序。
 - 当前原型使用“生机妮莎”的 3 条真实本地释疑样例。
 

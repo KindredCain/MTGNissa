@@ -2,14 +2,21 @@ package carddata
 
 import (
 	"bufio"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 type sourceSpec struct {
+	kind          sourceKind
 	table         tableName
 	file          string
 	required      []string
@@ -18,19 +25,21 @@ type sourceSpec struct {
 	standardJSON  bool
 }
 
+type sourceKind uint8
+
+const (
+	sourceRows sourceKind = iota
+	sourceAllPrintings
+	sourceLegacyCardBridge
+)
+
 var sourceSpecs = []sourceSpec{
 	{
-		table: tableScryfallCard, file: "scryfall_card.json",
-		required: []string{"uuid", "scryfall_id", "name", "set_code", "collector_number", "lang"},
-		columnSources: map[string]string{
-			"colors_mask":            "colors",
-			"color_identity_mask":    "color_identity",
-			"color_indicator_mask":   "color_indicator",
-			"finishes_mask":          "finishes",
-			"games_mask":             "games",
-			"attraction_lights_mask": "attraction_lights",
-		},
-		extraFields: []string{"keywords", "frame_effects", "promo_types", "set_code", "set_name", "set_type"},
+		kind: sourceAllPrintings, file: "AllPrintings.json", standardJSON: true,
+	},
+	{
+		kind: sourceLegacyCardBridge, file: "scryfall_card.json",
+		required: []string{"uuid", "scryfall_id", "face_index", "name"},
 	},
 	{table: tableCardTranslation, file: "zhs_card.json", required: []string{"card_id"}},
 	{table: tableFlavorTranslation, file: "zhs_flavor.json", required: []string{"flavor_id"}},
@@ -43,12 +52,6 @@ var sourceSpecs = []sourceSpec{
 			"translation_source": "source",
 			"translation_stage":  "stage",
 		},
-	},
-	{
-		table: tableScryfallOracleRuling, file: "rulings.jsonl",
-		required:      []string{"object", "oracle_id", "source", "published_at", "comment"},
-		columnSources: map[string]string{"ruling_key": "comment"},
-		extraFields:   []string{"object"}, standardJSON: true,
 	},
 	{
 		table: tableOracleTag, file: "oracle-tags.jsonl",
@@ -129,4 +132,247 @@ func scannerFor(r io.Reader) *bufio.Scanner {
 	s := bufio.NewScanner(r)
 	s.Buffer(make([]byte, 64*1024), 16*1024*1024)
 	return s
+}
+
+type setHeader struct {
+	Code             string  `json:"code"`
+	ParentCode       *string `json:"parentCode"`
+	IsPartialPreview bool    `json:"isPartialPreview"`
+}
+
+type mtgjsonSet struct {
+	Code             string            `json:"code"`
+	Name             string            `json:"name"`
+	ReleaseDate      *string           `json:"releaseDate"`
+	Type             string            `json:"type"`
+	KeyruneCode      *string           `json:"keyruneCode"`
+	Languages        []string          `json:"languages"`
+	Block            *string           `json:"block"`
+	ParentCode       *string           `json:"parentCode"`
+	TokenSetCode     *string           `json:"tokenSetCode"`
+	IsPartialPreview bool              `json:"isPartialPreview"`
+	Cards            []json.RawMessage `json:"cards"`
+	Tokens           []json.RawMessage `json:"tokens"`
+}
+
+type legacyCard struct {
+	UUID         string
+	ScryfallID   string
+	FaceIndex    int64
+	Name         string
+	FaceName     string
+	FlavorID     string
+	FaceOracleID string
+	Line         int64
+}
+
+type loadPlan struct {
+	excludedSets map[string]struct{}
+}
+
+type importState struct {
+	plan                        *loadPlan
+	flavorMappingCount          int64
+	oracleMappingCount          int64
+	bridgeSkippedAlchemy        int64
+	bridgeSkippedUnmatched      int64
+	translationSkippedUnmatched int64
+	legalityByOracle            map[string]map[string]string
+	rulingKeys                  map[string]struct{}
+	insertedRows                map[tableName]int64
+}
+
+func newImportState(plan *loadPlan) *importState {
+	return &importState{
+		plan:             plan,
+		legalityByOracle: make(map[string]map[string]string),
+		rulingKeys:       make(map[string]struct{}),
+		insertedRows:     make(map[tableName]int64),
+	}
+}
+
+func inspectAllPrintings(ctx context.Context, dir string, progress func(int64)) (FileResult, *loadPlan, *TaskError) {
+	file := "AllPrintings.json"
+	path := filepath.Join(dir, file)
+	f, err := os.Open(path)
+	if err != nil {
+		return FileResult{}, nil, fail(file, 0, err)
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return FileResult{}, nil, fail(file, 0, err)
+	}
+	if !info.Mode().IsRegular() || info.Size() == 0 {
+		return FileResult{}, nil, fail(file, 0, errors.New("file must be a non-empty regular file"))
+	}
+
+	h := sha256.New()
+	headers := make(map[string]setHeader)
+	rows, err := walkAllPrintings(ctx, io.TeeReader(f, h), func(key string, raw json.RawMessage, row int64) error {
+		var header setHeader
+		if err := json.Unmarshal(raw, &header); err != nil {
+			return fmt.Errorf("set %q: %w", key, err)
+		}
+		if header.Code == "" {
+			return fmt.Errorf("set %q: required field %q is missing or empty", key, "code")
+		}
+		if !strings.EqualFold(key, header.Code) {
+			return fmt.Errorf("set key %q does not match code %q", key, header.Code)
+		}
+		code := strings.ToUpper(header.Code)
+		if _, exists := headers[code]; exists {
+			return fmt.Errorf("duplicate set code %q", header.Code)
+		}
+		headers[code] = header
+		if row%25 == 0 {
+			progress(row)
+		}
+		return nil
+	})
+	if err != nil {
+		return FileResult{}, nil, fail(file, rows+1, err)
+	}
+	if rows == 0 {
+		return FileResult{}, nil, fail(file, 0, errors.New("AllPrintings data contains no sets"))
+	}
+
+	excluded := make(map[string]struct{})
+	for code, header := range headers {
+		if header.IsPartialPreview {
+			excluded[code] = struct{}{}
+		}
+	}
+	changed := true
+	for changed {
+		changed = false
+		for code, header := range headers {
+			if _, alreadyExcluded := excluded[code]; alreadyExcluded || header.ParentCode == nil {
+				continue
+			}
+			if _, parentExcluded := excluded[strings.ToUpper(*header.ParentCode)]; parentExcluded {
+				excluded[code] = struct{}{}
+				changed = true
+			}
+		}
+	}
+	return FileResult{File: file, Size: info.Size(), SHA256: hex.EncodeToString(h.Sum(nil)), ReadRows: rows}, &loadPlan{excludedSets: excluded}, nil
+}
+
+func walkAllPrintings(ctx context.Context, r io.Reader, visit func(string, json.RawMessage, int64) error) (int64, error) {
+	decoder := json.NewDecoder(r)
+	token, err := decoder.Token()
+	if err != nil {
+		return 0, err
+	}
+	if delimiter, ok := token.(json.Delim); !ok || delimiter != '{' {
+		return 0, errors.New("top-level JSON value must be an object")
+	}
+	var rows int64
+	foundData := false
+	for decoder.More() {
+		nameToken, err := decoder.Token()
+		if err != nil {
+			return rows, err
+		}
+		name, ok := nameToken.(string)
+		if !ok {
+			return rows, errors.New("top-level property name must be a string")
+		}
+		if name != "data" {
+			var ignored json.RawMessage
+			if err := decoder.Decode(&ignored); err != nil {
+				return rows, fmt.Errorf("top-level field %q: %w", name, err)
+			}
+			continue
+		}
+		if foundData {
+			return rows, errors.New("top-level field \"data\" appears more than once")
+		}
+		foundData = true
+		dataToken, err := decoder.Token()
+		if err != nil {
+			return rows, err
+		}
+		if delimiter, ok := dataToken.(json.Delim); !ok || delimiter != '{' {
+			return rows, errors.New("top-level field \"data\" must be an object")
+		}
+		for decoder.More() {
+			if err := ctx.Err(); err != nil {
+				return rows, err
+			}
+			keyToken, err := decoder.Token()
+			if err != nil {
+				return rows, err
+			}
+			key, ok := keyToken.(string)
+			if !ok {
+				return rows, errors.New("set key must be a string")
+			}
+			var raw json.RawMessage
+			if err := decoder.Decode(&raw); err != nil {
+				return rows, fmt.Errorf("set %q: %w", key, err)
+			}
+			rows++
+			if err := visit(key, raw, rows); err != nil {
+				return rows, err
+			}
+		}
+		if _, err := decoder.Token(); err != nil {
+			return rows, err
+		}
+	}
+	if _, err := decoder.Token(); err != nil {
+		return rows, err
+	}
+	var trailing json.RawMessage
+	if err := decoder.Decode(&trailing); err == nil {
+		return rows, errors.New("multiple top-level JSON values are not allowed")
+	} else if !errors.Is(err, io.EOF) {
+		return rows, fmt.Errorf("trailing JSON data: %w", err)
+	}
+	if !foundData {
+		return rows, errors.New("required top-level field \"data\" is missing")
+	}
+	return rows, nil
+}
+
+func languageCode(name string) (string, error) {
+	code, ok := mtgjsonLanguageCodes[name]
+	if !ok {
+		return "", fmt.Errorf("unsupported MTGJSON language %q", name)
+	}
+	return code, nil
+}
+
+func faceIndex(obj map[string]json.RawMessage) (int64, error) {
+	layout, err := optionalStringField(obj, "layout")
+	if err != nil {
+		return 0, err
+	}
+	if layout != nil && strings.EqualFold(*layout, "meld") {
+		return -1, nil
+	}
+	side, err := optionalStringField(obj, "side")
+	if err != nil {
+		return 0, err
+	}
+	if side == nil || *side == "" {
+		return -1, nil
+	}
+	if len(*side) == 1 && (*side)[0] >= 'a' && (*side)[0] <= 'e' {
+		return int64((*side)[0] - 'a'), nil
+	}
+	return 0, fmt.Errorf("unsupported side %q", *side)
+}
+
+func lookupKey(scryfallID string, index int64) string {
+	return strings.ToLower(scryfallID) + "\x1f" + strconv.FormatInt(index, 10)
+}
+
+func tokenSetCode(set mtgjsonSet) string {
+	if set.TokenSetCode != nil && *set.TokenSetCode != "" && !strings.EqualFold(*set.TokenSetCode, set.Code) {
+		return *set.TokenSetCode
+	}
+	return "T" + set.Code
 }

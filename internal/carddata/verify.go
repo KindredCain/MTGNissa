@@ -16,18 +16,20 @@ type associationSpec struct {
 }
 
 var associationSpecs = []associationSpec{
-	{childTable: tableScryfallCard, childColumn: "lang", parentTable: tableScryfallLanguage, parentColumn: "code"},
 	{childTable: tableScryfallCard, childColumn: "layout", parentTable: tableScryfallLayout, parentColumn: "code"},
 	{childTable: tableScryfallCard, childColumn: "frame", parentTable: tableScryfallFrame, parentColumn: "code"},
-	{childTable: tableScryfallCard, childColumn: "set_id", parentTable: tableScryfallSet, parentColumn: "set_id"},
+	{childTable: tableScryfallCard, childColumn: "set_code", parentTable: tableScryfallSet, parentColumn: "code"},
+	{childTable: tableMTGNissaToken, childColumn: "set_code", parentTable: tableScryfallSet, parentColumn: "code"},
+	{childTable: tableMTGNissaCardPrinting, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableMTGNissaCardPrinting, childColumn: "language_code", parentTable: tableScryfallLanguage, parentColumn: "code"},
+	{childTable: tableScryfallSet, childColumn: "parent_code", parentTable: tableScryfallSet, parentColumn: "code"},
 	{childTable: tableCardTranslation, childColumn: "card_id", parentTable: tableScryfallCard, parentColumn: "uuid"},
-	{childTable: tableFlavorTranslation, childColumn: "flavor_id", parentTable: tableScryfallCard, parentColumn: "flavor_id"},
-	{childTable: tableOracleTranslation, childColumn: "face_oracle_id", parentTable: tableScryfallCard, parentColumn: "face_oracle_id"},
-	{childTable: tableOracleTranslation, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
-	{childTable: tableSetTranslation, childColumn: "set_id", parentTable: tableScryfallSet, parentColumn: "set_id"},
 	{childTable: tableScryfallOracleRuling, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
-	{childTable: tableScryfallOracleRuling, childColumn: "ruling_key", parentTable: tableRulingTranslation, parentColumn: "ruling_key"},
-	{childTable: tableRulingTranslation, childColumn: "ruling_key", parentTable: tableScryfallOracleRuling, parentColumn: "ruling_key"},
+	{childTable: tableOracleLegality, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
+	{childTable: tableCardFlavorMapping, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableCardFlavorMapping, childColumn: "flavor_id", parentTable: tableFlavorTranslation, parentColumn: "flavor_id"},
+	{childTable: tableCardOracleMapping, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
+	{childTable: tableCardOracleMapping, childColumn: "face_oracle_id", parentTable: tableOracleTranslation, parentColumn: "face_oracle_id"},
 	{childTable: tableScryfallCardKeyword, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
 	{childTable: tableScryfallCardType, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
 	{childTable: tableScryfallCardFrameEffect, childColumn: "card_uuid", parentTable: tableScryfallCard, parentColumn: "uuid"},
@@ -36,24 +38,52 @@ var associationSpecs = []associationSpec{
 	{childTable: tableOracleTagRelation, childColumn: "parent_tag_id", parentTable: tableOracleTag, parentColumn: "tag_id"},
 	{childTable: tableOracleTagRelation, childColumn: "child_tag_id", parentTable: tableOracleTag, parentColumn: "tag_id"},
 	{childTable: tableOracleTagging, childColumn: "tag_id", parentTable: tableOracleTag, parentColumn: "tag_id"},
-	{childTable: tableOracleTagging, childColumn: "oracle_id", parentTable: tableScryfallCard, parentColumn: "oracle_id"},
 }
 
-func (m *Manager) verifyImportedData(ctx context.Context, id string, results []FileResult, tableNames map[tableName]string) *TaskError {
+func (m *Manager) verifyImportedData(ctx context.Context, id string, results []FileResult, tableNames map[tableName]string, state *importState) *TaskError {
 	m.stage(id, StageVerifying)
 	startedAt := time.Now()
+	for _, table := range []tableName{
+		tableScryfallCard, tableMTGNissaToken, tableScryfallSet, tableMTGNissaCardPrinting,
+		tableScryfallOracleRuling, tableOracleLegality, tableScryfallCardKeyword,
+		tableScryfallCardType, tableScryfallCardFrameEffect, tableScryfallCardPromoType,
+	} {
+		var count int64
+		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tableNames[table])).Scan(&count); err != nil {
+			return stageFail(StageVerifying, "AllPrintings.json", 0, err)
+		}
+		if count != state.insertedRows[table] {
+			return stageFail(StageVerifying, "AllPrintings.json", 0, fmt.Errorf("table %s row count mismatch: expected %d, inserted %d", table, state.insertedRows[table], count))
+		}
+	}
+	for table, expected := range map[tableName]int64{
+		tableCardFlavorMapping: state.flavorMappingCount,
+		tableCardOracleMapping: state.oracleMappingCount,
+	} {
+		var count int64
+		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tableNames[table])).Scan(&count); err != nil {
+			return stageFail(StageVerifying, "scryfall_card.json", 0, err)
+		}
+		if count != expected {
+			return stageFail(StageVerifying, "scryfall_card.json", 0, fmt.Errorf("table %s row count mismatch: expected %d, inserted %d", table, expected, count))
+		}
+	}
 	for i, s := range sourceSpecs {
+		if s.kind != sourceRows {
+			continue
+		}
 		tableSpec := mustTableSpec(s.table)
 		tableStartedAt := time.Now()
-		m.setProgress(s.file, 0, results[i].ReadRows)
+		expectedRows := results[i].InsertedRows
+		m.setProgress(s.file, 0, expectedRows)
 		var count int64
 		if err := m.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+quote(tableNames[s.table])).Scan(&count); err != nil {
 			return stageFail(StageVerifying, s.file, 0, err)
 		}
-		if (!tableSpec.allowExtraRows && count != results[i].ReadRows) || (tableSpec.allowExtraRows && count < results[i].ReadRows) {
-			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: read %d, inserted %d", results[i].ReadRows, count))
+		if (!tableSpec.allowExtraRows && count != expectedRows) || (tableSpec.allowExtraRows && count < expectedRows) {
+			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: expected %d, inserted %d", expectedRows, count))
 		}
-		m.setProgress(s.file, count, results[i].ReadRows)
+		m.setProgress(s.file, count, expectedRows)
 		m.log.Info("card data table verification completed", "task_id", id, "table", s.table, "rows", count, "duration", time.Since(tableStartedAt))
 	}
 	associationStartedAt := time.Now()

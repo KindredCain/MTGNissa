@@ -929,18 +929,19 @@ CARD_DATA_DIR=/data/card-data
 考虑到 MySQL DDL 会隐式提交，不能直接先删除正在使用的正式表，否则导入失败会留下空库或半成品库。实现时采用等价但更安全的方式：
 
 1. 完成全部文件预检。
-2. 创建一组新的临时卡牌表。
-3. 再次流式读取九个文件并导入临时表。
-4. 校验普通源表的导入行数与预检行数一致；合并后的 `ruling_translation` 行数不得少于 `zhs_ruling.json` 的预检行数。
-5. 再次确认 SHA-256 和行数未在导入期间变化；不重复核对文件大小。
-6. 使用 MySQL 多表 `RENAME TABLE` 原子切换新旧表。
-7. 切换成功后删除全部旧卡牌表。
+2. 创建一组新的临时卡牌表；此时不创建桥接暂存表。
+3. 导入 AllPrintings 元数据；开始处理 `scryfall_card.json` 前，再创建不属于目标数据字典的任务级普通桥接暂存表 `card_uuid_bridge__stage_<task_id>`。
+4. 继续流式导入其余文件；旧 UUID 与 AllPrintings UUID 的关系先批量写入桥接暂存表，卡牌翻译分批查询该表并直接使用新 UUID 入库。无法命中新 `mtgnissa_card` 的旧记录正常跳过，不区分 Token、预览系列或普通卡缺失；日志只打印各类计数，不打印未命中样例。
+5. 全部源文件和两张翻译映射表写入完成后立即删除桥接暂存表，再校验普通源表的导入行数与预检行数一致；`ruling_translation` 只导入 `zhs_ruling.json` 中的翻译记录，行数必须与实际写入行数一致。
+6. 再次确认 SHA-256 和行数未在导入期间变化；不重复核对文件大小。
+7. 使用 MySQL 多表 `RENAME TABLE` 原子切换新旧表。
+8. 切换成功后删除全部旧卡牌表。
 
 在切换前发生任何错误时立即停止数据库操作，不自动清理临时表，现有正式卡牌表保持不变；遗留临时表用于排查并由运维人员处理。只有原子切换成功后才进入 `cleaning` 阶段，按表删除本次切换产生的旧表，任一删除失败即停止后续数据库操作。
 
 ### 15.6 表范围
 
-加载逻辑只能操作以下固定白名单表：
+加载逻辑只能操作以下固定白名单正式表：
 
 - `scryfall_card`
 - `card_translation`
@@ -966,7 +967,7 @@ CARD_DATA_DIR=/data/card-data
 - `scryfall_finish`
 - `scryfall_game`
 
-禁止枚举数据库中的所有表后直接删除。执行前必须确认当前连接的数据库名称等于配置的卡牌数据库名称，防止误操作个人数据数据库。
+除上述正式表外，加载任务可以在处理 `scryfall_card.json` 前创建名称严格限定为 `card_uuid_bridge__stage_<task_id>` 的普通桥接暂存表；该表不属于目标数据字典或 `schema.go`，不参与正式表换表。全部源文件及两张翻译映射表写入完成后必须立即删除，再进入验证阶段；此前失败时与其他本次任务临时表一同保留以便排查。禁止枚举数据库中的所有表后直接删除。执行前必须确认当前连接的数据库名称等于配置的卡牌数据库名称，防止误操作个人数据数据库。
 
 ### 15.7 导入要求
 
@@ -980,7 +981,7 @@ CARD_DATA_DIR=/data/card-data
 - `artist_ids` 按源数组顺序以逗号连接后保存到 `scryfall_card.artist_ids VARCHAR(2048) NULL`；`former_names` 以压缩 JSON 数组文本保存到 `oracle_translation.former_names LONGTEXT NULL`。两者均不建立关联表或索引。
 - `preview` 不参与检索，以规范 JSON 文本存入 `scryfall_card.preview` 的可空 `LONGTEXT` 列，不单独建表。
 - `rulings.jsonl` 的每条规则使用规范化英文 `comment` 的 SHA-256 生成 `ruling_key`；规范化只统一换行、弯引号、不换行空格和首尾空白，正文不折叠或改写。
-- `scryfall_oracle_ruling` 使用自增 `id` 区分每一条源记录，并保存 `oracle_id`、`ruling_key`、来源和发布日期；`ruling_translation` 保存英文规则及翻译文本。Scryfall 中存在但翻译来源文件缺失的规则必须补成 `translation NULL` 的英文行，已有翻译不得被覆盖。
+- `oracle_ruling` 保存 `oracle_id`、`ruling_key`、发布日期和 AllPrintings 英文正文；`ruling_translation` 只保存 `zhs_ruling.json` 中实际存在的翻译记录。两表可按 `ruling_key` 关联，但两个方向均不要求对方必须存在；显示时优先使用非空翻译，否则回退到 `oracle_ruling.text`。
 - `rulings.jsonl` 中同一 `oracle_id` 和正文可能因不同发布日期而重复出现；所有源记录必须分别保留，不得覆盖或合并。自增 `id` 只作为本次加载结果的内部行标识，业务关联仍使用 `oracle_id` 和 `ruling_key`。
 - `ruling_translation.extra` 接受任意合法 JSON 值并以压缩 JSON 文本保存到 `LONGTEXT`，不建立 JSON 子表。
 - `oracle-tags.jsonl` 只导入 `oracle` 标签。标签主表仅保留标签 ID、名称、说明和逗号连接的别名，不保存 Scryfall URI、slug、对象类型等本系统不用的元数据。

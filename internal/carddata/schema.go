@@ -5,12 +5,15 @@ import "strings"
 type tableName string
 
 const (
-	tableScryfallCard            tableName = "scryfall_card"
+	tableScryfallCard            tableName = "mtgnissa_card"
+	tableMTGNissaToken           tableName = "mtgnissa_token"
+	tableMTGNissaCardPrinting    tableName = "mtgnissa_card_printing"
 	tableCardTranslation         tableName = "card_translation"
 	tableFlavorTranslation       tableName = "flavor_translation"
 	tableOracleTranslation       tableName = "oracle_translation"
 	tableRulingTranslation       tableName = "ruling_translation"
-	tableScryfallOracleRuling    tableName = "scryfall_oracle_ruling"
+	tableScryfallOracleRuling    tableName = "oracle_ruling"
+	tableOracleLegality          tableName = "oracle_legality"
 	tableOracleTag               tableName = "oracle_tag"
 	tableSetTranslation          tableName = "set_translation"
 	tableTypeTranslation         tableName = "type_translation"
@@ -18,9 +21,11 @@ const (
 	tableScryfallCardType        tableName = "scryfall_card_type"
 	tableScryfallCardFrameEffect tableName = "scryfall_card_frame_effect"
 	tableScryfallCardPromoType   tableName = "scryfall_card_promo_type"
-	tableScryfallSet             tableName = "scryfall_set"
+	tableScryfallSet             tableName = "mtgnissa_set"
+	tableCardFlavorMapping       tableName = "card_flavor_translation_mapping"
+	tableCardOracleMapping       tableName = "card_oracle_translation_mapping"
 	tableOracleTagRelation       tableName = "oracle_tag_relation"
-	tableOracleTagging           tableName = "oracle_tagging"
+	tableOracleTagging           tableName = "oracle_tag_mapping"
 	tableScryfallColor           tableName = "scryfall_color"
 	tableScryfallLanguage        tableName = "scryfall_language"
 	tableScryfallLayout          tableName = "scryfall_layout"
@@ -59,6 +64,7 @@ type columnSpec struct {
 type indexSpec struct {
 	name    string
 	columns []string
+	unique  bool
 }
 
 type spec struct {
@@ -78,6 +84,10 @@ func idx(name string, columns ...string) indexSpec {
 	return indexSpec{name: name, columns: columns}
 }
 
+func uniqueIdx(name string, columns ...string) indexSpec {
+	return indexSpec{name: name, columns: columns, unique: true}
+}
+
 var specs = []spec{
 	{
 		table: tableScryfallCard,
@@ -86,104 +96,135 @@ var specs = []spec{
 			col("uuid", "CHAR(36) NOT NULL", kindString),
 			col("scryfall_id", "CHAR(36) NOT NULL", kindString),
 			col("face_index", "INT NOT NULL", kindInteger),
-			col("lang", "VARCHAR(16) NOT NULL", kindString),
 			col("oracle_id", "CHAR(36) NULL", kindString),
-			col("layout", "VARCHAR(64) NOT NULL", kindString),
-			col("arena_id", "BIGINT NULL", kindInteger),
-			col("mtgo_id", "BIGINT NULL", kindInteger),
-			col("mtgo_foil_id", "BIGINT NULL", kindInteger),
-			col("multiverse_id", "BIGINT NULL", kindInteger),
-			col("tcgplayer_id", "BIGINT NULL", kindInteger),
-			col("tcgplayer_etched_id", "BIGINT NULL", kindInteger),
-			col("cardmarket_id", "BIGINT NULL", kindInteger),
-			col("resource_id", "VARCHAR(255) NULL", kindString),
+			col("layout", "VARCHAR(32) NOT NULL", kindString),
 			col("cmc", "DECIMAL(12,4) NOT NULL", kindNumber),
-			col("colors_mask", "TINYINT UNSIGNED NOT NULL", kindColorMask),
-			col("color_identity_mask", "TINYINT UNSIGNED NOT NULL", kindColorMask),
-			col("color_indicator_mask", "TINYINT UNSIGNED NOT NULL", kindColorMask),
-			col("produced_mana", "VARCHAR(64) NULL", kindStringArray),
+			col("colors_mask", "BIGINT UNSIGNED NOT NULL", kindColorMask),
+			col("color_identity_mask", "BIGINT UNSIGNED NOT NULL", kindColorMask),
+			col("color_indicator_mask", "BIGINT UNSIGNED NOT NULL", kindColorMask),
+			col("produced_mana", "VARCHAR(32) NULL", kindStringArray),
 			col("defense", "VARCHAR(32) NULL", kindString),
 			col("game_changer", "BOOLEAN NOT NULL", kindBoolean),
 			col("hand_modifier", "VARCHAR(32) NULL", kindString),
 			col("life_modifier", "VARCHAR(32) NULL", kindString),
 			col("loyalty", "VARCHAR(32) NULL", kindString),
-			col("loyalty_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+			col("loyalty_numeric", "DECIMAL(8,2) NULL", kindDerivedNumber),
 			col("name", "VARCHAR(512) NOT NULL", kindString),
 			col("face_name", "VARCHAR(512) NULL", kindString),
 			col("oracle_text", "LONGTEXT NULL", kindString),
 			col("power", "VARCHAR(32) NULL", kindString),
-			col("power_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+			col("power_numeric", "DECIMAL(8,2) NULL", kindDerivedNumber),
 			col("reserved", "BOOLEAN NOT NULL", kindBoolean),
 			col("toughness", "VARCHAR(32) NULL", kindString),
-			col("toughness_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+			col("toughness_numeric", "DECIMAL(8,2) NULL", kindDerivedNumber),
 			col("pt_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
 			col("type_line", "VARCHAR(512) NOT NULL", kindString),
-			col("artist", "VARCHAR(255) NULL", kindString),
+			col("artist", "VARCHAR(512) NULL", kindString),
 			col("artist_ids", "VARCHAR(2048) NULL", kindStringArray),
 			col("booster", "BOOLEAN NOT NULL", kindBoolean),
 			col("border_color", "VARCHAR(32) NOT NULL", kindString),
-			col("card_back_id", "CHAR(36) NULL", kindString),
 			col("collector_number", "VARCHAR(64) NOT NULL", kindString),
-			col("content_warning", "BOOLEAN NULL", kindBoolean),
+			col("content_warning", "BOOLEAN NOT NULL", kindBoolean),
 			col("digital", "BOOLEAN NOT NULL", kindBoolean),
-			col("finishes_mask", "TINYINT UNSIGNED NOT NULL", kindFinishMask),
+			col("finishes_mask", "BIGINT UNSIGNED NOT NULL", kindFinishMask),
 			col("flavor_name", "VARCHAR(512) NULL", kindString),
 			col("flavor_text", "LONGTEXT NULL", kindString),
-			col("frame", "VARCHAR(32) NOT NULL", kindString),
+			col("frame", "VARCHAR(16) NULL", kindString),
 			col("full_art", "BOOLEAN NOT NULL", kindBoolean),
-			col("games_mask", "TINYINT UNSIGNED NOT NULL", kindGameMask),
-			col("highres_image", "BOOLEAN NOT NULL", kindBoolean),
-			col("illustration_id", "CHAR(36) NULL", kindString),
-			col("image_status", "VARCHAR(32) NOT NULL", kindString),
+			col("games_mask", "BIGINT UNSIGNED NOT NULL", kindGameMask),
 			col("oversized", "BOOLEAN NOT NULL", kindBoolean),
-			col("printed_name", "VARCHAR(512) NULL", kindString),
-			col("printed_text", "LONGTEXT NULL", kindString),
-			col("printed_type_line", "VARCHAR(512) NULL", kindString),
 			col("promo", "BOOLEAN NOT NULL", kindBoolean),
 			col("rarity", "VARCHAR(32) NOT NULL", kindString),
-			col("released_at", "DATE NOT NULL", kindDate),
+			col("released_at", "DATE NULL", kindDate),
 			col("reprint", "BOOLEAN NOT NULL", kindBoolean),
-			col("set_id", "CHAR(36) NOT NULL", kindString),
+			col("set_code", "VARCHAR(16) NOT NULL", kindString),
 			col("story_spotlight", "BOOLEAN NOT NULL", kindBoolean),
 			col("textless", "BOOLEAN NOT NULL", kindBoolean),
 			col("variation", "BOOLEAN NOT NULL", kindBoolean),
-			col("variation_of", "CHAR(36) NULL", kindString),
+			col("variations", "TEXT NULL", kindStringArray),
 			col("security_stamp", "VARCHAR(64) NULL", kindString),
 			col("watermark", "VARCHAR(128) NULL", kindString),
 			col("foil", "BOOLEAN NOT NULL", kindBoolean),
 			col("nonfoil", "BOOLEAN NOT NULL", kindBoolean),
-			col("attraction_lights_mask", "TINYINT UNSIGNED NOT NULL", kindAttractionLightMask),
-			col("preview", "LONGTEXT NULL", kindRawJSONText),
-			col("mana_cost", "VARCHAR(255) NULL", kindString),
-			col("flavor_id", "CHAR(36) NULL", kindString),
-			col("face_oracle_id", "CHAR(36) NULL", kindString),
-			col("created_at", "DATETIME(6) NOT NULL", kindDateTime),
-			col("updated_at", "DATETIME(6) NOT NULL", kindDateTime),
+			col("attraction_lights_mask", "BIGINT UNSIGNED NOT NULL", kindAttractionLightMask),
+			col("mana_cost", "VARCHAR(512) NULL", kindString),
+			col("has_alternative_deck_limit", "BOOLEAN NOT NULL", kindBoolean),
+			col("brawl_leader", "BOOLEAN NOT NULL", kindBoolean),
+			col("commander_leader", "BOOLEAN NOT NULL", kindBoolean),
+			col("oathbreaker_leader", "BOOLEAN NOT NULL", kindBoolean),
 		},
 		indexes: []indexSpec{
-			idx("idx_scryfall_card_scryfall_id", "scryfall_id"),
-			idx("idx_scryfall_card_oracle_id", "oracle_id"),
-			idx("idx_scryfall_card_face_oracle_id", "face_oracle_id"),
-			idx("idx_scryfall_card_flavor_id", "flavor_id"),
-			idx("idx_scryfall_card_set_id", "set_id"),
-			idx("idx_scryfall_card_multiverse_id", "multiverse_id"),
-			idx("idx_scryfall_card_set_print", "set_id", "collector_number", "lang"),
-			idx("idx_scryfall_card_cmc", "cmc"),
-			idx("idx_scryfall_card_mana_cost", "mana_cost"),
-			idx("idx_scryfall_card_rarity", "rarity"),
-			idx("idx_scryfall_card_released_at", "released_at"),
-			idx("idx_scryfall_card_name", "name"),
-			idx("idx_scryfall_card_language", "lang"),
-			idx("idx_scryfall_card_layout", "layout"),
-			idx("idx_scryfall_card_frame", "frame"),
-			idx("idx_scryfall_card_colors_mask", "colors_mask"),
-			idx("idx_scryfall_card_identity_mask", "color_identity_mask"),
-			idx("idx_scryfall_card_power_numeric", "power_numeric"),
-			idx("idx_scryfall_card_toughness_numeric", "toughness_numeric"),
-			idx("idx_scryfall_card_loyalty_numeric", "loyalty_numeric"),
-			idx("idx_scryfall_card_pt_numeric", "pt_numeric"),
-			idx("idx_scryfall_card_finishes_mask", "finishes_mask"),
-			idx("idx_scryfall_card_games_mask", "games_mask"),
+			uniqueIdx("uq_mtgnissa_card_scryfall_face", "scryfall_id", "face_index"),
+			idx("idx_mtgnissa_card_oracle_id", "oracle_id"),
+			idx("idx_mtgnissa_card_set_code", "set_code"),
+			idx("idx_mtgnissa_card_name", "name"),
+			idx("idx_mtgnissa_card_released_at", "released_at"),
+		},
+	},
+	{
+		table: tableMTGNissaToken,
+		key:   []string{"uuid"},
+		columns: []columnSpec{
+			col("uuid", "CHAR(36) NOT NULL", kindString),
+			col("scryfall_id", "CHAR(36) NULL", kindString),
+			col("face_index", "INT NOT NULL", kindInteger),
+			col("oracle_id", "CHAR(36) NULL", kindString),
+			col("layout", "VARCHAR(32) NOT NULL", kindString),
+			col("colors_mask", "BIGINT UNSIGNED NOT NULL", kindColorMask),
+			col("color_identity_mask", "BIGINT UNSIGNED NOT NULL", kindColorMask),
+			col("produced_mana", "VARCHAR(32) NULL", kindStringArray),
+			col("name", "VARCHAR(512) NOT NULL", kindString),
+			col("face_name", "VARCHAR(512) NULL", kindString),
+			col("oracle_text", "LONGTEXT NULL", kindString),
+			col("power", "VARCHAR(32) NULL", kindString),
+			col("power_numeric", "DECIMAL(8,2) NULL", kindDerivedNumber),
+			col("toughness", "VARCHAR(32) NULL", kindString),
+			col("toughness_numeric", "DECIMAL(8,2) NULL", kindDerivedNumber),
+			col("pt_numeric", "DECIMAL(12,4) NULL", kindDerivedNumber),
+			col("type_line", "VARCHAR(512) NOT NULL", kindString),
+			col("artist", "VARCHAR(512) NULL", kindString),
+			col("artist_ids", "VARCHAR(2048) NULL", kindStringArray),
+			col("booster", "BOOLEAN NOT NULL", kindBoolean),
+			col("border_color", "VARCHAR(32) NOT NULL", kindString),
+			col("collector_number", "VARCHAR(64) NOT NULL", kindString),
+			col("finishes_mask", "BIGINT UNSIGNED NOT NULL", kindFinishMask),
+			col("flavor_name", "VARCHAR(512) NULL", kindString),
+			col("flavor_text", "LONGTEXT NULL", kindString),
+			col("frame", "VARCHAR(16) NULL", kindString),
+			col("full_art", "BOOLEAN NOT NULL", kindBoolean),
+			col("games_mask", "BIGINT UNSIGNED NOT NULL", kindGameMask),
+			col("oversized", "BOOLEAN NOT NULL", kindBoolean),
+			col("promo", "BOOLEAN NOT NULL", kindBoolean),
+			col("reprint", "BOOLEAN NOT NULL", kindBoolean),
+			col("set_code", "VARCHAR(16) NOT NULL", kindString),
+			col("textless", "BOOLEAN NOT NULL", kindBoolean),
+			col("security_stamp", "VARCHAR(64) NULL", kindString),
+			col("watermark", "VARCHAR(128) NULL", kindString),
+			col("foil", "BOOLEAN NOT NULL", kindBoolean),
+			col("nonfoil", "BOOLEAN NOT NULL", kindBoolean),
+			col("mana_cost", "VARCHAR(512) NULL", kindString),
+		},
+		indexes: []indexSpec{
+			idx("idx_mtgnissa_token_set_code", "set_code"),
+			idx("idx_mtgnissa_token_scryfall_id", "scryfall_id"),
+		},
+	},
+	{
+		table: tableMTGNissaCardPrinting,
+		key:   []string{"uuid"},
+		columns: []columnSpec{
+			col("uuid", "CHAR(36) NOT NULL", kindString),
+			col("card_uuid", "CHAR(36) NOT NULL", kindString),
+			col("language_code", "VARCHAR(8) NOT NULL", kindString),
+			col("scryfall_id", "CHAR(36) NULL", kindString),
+			col("printed_name", "VARCHAR(512) NULL", kindString),
+			col("printed_text", "LONGTEXT NULL", kindString),
+			col("printed_type_line", "VARCHAR(512) NULL", kindString),
+		},
+		indexes: []indexSpec{
+			uniqueIdx("uq_mtgnissa_card_printing_language", "card_uuid", "language_code"),
+			idx("idx_mtgnissa_card_printing_scryfall_id", "scryfall_id"),
+			idx("idx_mtgnissa_card_printing_language", "language_code"),
 		},
 	},
 	{
@@ -251,7 +292,7 @@ var specs = []spec{
 		},
 	},
 	{
-		table: tableRulingTranslation, key: []string{"ruling_key"}, allowExtraRows: true,
+		table: tableRulingTranslation, key: []string{"ruling_key"},
 		columns: []columnSpec{
 			col("ruling_key", "CHAR(64) NOT NULL", kindRulingKey),
 			col("ruling_id", "CHAR(36) NULL", kindString),
@@ -266,19 +307,46 @@ var specs = []spec{
 	},
 	{
 		table: tableScryfallOracleRuling,
-		key:   []string{"id"},
+		key:   []string{"oracle_id", "ruling_key", "published_at"},
 		columns: []columnSpec{
-			col("id", "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT", kindAutoIncrement),
 			col("oracle_id", "CHAR(36) NOT NULL", kindString),
 			col("ruling_key", "CHAR(64) NOT NULL", kindRulingKey),
-			col("source", "VARCHAR(32) NOT NULL", kindString),
 			col("published_at", "DATE NOT NULL", kindDate),
+			col("text", "LONGTEXT NOT NULL", kindString),
 		},
 		indexes: []indexSpec{
-			idx("idx_scryfall_oracle_ruling_oracle", "oracle_id", "published_at"),
-			idx("idx_scryfall_oracle_ruling_rule", "ruling_key", "oracle_id"),
+			idx("idx_oracle_ruling_oracle", "oracle_id", "published_at"),
+			idx("idx_oracle_ruling_rule", "ruling_key", "oracle_id"),
 		},
-		autoIncrementKey: true,
+	},
+	{
+		table: tableOracleLegality,
+		key:   []string{"oracle_id"},
+		columns: []columnSpec{
+			col("oracle_id", "CHAR(36) NOT NULL", kindString),
+			col("alchemy_status", "VARCHAR(32) NULL", kindString),
+			col("brawl_status", "VARCHAR(32) NULL", kindString),
+			col("commander_status", "VARCHAR(32) NULL", kindString),
+			col("duel_status", "VARCHAR(32) NULL", kindString),
+			col("future_status", "VARCHAR(32) NULL", kindString),
+			col("gladiator_status", "VARCHAR(32) NULL", kindString),
+			col("historic_status", "VARCHAR(32) NULL", kindString),
+			col("competitivebrawl_status", "VARCHAR(32) NULL", kindString),
+			col("legacy_status", "VARCHAR(32) NULL", kindString),
+			col("modern_status", "VARCHAR(32) NULL", kindString),
+			col("oathbreaker_status", "VARCHAR(32) NULL", kindString),
+			col("oldschool_status", "VARCHAR(32) NULL", kindString),
+			col("pauper_status", "VARCHAR(32) NULL", kindString),
+			col("paupercommander_status", "VARCHAR(32) NULL", kindString),
+			col("penny_status", "VARCHAR(32) NULL", kindString),
+			col("pioneer_status", "VARCHAR(32) NULL", kindString),
+			col("predh_status", "VARCHAR(32) NULL", kindString),
+			col("premodern_status", "VARCHAR(32) NULL", kindString),
+			col("standard_status", "VARCHAR(32) NULL", kindString),
+			col("standardbrawl_status", "VARCHAR(32) NULL", kindString),
+			col("timeless_status", "VARCHAR(32) NULL", kindString),
+			col("vintage_status", "VARCHAR(32) NULL", kindString),
+		},
 	},
 	{
 		table: tableOracleTag,
@@ -350,21 +418,39 @@ var derivedSpecs = []spec{
 		indexes: []indexSpec{idx("idx_scryfall_card_promo_type_lookup", "promo_type", "card_uuid")},
 	},
 	{
-		table: tableScryfallSet, key: []string{"set_id"},
+		table: tableScryfallSet, key: []string{"code"},
 		columns: []columnSpec{
-			col("set_id", "CHAR(36) NOT NULL", kindString),
-			col("code", "VARCHAR(32) NOT NULL", kindString),
-			col("name", "VARCHAR(255) NOT NULL", kindString),
-			col("set_type", "VARCHAR(64) NOT NULL", kindString),
-			col("released_at", "DATE NOT NULL", kindDate),
+			col("code", "VARCHAR(16) NOT NULL", kindString),
+			col("name", "VARCHAR(512) NOT NULL", kindString),
+			col("released_at", "DATE NULL", kindDate),
+			col("set_type", "VARCHAR(32) NOT NULL", kindString),
 			col("card_count", "BIGINT UNSIGNED NOT NULL", kindInteger),
+			col("keyrune_code", "VARCHAR(64) NULL", kindString),
+			col("languages", "VARCHAR(255) NULL", kindStringArray),
+			col("block", "VARCHAR(512) NULL", kindString),
+			col("parent_code", "VARCHAR(16) NULL", kindString),
 		},
 		indexes: []indexSpec{
-			idx("idx_scryfall_set_code", "code"),
-			idx("idx_scryfall_set_type", "set_type"),
-			idx("idx_scryfall_set_released_at", "released_at"),
-			idx("idx_scryfall_set_card_count", "card_count"),
+			idx("idx_mtgnissa_set_type", "set_type"),
+			idx("idx_mtgnissa_set_released_at", "released_at"),
+			idx("idx_mtgnissa_set_parent_code", "parent_code"),
 		},
+	},
+	{
+		table: tableCardFlavorMapping, key: []string{"card_uuid", "flavor_id"},
+		columns: []columnSpec{
+			col("card_uuid", "CHAR(36) NOT NULL", kindString),
+			col("flavor_id", "CHAR(36) NOT NULL", kindString),
+		},
+		indexes: []indexSpec{idx("idx_card_flavor_mapping_flavor", "flavor_id", "card_uuid")},
+	},
+	{
+		table: tableCardOracleMapping, key: []string{"card_uuid", "face_oracle_id"},
+		columns: []columnSpec{
+			col("card_uuid", "CHAR(36) NOT NULL", kindString),
+			col("face_oracle_id", "CHAR(36) NOT NULL", kindString),
+		},
+		indexes: []indexSpec{idx("idx_card_oracle_mapping_oracle", "face_oracle_id", "card_uuid")},
 	},
 	{
 		table: tableOracleTagRelation, key: []string{"parent_tag_id", "child_tag_id"},
@@ -381,7 +467,7 @@ var derivedSpecs = []spec{
 			col("tag_id", "CHAR(36) NOT NULL", kindString),
 			col("weight", "VARCHAR(16) NOT NULL", kindString),
 		},
-		indexes: []indexSpec{idx("idx_oracle_tagging_tag", "tag_id", "weight", "oracle_id")},
+		indexes: []indexSpec{idx("idx_oracle_tag_mapping_tag", "tag_id", "weight", "oracle_id")},
 	},
 }
 
@@ -471,7 +557,11 @@ func createTableSQL(table string, s spec) string {
 	}
 	parts = append(parts, "PRIMARY KEY ("+quotedList(s.key)+")")
 	for _, index := range s.indexes {
-		parts = append(parts, "KEY "+quote(index.name)+" ("+quotedList(index.columns)+")")
+		prefix := "KEY "
+		if index.unique {
+			prefix = "UNIQUE KEY "
+		}
+		parts = append(parts, prefix+quote(index.name)+" ("+quotedList(index.columns)+")")
 	}
 	return "CREATE TABLE " + quote(table) + " (" + strings.Join(parts, ",") + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
 }

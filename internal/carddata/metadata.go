@@ -13,14 +13,39 @@ var finishBits = map[string]int64{
 	"nonfoil": 1,
 	"foil":    2,
 	"etched":  4,
+	"signed":  8,
 }
 
 var gameBits = map[string]int64{
-	"paper":  1,
-	"arena":  2,
-	"mtgo":   4,
-	"astral": 8,
-	"sega":   16,
+	"paper":     1,
+	"arena":     2,
+	"mtgo":      4,
+	"astral":    8,
+	"shandalar": 8,
+	"sega":      16,
+	"dreamcast": 16,
+}
+
+var mtgjsonLanguageCodes = map[string]string{
+	"English":             "en",
+	"Spanish":             "es",
+	"French":              "fr",
+	"German":              "de",
+	"Italian":             "it",
+	"Portuguese (Brazil)": "pt",
+	"Japanese":            "ja",
+	"Korean":              "ko",
+	"Russian":             "ru",
+	"Chinese Simplified":  "zhs",
+	"Chinese Traditional": "zht",
+	"Hebrew":              "he",
+	"Latin":               "la",
+	"Ancient Greek":       "grc",
+	"Arabic":              "ar",
+	"Sanskrit":            "sa",
+	"Phyrexian":           "ph",
+	"Quenya":              "qya",
+	"Dwarvish":            "dw",
 }
 
 func dictionaryRows() map[tableName][]importRow {
@@ -45,6 +70,9 @@ func dictionaryRows() map[tableName][]importRow {
 		tableScryfallLayout: rows(
 			[]any{"normal", "Normal", "A standard Magic card with one face", "single_faced"},
 			[]any{"split", "Split", "A split-faced card", "single_sided_multi_face"},
+			[]any{"aftermath", "Aftermath", "A split card with an aftermath half", "single_sided_multi_face"},
+			[]any{"prepare", "Prepare", "A multi-part card using the prepare layout", "single_sided_multi_face"},
+			[]any{"front_card", "Front card", "The front member of a linked card presentation", "single_faced"},
 			[]any{"flip", "Flip", "A card that inverts vertically with the flip keyword", "single_sided_multi_face"},
 			[]any{"transform", "Transform", "A double-sided card that transforms", "double_sided"},
 			[]any{"modal_dfc", "Modal DFC", "A double-sided card playable from either side", "double_sided"},
@@ -88,11 +116,14 @@ func dictionaryRows() map[tableName][]importRow {
 			[]any{"snow", "Snow frame"}, []any{"lesson", "Lesson frame"},
 			[]any{"shatteredglass", "Shattered Glass frame"}, []any{"convertdfc", "More Than Meets the Eye transform marks"},
 			[]any{"fandfc", "Fan transform marks"}, []any{"upsidedowndfc", "Upside Down transform marks"},
+			[]any{"enchantment", "Enchantment frame"}, []any{"fullart", "Full-art frame"},
+			[]any{"spree", "Spree frame"},
 		),
 		tableScryfallFinish: rows(
 			[]any{"nonfoil", int64(1), "Nonfoil"},
 			[]any{"foil", int64(2), "Foil"},
 			[]any{"etched", int64(4), "Etched foil"},
+			[]any{"signed", int64(8), "Signed"},
 		),
 		tableScryfallGame: rows(
 			[]any{"paper", int64(1), "Paper"},
