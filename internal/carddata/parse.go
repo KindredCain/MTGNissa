@@ -63,6 +63,56 @@ var sourceSpecs = []sourceSpec{
 	{table: tableTypeTranslation, file: "zhs_type.json", required: []string{"type_name", "type_type"}},
 }
 
+type setHeader struct {
+	Code             string  `json:"code"`
+	ParentCode       *string `json:"parentCode"`
+	IsPartialPreview bool    `json:"isPartialPreview"`
+}
+
+type mtgjsonSet struct {
+	Code             string            `json:"code"`
+	Name             string            `json:"name"`
+	ReleaseDate      *string           `json:"releaseDate"`
+	Type             string            `json:"type"`
+	KeyruneCode      *string           `json:"keyruneCode"`
+	Languages        []string          `json:"languages"`
+	Block            *string           `json:"block"`
+	ParentCode       *string           `json:"parentCode"`
+	TokenSetCode     *string           `json:"tokenSetCode"`
+	IsPartialPreview bool              `json:"isPartialPreview"`
+	Cards            []json.RawMessage `json:"cards"`
+	Tokens           []json.RawMessage `json:"tokens"`
+}
+
+type loadPlan struct {
+	excludedSets map[string]struct{}
+}
+
+type importState struct {
+	plan                        *loadPlan
+	flavorMappingCount          int64
+	oracleMappingCount          int64
+	bridgeSkippedAlchemy        int64
+	bridgeSkippedUnmatched      int64
+	translationSkippedUnmatched int64
+	legalityByOracle            map[string]map[string]string
+	rulingKeys                  map[string]struct{}
+	insertedRows                map[tableName]int64
+}
+
+type legacyCard struct {
+	UUID         string
+	ScryfallID   string
+	FaceIndex    int64
+	Name         string
+	FaceName     string
+	FlavorID     string
+	FaceOracleID string
+	Line         int64
+}
+
+// Shared NDJSON and JSONL parsing helpers.
+
 func parseObject(line []byte, s sourceSpec) (map[string]json.RawMessage, bool, error) {
 	var obj map[string]json.RawMessage
 	if len(strings.TrimSpace(string(line))) == 0 {
@@ -134,54 +184,6 @@ func scannerFor(r io.Reader) *bufio.Scanner {
 	return s
 }
 
-type setHeader struct {
-	Code             string  `json:"code"`
-	ParentCode       *string `json:"parentCode"`
-	IsPartialPreview bool    `json:"isPartialPreview"`
-}
-
-type mtgjsonSet struct {
-	Code             string            `json:"code"`
-	Name             string            `json:"name"`
-	ReleaseDate      *string           `json:"releaseDate"`
-	Type             string            `json:"type"`
-	KeyruneCode      *string           `json:"keyruneCode"`
-	Languages        []string          `json:"languages"`
-	Block            *string           `json:"block"`
-	ParentCode       *string           `json:"parentCode"`
-	TokenSetCode     *string           `json:"tokenSetCode"`
-	IsPartialPreview bool              `json:"isPartialPreview"`
-	Cards            []json.RawMessage `json:"cards"`
-	Tokens           []json.RawMessage `json:"tokens"`
-}
-
-type legacyCard struct {
-	UUID         string
-	ScryfallID   string
-	FaceIndex    int64
-	Name         string
-	FaceName     string
-	FlavorID     string
-	FaceOracleID string
-	Line         int64
-}
-
-type loadPlan struct {
-	excludedSets map[string]struct{}
-}
-
-type importState struct {
-	plan                        *loadPlan
-	flavorMappingCount          int64
-	oracleMappingCount          int64
-	bridgeSkippedAlchemy        int64
-	bridgeSkippedUnmatched      int64
-	translationSkippedUnmatched int64
-	legalityByOracle            map[string]map[string]string
-	rulingKeys                  map[string]struct{}
-	insertedRows                map[tableName]int64
-}
-
 func newImportState(plan *loadPlan) *importState {
 	return &importState{
 		plan:             plan,
@@ -190,6 +192,8 @@ func newImportState(plan *loadPlan) *importState {
 		insertedRows:     make(map[tableName]int64),
 	}
 }
+
+// AllPrintings.json parsing and load planning.
 
 func inspectAllPrintings(ctx context.Context, dir string, progress func(int64)) (FileResult, *loadPlan, *TaskError) {
 	file := "AllPrintings.json"

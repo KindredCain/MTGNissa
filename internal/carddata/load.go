@@ -64,10 +64,6 @@ type TaskError struct {
 	Message string
 }
 
-func (e *TaskError) Error() string {
-	return e.Message
-}
-
 type importRow struct {
 	values []any
 	line   int64
@@ -88,6 +84,10 @@ type Manager struct {
 	progressFile      string
 	progressRows      int64
 	progressTotal     int64
+}
+
+func (e *TaskError) Error() string {
+	return e.Message
 }
 
 func NewManager(ctx context.Context, db *sql.DB, databaseName, dir string, log *slog.Logger) *Manager {
@@ -195,6 +195,8 @@ func (m *Manager) logHeartbeat(id string, startedAt time.Time, done <-chan struc
 	}
 }
 
+// Full-load table lifecycle: prepare, import, verify, switch, and clean.
+
 func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskError {
 	ctx := m.ctx
 	var selected string
@@ -218,13 +220,8 @@ func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskErr
 	}
 	m.stage(id, StagePreparing)
 	prepareStartedAt := time.Now()
-	for _, table := range tables {
-		tableStartedAt := time.Now()
-		q := createTableSQL(tempNames[table.table], table)
-		if _, err := m.db.ExecContext(ctx, q); err != nil {
-			return stageFail(StagePreparing, "", 0, err)
-		}
-		m.log.Info("card data temporary table creation completed", "task_id", id, "table", table.table, "duration", time.Since(tableStartedAt))
+	if err := m.createLoadTables(ctx, id, tables, tempNames); err != nil {
+		return stageFail(StagePreparing, "", 0, err)
 	}
 	seedRows := dictionaryRows()
 	for _, table := range dictionarySpecs {
@@ -289,45 +286,66 @@ func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskErr
 	}
 	m.stage(id, StageSwitching)
 	switchStartedAt := time.Now()
-	for _, table := range tables {
-		q := "CREATE TABLE IF NOT EXISTS " + quote(string(table.table)) + " LIKE " + quote(tempNames[table.table])
-		if _, err := m.db.ExecContext(ctx, q); err != nil {
-			return stageFail(StageSwitching, "", 0, err)
-		}
-	}
-	parts := make([]string, 0, len(tables)*2)
-	for _, table := range tables {
-		parts = append(parts, quote(string(table.table))+" TO "+quote(backupNames[table.table]), quote(tempNames[table.table])+" TO "+quote(string(table.table)))
-	}
-	if _, err := m.db.ExecContext(ctx, "RENAME TABLE "+strings.Join(parts, ", ")); err != nil {
+	if err := m.switchLoadTables(ctx, tables, tempNames, backupNames); err != nil {
 		return stageFail(StageSwitching, "", 0, err)
 	}
 	m.stageCompleted(id, StageSwitching, "table_count", len(tables), "duration", time.Since(switchStartedAt))
 	m.stage(id, StageCleaning)
-	cleanupNames := make([]string, 0, len(backupNames))
-	for _, table := range tables {
-		cleanupNames = append(cleanupNames, backupNames[table.table])
-	}
-	if err := m.cleanupTables(id, cleanupNames); err != nil {
+	if err := m.cleanupTables(id, tables, backupNames); err != nil {
 		return stageFail(StageCleaning, "", 0, fmt.Errorf("card data tables switched but cleanup failed: %w", err))
 	}
 	return nil
 }
 
-func (m *Manager) cleanupTables(id string, names []string) error {
+func (m *Manager) createLoadTables(ctx context.Context, id string, tables []spec, names map[tableName]string) error {
+	for _, table := range tables {
+		tableStartedAt := time.Now()
+		if _, err := m.db.ExecContext(ctx, createTableSQL(names[table.table], table)); err != nil {
+			return err
+		}
+		m.log.Info("card data temporary table creation completed", "task_id", id, "table", table.table, "duration", time.Since(tableStartedAt))
+	}
+	return nil
+}
+
+func (m *Manager) switchLoadTables(ctx context.Context, tables []spec, tempNames, backupNames map[tableName]string) error {
+	if len(tables) == 0 {
+		return errors.New("no card data tables selected for switching")
+	}
+	for _, table := range tables {
+		query := "CREATE TABLE IF NOT EXISTS " + quote(string(table.table)) + " LIKE " + quote(tempNames[table.table])
+		if _, err := m.db.ExecContext(ctx, query); err != nil {
+			return err
+		}
+	}
+	parts := make([]string, 0, len(tables)*2)
+	for _, table := range tables {
+		parts = append(parts,
+			quote(string(table.table))+" TO "+quote(backupNames[table.table]),
+			quote(tempNames[table.table])+" TO "+quote(string(table.table)),
+		)
+	}
+	_, err := m.db.ExecContext(ctx, "RENAME TABLE "+strings.Join(parts, ", "))
+	return err
+}
+
+func (m *Manager) cleanupTables(id string, tables []spec, names map[tableName]string) error {
 	ctx, cancel := context.WithTimeout(m.ctx, cleanupTimeout)
 	defer cancel()
 	startedAt := time.Now()
-	for _, name := range names {
+	for _, table := range tables {
+		name := names[table.table]
 		tableStartedAt := time.Now()
 		if _, err := m.db.ExecContext(ctx, "DROP TABLE IF EXISTS "+quote(name)); err != nil {
 			return fmt.Errorf("drop table %s: %w", name, err)
 		}
 		m.log.Info("card data table cleanup completed", "task_id", id, "table", name, "duration", time.Since(tableStartedAt))
 	}
-	m.stageCompleted(id, StageCleaning, "table_count", len(names), "duration", time.Since(startedAt))
+	m.stageCompleted(id, StageCleaning, "table_count", len(tables), "duration", time.Since(startedAt))
 	return nil
 }
+
+// Source dispatch and shared row import for zhs_*.json and oracle-tags.jsonl.
 
 func (m *Manager) importFile(ctx context.Context, s sourceSpec, tableNames map[tableName]string, bridgeName string, expected FileResult, state *importState) (int64, *TaskError) {
 	if s.kind == sourceAllPrintings {
@@ -473,26 +491,6 @@ func insertRows(ctx context.Context, db *sql.DB, table string, s spec, rows []im
 	return err
 }
 
-func createCardUUIDBridgeTable(ctx context.Context, db *sql.DB, table string) error {
-	query := "CREATE TABLE " + quote(table) + " (" +
-		"`legacy_uuid` CHAR(36) NOT NULL," +
-		"`card_uuid` CHAR(36) NOT NULL," +
-		"`flavor_id` CHAR(36) NULL," +
-		"`face_oracle_id` CHAR(36) NULL," +
-		"PRIMARY KEY (`legacy_uuid`)," +
-		"KEY `idx_card_uuid_bridge_card` (`card_uuid`)," +
-		"KEY `idx_card_uuid_bridge_flavor` (`flavor_id`,`card_uuid`)," +
-		"KEY `idx_card_uuid_bridge_oracle` (`face_oracle_id`,`card_uuid`)" +
-		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-	_, err := db.ExecContext(ctx, query)
-	return err
-}
-
-func dropCardUUIDBridgeTable(ctx context.Context, db *sql.DB, table string) error {
-	_, err := db.ExecContext(ctx, "DROP TABLE "+quote(table))
-	return err
-}
-
 func quote(name string) string {
 	return "`" + strings.ReplaceAll(name, "`", "``") + "`"
 }
@@ -548,6 +546,8 @@ func cloneTask(t *Task) Task {
 	}
 	return c
 }
+
+// AllPrintings.json import.
 
 func (m *Manager) importAllPrintings(ctx context.Context, s sourceSpec, tableNames map[tableName]string, expected FileResult, state *importState) (int64, *TaskError) {
 	f, err := os.Open(filepath.Join(m.dir, s.file))
@@ -655,6 +655,28 @@ func (m *Manager) importAllPrintings(ctx context.Context, s sourceSpec, tableNam
 		}
 	}
 	return inserted, nil
+}
+
+// scryfall_card.json UUID bridge import.
+
+func createCardUUIDBridgeTable(ctx context.Context, db *sql.DB, table string) error {
+	query := "CREATE TABLE " + quote(table) + " (" +
+		"`legacy_uuid` CHAR(36) NOT NULL," +
+		"`card_uuid` CHAR(36) NOT NULL," +
+		"`flavor_id` CHAR(36) NULL," +
+		"`face_oracle_id` CHAR(36) NULL," +
+		"PRIMARY KEY (`legacy_uuid`)," +
+		"KEY `idx_card_uuid_bridge_card` (`card_uuid`)," +
+		"KEY `idx_card_uuid_bridge_flavor` (`flavor_id`,`card_uuid`)," +
+		"KEY `idx_card_uuid_bridge_oracle` (`face_oracle_id`,`card_uuid`)" +
+		") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+	_, err := db.ExecContext(ctx, query)
+	return err
+}
+
+func dropCardUUIDBridgeTable(ctx context.Context, db *sql.DB, table string) error {
+	_, err := db.ExecContext(ctx, "DROP TABLE "+quote(table))
+	return err
 }
 
 func (m *Manager) importLegacyBridge(ctx context.Context, s sourceSpec, cardTable, bridgeTable string, expected FileResult, state *importState) (int64, *TaskError) {
@@ -803,6 +825,8 @@ func legacyCardFromObject(obj map[string]json.RawMessage, line int64) (legacyCar
 	}, nil
 }
 
+// zhs_card.json UUID remapping.
+
 func remapCardTranslationRows(ctx context.Context, db *sql.DB, bridgeTable string, rows []importRow, state *importState) ([]importRow, error) {
 	cardIDIndex := -1
 	for i, column := range mustTableSpec(tableCardTranslation).columns {
@@ -850,6 +874,8 @@ func remapCardTranslationRows(ctx context.Context, db *sql.DB, bridgeTable strin
 	}
 	return mapped, nil
 }
+
+// zhs_flavor.json and zhs_oracle.json card association finalization.
 
 func insertTranslationMappings(ctx context.Context, db *sql.DB, tableNames map[tableName]string, bridgeTable string, state *importState) error {
 	mappings := []struct {

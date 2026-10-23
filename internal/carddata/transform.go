@@ -14,83 +14,21 @@ import (
 
 var decimalNumberPattern = regexp.MustCompile(`^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$`)
 
-func deriveRows(s sourceSpec, obj map[string]json.RawMessage, line int64) (map[tableName][]importRow, error) {
-	switch s.table {
-	case tableOracleTag:
-		return deriveOracleTagRows(obj, line)
-	default:
-		return nil, nil
-	}
+var legalityFormats = []string{
+	"alchemy", "brawl", "commander", "duel", "future", "gladiator", "historic",
+	"competitivebrawl", "legacy", "modern", "oathbreaker", "oldschool", "pauper",
+	"paupercommander", "penny", "pioneer", "predh", "premodern", "standard",
+	"standardbrawl", "timeless", "vintage",
 }
 
-func deriveOracleTagRows(obj map[string]json.RawMessage, line int64) (map[tableName][]importRow, error) {
-	objectType, err := stringField(obj, "object")
-	if err != nil {
-		return nil, err
-	}
-	if objectType != "tag" {
-		return nil, fmt.Errorf("field %q: unsupported object type %q", "object", objectType)
-	}
-	tagType, err := stringField(obj, "type")
-	if err != nil {
-		return nil, err
-	}
-	if tagType != "oracle" {
-		return nil, fmt.Errorf("field %q: expected oracle tag, got %q", "type", tagType)
-	}
-	tagID, err := stringField(obj, "id")
-	if err != nil {
-		return nil, err
-	}
-	parents, err := stringArrayField(obj, "parent_ids")
-	if err != nil {
-		return nil, err
-	}
-	children, err := stringArrayField(obj, "child_ids")
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[tableName][]importRow)
-	seenRelations := make(map[string]struct{}, len(parents)+len(children))
-	appendRelation := func(parentID, childID string) {
-		key := parentID + "\x1f" + childID
-		if _, exists := seenRelations[key]; exists {
-			return
-		}
-		seenRelations[key] = struct{}{}
-		result[tableOracleTagRelation] = append(result[tableOracleTagRelation], importRow{[]any{parentID, childID}, line})
-	}
-	for _, parentID := range parents {
-		appendRelation(parentID, tagID)
-	}
-	for _, childID := range children {
-		appendRelation(tagID, childID)
-	}
-
-	var taggings []struct {
-		OracleID string `json:"oracle_id"`
-		Weight   string `json:"weight"`
-	}
-	if err := json.Unmarshal(obj["taggings"], &taggings); err != nil {
-		return nil, fmt.Errorf("field %q: %w", "taggings", err)
-	}
-	seenTaggings := make(map[string]string, len(taggings))
-	for _, tagging := range taggings {
-		if tagging.OracleID == "" || tagging.Weight == "" {
-			return nil, fmt.Errorf("field %q: oracle_id and weight must be non-empty", "taggings")
-		}
-		if previous, exists := seenTaggings[tagging.OracleID]; exists {
-			if previous != tagging.Weight {
-				return nil, fmt.Errorf("field %q: oracle_id %q has conflicting weights %q and %q", "taggings", tagging.OracleID, previous, tagging.Weight)
-			}
-			continue
-		}
-		seenTaggings[tagging.OracleID] = tagging.Weight
-		result[tableOracleTagging] = append(result[tableOracleTagging], importRow{[]any{tagging.OracleID, tagID, tagging.Weight}, line})
-	}
-	return result, nil
+var legalityPriority = map[string]int{
+	"Not Legal":  1,
+	"Banned":     2,
+	"Restricted": 3,
+	"Legal":      4,
 }
+
+// Shared JSON field and relational-row conversion helpers.
 
 func stringField(obj map[string]json.RawMessage, field string) (string, error) {
 	value, err := optionalStringField(obj, field)
@@ -150,6 +88,8 @@ func uniqueStrings(values []string) []string {
 	}
 	return result
 }
+
+// Shared relational-row conversion for row-oriented source files.
 
 func rowValues(obj map[string]json.RawMessage, input sourceSpec) ([]any, error) {
 	tableSpec := mustTableSpec(input.table)
@@ -376,19 +316,7 @@ func stringSetMask(raw json.RawMessage, bits map[string]int64) (int64, error) {
 	return mask, nil
 }
 
-var legalityFormats = []string{
-	"alchemy", "brawl", "commander", "duel", "future", "gladiator", "historic",
-	"competitivebrawl", "legacy", "modern", "oathbreaker", "oldschool", "pauper",
-	"paupercommander", "penny", "pioneer", "predh", "premodern", "standard",
-	"standardbrawl", "timeless", "vintage",
-}
-
-var legalityPriority = map[string]int{
-	"Not Legal":  1,
-	"Banned":     2,
-	"Restricted": 3,
-	"Legal":      4,
-}
+// AllPrintings.json transformations.
 
 func decodeObject(raw json.RawMessage) (map[string]json.RawMessage, error) {
 	var obj map[string]json.RawMessage
@@ -920,4 +848,84 @@ func containsString(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+// oracle-tags.jsonl transformations.
+
+func deriveRows(s sourceSpec, obj map[string]json.RawMessage, line int64) (map[tableName][]importRow, error) {
+	switch s.table {
+	case tableOracleTag:
+		return deriveOracleTagRows(obj, line)
+	default:
+		return nil, nil
+	}
+}
+
+func deriveOracleTagRows(obj map[string]json.RawMessage, line int64) (map[tableName][]importRow, error) {
+	objectType, err := stringField(obj, "object")
+	if err != nil {
+		return nil, err
+	}
+	if objectType != "tag" {
+		return nil, fmt.Errorf("field %q: unsupported object type %q", "object", objectType)
+	}
+	tagType, err := stringField(obj, "type")
+	if err != nil {
+		return nil, err
+	}
+	if tagType != "oracle" {
+		return nil, fmt.Errorf("field %q: expected oracle tag, got %q", "type", tagType)
+	}
+	tagID, err := stringField(obj, "id")
+	if err != nil {
+		return nil, err
+	}
+	parents, err := stringArrayField(obj, "parent_ids")
+	if err != nil {
+		return nil, err
+	}
+	children, err := stringArrayField(obj, "child_ids")
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[tableName][]importRow)
+	seenRelations := make(map[string]struct{}, len(parents)+len(children))
+	appendRelation := func(parentID, childID string) {
+		key := parentID + "\x1f" + childID
+		if _, exists := seenRelations[key]; exists {
+			return
+		}
+		seenRelations[key] = struct{}{}
+		result[tableOracleTagRelation] = append(result[tableOracleTagRelation], importRow{[]any{parentID, childID}, line})
+	}
+	for _, parentID := range parents {
+		appendRelation(parentID, tagID)
+	}
+	for _, childID := range children {
+		appendRelation(tagID, childID)
+	}
+
+	var taggings []struct {
+		OracleID string `json:"oracle_id"`
+		Weight   string `json:"weight"`
+	}
+	if err := json.Unmarshal(obj["taggings"], &taggings); err != nil {
+		return nil, fmt.Errorf("field %q: %w", "taggings", err)
+	}
+	seenTaggings := make(map[string]string, len(taggings))
+	for _, tagging := range taggings {
+		if tagging.OracleID == "" || tagging.Weight == "" {
+			return nil, fmt.Errorf("field %q: oracle_id and weight must be non-empty", "taggings")
+		}
+		if previous, exists := seenTaggings[tagging.OracleID]; exists {
+			if previous != tagging.Weight {
+				return nil, fmt.Errorf("field %q: oracle_id %q has conflicting weights %q and %q", "taggings", tagging.OracleID, previous, tagging.Weight)
+			}
+			continue
+		}
+		seenTaggings[tagging.OracleID] = tagging.Weight
+		result[tableOracleTagging] = append(result[tableOracleTagging], importRow{[]any{tagging.OracleID, tagID, tagging.Weight}, line})
+	}
+	return result, nil
 }
