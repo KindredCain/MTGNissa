@@ -3,7 +3,7 @@ package setlist
 
 import "time"
 
-// Sort identifies the primary ordering applied to a Set list query.
+// Sort identifies the primary ordering applied to root Set groups.
 type Sort string
 
 const (
@@ -34,20 +34,21 @@ type Language struct {
 	Available   bool
 }
 
-// Set contains one Set list result and its language availability.
+// Set contains one root or descendant Set and its language availability.
 type Set struct {
-	SetID           string
 	Code            string
 	Name            string
 	DisplayName     string
 	SetType         string
 	CardCount       uint64
-	ReleasedAt      time.Time
+	ReleasedAt      *time.Time
 	Languages       []Language
 	DefaultLanguage *string
+	ParentCode      *string
+	Depth           int
 }
 
-// Page is one cursor-paginated Set list result.
+// Page contains complete root groups in preorder, with a total counting roots.
 type Page struct {
 	Items      []Set
 	Total      int64

@@ -25,7 +25,7 @@ func NewStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
 
-// List reads a consistent Set page, its total, and the page language matrix.
+// List reads a consistent page of complete root groups and their language matrix.
 func (s *Store) List(ctx context.Context, params Params, position *cursorPosition, pageSize int) (Page, bool, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
@@ -34,6 +34,14 @@ func (s *Store) List(ctx context.Context, params Params, position *cursorPositio
 	defer tx.Rollback()
 
 	languages, err := queryLanguages(ctx, tx)
+	if err != nil {
+		return Page{}, false, err
+	}
+	var links []hierarchyRow
+	if err := tx.SelectContext(ctx, &links, "SELECT code, parent_code FROM mtgnissa_set"); err != nil {
+		return Page{}, false, err
+	}
+	hierarchy, err := newSetHierarchy(links)
 	if err != nil {
 		return Page{}, false, err
 	}
@@ -46,11 +54,16 @@ func (s *Store) List(ctx context.Context, params Params, position *cursorPositio
 	if err := tx.GetContext(ctx, &total, countQuery, countArgs...); err != nil {
 		return Page{}, false, err
 	}
-	items, hasMore, err := querySets(ctx, tx, base, params.Sort, position, pageSize)
+	roots, hasMore, err := queryRootSets(ctx, tx, base, languages, params.Sort, position, pageSize)
 	if err != nil {
 		return Page{}, false, err
 	}
-	if err := populateLanguageAvailability(ctx, tx, items, languages); err != nil {
+	descendants, err := queryDescendantSets(ctx, tx, hierarchy.descendantCodes(roots), languages)
+	if err != nil {
+		return Page{}, false, err
+	}
+	items, err := hierarchy.expand(roots, descendants)
+	if err != nil {
 		return Page{}, false, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -78,16 +91,8 @@ func queryLanguages(ctx context.Context, tx *sqlx.Tx) ([]Language, error) {
 	return languages, nil
 }
 
-func querySets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, sort Sort, position *cursorPosition, pageSize int) ([]Set, bool, error) {
-	dataset := base.Select(
-		goqu.I("s.set_id"),
-		goqu.I("s.code"),
-		goqu.I("s.name"),
-		goqu.L("COALESCE(NULLIF(TRIM(?), ''), ?)", goqu.I("st.name"), goqu.I("s.name")).As("display_name"),
-		goqu.I("s.set_type"),
-		goqu.I("s.card_count"),
-		goqu.I("s.released_at"),
-	)
+func queryRootSets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, languages []Language, sort Sort, position *cursorPosition, pageSize int) ([]Set, bool, error) {
+	dataset := base
 	if position != nil {
 		clause, err := cursorExpression(sort, *position)
 		if err != nil {
@@ -95,26 +100,9 @@ func querySets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, sort 
 		}
 		dataset = dataset.Where(clause)
 	}
-	dataset = dataset.Order(orderExpressions(sort)...).Limit(uint(pageSize + 1))
-	query, args, err := dataset.ToSQL()
+	items, err := readSets(ctx, tx, dataset.Order(orderExpressions(sort)...).Limit(uint(pageSize+1)), languages)
 	if err != nil {
 		return nil, false, err
-	}
-	var rows []setRow
-	if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
-		return nil, false, err
-	}
-	items := make([]Set, 0, len(rows))
-	for _, row := range rows {
-		items = append(items, Set{
-			SetID:       row.SetID,
-			Code:        row.Code,
-			Name:        row.Name,
-			DisplayName: row.DisplayName,
-			SetType:     row.SetType,
-			CardCount:   row.CardCount,
-			ReleasedAt:  row.ReleasedAt,
-		})
 	}
 	hasMore := len(items) > pageSize
 	if hasMore {
@@ -123,62 +111,80 @@ func querySets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, sort 
 	return items, hasMore, nil
 }
 
-func populateLanguageAvailability(ctx context.Context, tx *sqlx.Tx, items []Set, languages []Language) error {
-	if len(items) == 0 {
-		return nil
+func queryDescendantSets(ctx context.Context, tx *sqlx.Tx, codes []string, languages []Language) ([]Set, error) {
+	if len(codes) == 0 {
+		return []Set{}, nil
 	}
-	available := make(map[string]map[string]bool, len(items))
-	if len(languages) != 0 {
-		dataset := mysqlDialect.From("scryfall_card").
-			Prepared(true).
-			Select("set_id", "lang").
-			Distinct().
-			Where(
-				goqu.I("set_id").In(interfaceValues(items, func(item Set) string {
-					return item.SetID
-				})...),
-				goqu.I("lang").In(interfaceValues(languages, func(language Language) string {
-					return language.Code
-				})...),
-			)
-		query, queryArgs, err := dataset.ToSQL()
-		if err != nil {
-			return err
+	return readSets(ctx, tx, setDataset().Where(goqu.I("s.code").In(stringsToInterfaces(codes)...)), languages)
+}
+
+func readSets(ctx context.Context, tx *sqlx.Tx, dataset *goqu.SelectDataset, languages []Language) ([]Set, error) {
+	query, args, err := dataset.Select(
+		goqu.I("s.code"),
+		goqu.I("s.name"),
+		goqu.L("COALESCE(?, ?, ?)", goqu.I("st.name"), goqu.I("pt.name"), goqu.I("s.name")).As("display_name"),
+		goqu.I("s.set_type"),
+		goqu.I("s.card_count"),
+		goqu.I("s.released_at"),
+		goqu.I("s.languages"),
+		goqu.I("s.parent_code"),
+	).ToSQL()
+	if err != nil {
+		return nil, err
+	}
+	var rows []setRow
+	if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
+		return nil, err
+	}
+	items := make([]Set, 0, len(rows))
+	for _, row := range rows {
+		item := Set{
+			Code:        row.Code,
+			Name:        row.Name,
+			DisplayName: row.DisplayName,
+			SetType:     row.SetType,
+			CardCount:   row.CardCount,
+			ReleasedAt:  row.ReleasedAt,
+			ParentCode:  row.ParentCode,
+			Languages:   make([]Language, 0),
 		}
-		var rows []availabilityRow
-		if err := tx.SelectContext(ctx, &rows, query, queryArgs...); err != nil {
-			return err
-		}
-		for _, row := range rows {
-			if available[row.SetID] == nil {
-				available[row.SetID] = make(map[string]bool)
+		if row.SetType != "token" {
+			available := make(map[string]bool)
+			if row.Languages != nil {
+				for _, code := range strings.Split(*row.Languages, ",") {
+					available[strings.ToLower(strings.TrimSpace(code))] = true
+				}
 			}
-			available[row.SetID][row.Language] = true
-		}
-	}
-	for i := range items {
-		items[i].Languages = make([]Language, len(languages))
-		for j, language := range languages {
-			language.Available = available[items[i].SetID][language.Code]
-			items[i].Languages[j] = language
-			if items[i].DefaultLanguage == nil && language.Available {
-				code := language.Code
-				items[i].DefaultLanguage = &code
+			for _, language := range languages {
+				language.Available = available[strings.ToLower(language.Code)]
+				item.Languages = append(item.Languages, language)
+				if item.DefaultLanguage == nil && language.Available {
+					code := language.Code
+					item.DefaultLanguage = &code
+				}
 			}
 		}
+		items = append(items, item)
 	}
-	return nil
+	return items, nil
+}
+
+func setDataset() *goqu.SelectDataset {
+	translations := mysqlDialect.From("set_translation").
+		Select(goqu.C("code"), goqu.MIN(goqu.L("NULLIF(TRIM(?), '')", goqu.C("name"))).As("name")).
+		GroupBy(goqu.C("code"))
+	return mysqlDialect.
+		From(goqu.T("mtgnissa_set").As("s")).
+		LeftJoin(translations.As("st"), goqu.On(goqu.I("st.code").Eq(goqu.I("s.code")))).
+		LeftJoin(translations.As("pt"), goqu.On(
+			goqu.I("pt.code").Eq(goqu.I("s.parent_code")),
+			goqu.L("? = 'token'", goqu.I("s.set_type")),
+		)).
+		Prepared(true)
 }
 
 func buildSetDataset(params Params) *goqu.SelectDataset {
-	dataset := mysqlDialect.
-		From(goqu.T("scryfall_set").As("s")).
-		LeftJoin(
-			goqu.T("set_translation").As("st"),
-			goqu.On(goqu.I("st.set_id").Eq(goqu.I("s.set_id"))),
-		).
-		Prepared(true)
-	filters := make([]exp.Expression, 0, 3)
+	filters := []exp.Expression{goqu.I("s.parent_code").IsNull()}
 	if params.Query != "" {
 		pattern := "%" + escapeLike(params.Query) + "%"
 		filters = append(filters, goqu.Or(
@@ -188,19 +194,16 @@ func buildSetDataset(params Params) *goqu.SelectDataset {
 		))
 	}
 	if len(params.Languages) != 0 {
-		available := mysqlDialect.
-			From(goqu.T("scryfall_card").As("c")).
-			Select(goqu.L("1")).
-			Where(
-				goqu.I("c.set_id").Eq(goqu.I("s.set_id")),
-				goqu.I("c.lang").In(stringsToInterfaces(params.Languages)...),
-			)
-		filters = append(filters, goqu.L("EXISTS (?)", available))
+		choices := make([]exp.Expression, 0, len(params.Languages))
+		for _, language := range params.Languages {
+			choices = append(choices, goqu.L("FIND_IN_SET(?, ?) > 0", language, goqu.I("s.languages")))
+		}
+		filters = append(filters, goqu.Or(choices...))
 	}
 	if len(params.SetTypes) != 0 {
 		filters = append(filters, goqu.I("s.set_type").In(stringsToInterfaces(params.SetTypes)...))
 	}
-	return dataset.Where(filters...)
+	return setDataset().Where(filters...)
 }
 
 type languageRow struct {
@@ -210,22 +213,21 @@ type languageRow struct {
 }
 
 type setRow struct {
-	SetID       string    `db:"set_id"`
-	Code        string    `db:"code"`
-	Name        string    `db:"name"`
-	DisplayName string    `db:"display_name"`
-	SetType     string    `db:"set_type"`
-	CardCount   uint64    `db:"card_count"`
-	ReleasedAt  time.Time `db:"released_at"`
-}
-
-type availabilityRow struct {
-	SetID    string `db:"set_id"`
-	Language string `db:"lang"`
+	Code        string     `db:"code"`
+	Name        string     `db:"name"`
+	DisplayName string     `db:"display_name"`
+	SetType     string     `db:"set_type"`
+	CardCount   uint64     `db:"card_count"`
+	ReleasedAt  *time.Time `db:"released_at"`
+	Languages   *string    `db:"languages"`
+	ParentCode  *string    `db:"parent_code"`
 }
 
 func cursorExpression(sort Sort, position cursorPosition) (exp.Expression, error) {
 	column, descending := sortColumn(sort)
+	if isDateSort(sort) && position.isNull {
+		return goqu.And(goqu.I(column).IsNull(), goqu.I("s.code").Gt(position.code)), nil
+	}
 	value := any(position.value)
 	if sort == SortCardCountAsc || sort == SortCardCountDesc {
 		parsed, err := strconv.ParseUint(position.value, 10, 64)
@@ -238,10 +240,14 @@ func cursorExpression(sort Sort, position cursorPosition) (exp.Expression, error
 	if descending {
 		primary = goqu.I(column).Lt(value)
 	}
-	return goqu.Or(
-		primary,
-		goqu.And(goqu.I(column).Eq(value), goqu.I("s.set_id").Gt(position.setID)),
-	), nil
+	if sort == SortCodeAsc || sort == SortCodeDesc {
+		return primary, nil
+	}
+	clause := goqu.Or(primary, goqu.And(goqu.I(column).Eq(value), goqu.I("s.code").Gt(position.code)))
+	if isDateSort(sort) {
+		return goqu.Or(clause, goqu.I(column).IsNull()), nil
+	}
+	return clause, nil
 }
 
 func sortColumn(sort Sort) (string, bool) {
@@ -267,13 +273,24 @@ func sortColumn(sort Sort) (string, bool) {
 	}
 }
 
+func isDateSort(sort Sort) bool {
+	return sort == SortReleasedAsc || sort == SortReleasedDesc
+}
+
 func orderExpressions(sort Sort) []exp.OrderedExpression {
 	column, descending := sortColumn(sort)
 	primary := goqu.I(column).Asc()
 	if descending {
 		primary = goqu.I(column).Desc()
 	}
-	return []exp.OrderedExpression{primary, goqu.I("s.set_id").Asc()}
+	if sort == SortCodeAsc || sort == SortCodeDesc {
+		return []exp.OrderedExpression{primary}
+	}
+	order := make([]exp.OrderedExpression, 0, 3)
+	if isDateSort(sort) {
+		order = append(order, goqu.L("? IS NULL", goqu.I(column)).Asc())
+	}
+	return append(order, primary, goqu.I("s.code").Asc())
 }
 
 func escapeLike(value string) string {
@@ -286,14 +303,6 @@ func stringsToInterfaces(values []string) []any {
 	result := make([]any, len(values))
 	for i, value := range values {
 		result[i] = value
-	}
-	return result
-}
-
-func interfaceValues[T any](values []T, value func(T) string) []any {
-	result := make([]any, len(values))
-	for i, item := range values {
-		result[i] = value(item)
 	}
 	return result
 }

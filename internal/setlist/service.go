@@ -17,24 +17,30 @@ import (
 	"mtgnissa/internal/apperror"
 )
 
-const cursorVersion = 1
+const cursorVersion = 2
 
 type cursorPayload struct {
 	Version     int    `json:"v"`
 	Fingerprint string `json:"f"`
 	Sort        Sort   `json:"s"`
 	Value       string `json:"p"`
-	SetID       string `json:"id"`
+	Code        string `json:"code"`
+	MissingDate bool   `json:"n,omitempty"`
 }
 
 type cursorPosition struct {
-	value string
-	setID string
+	value  string
+	code   string
+	isNull bool
+}
+
+type setStore interface {
+	List(context.Context, Params, *cursorPosition, int) (Page, bool, error)
 }
 
 // Service validates opaque cursors and coordinates Set list database queries.
 type Service struct {
-	store    *Store
+	store    setStore
 	pageSize int
 }
 
@@ -45,6 +51,10 @@ func NewService(store *Store, pageSize int) *Service {
 
 // List returns one stable page and a cursor bound to the current query.
 func (s *Service) List(ctx context.Context, params Params) (Page, error) {
+	params.Query = strings.TrimSpace(params.Query)
+	if params.Sort == "" {
+		params.Sort = SortReleasedDesc
+	}
 	fingerprint := queryFingerprint(params)
 	var position *cursorPosition
 	if params.Cursor != "" {
@@ -59,14 +69,24 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 	if err != nil {
 		return Page{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
 	}
-	if hasMore && len(page.Items) != 0 {
-		last := page.Items[len(page.Items)-1]
+	if hasMore {
+		var last *Set
+		for i := len(page.Items) - 1; i >= 0; i-- {
+			if page.Items[i].ParentCode == nil {
+				last = &page.Items[i]
+				break
+			}
+		}
+		if last == nil {
+			return Page{}, apperror.New(apperror.CodeInternalError, "could not locate the pagination root")
+		}
 		cursor, err := encodeCursor(cursorPayload{
 			Version:     cursorVersion,
 			Fingerprint: fingerprint,
 			Sort:        params.Sort,
-			Value:       cursorValue(params.Sort, last),
-			SetID:       last.SetID,
+			Value:       cursorValue(params.Sort, *last),
+			Code:        last.Code,
+			MissingDate: isDateSort(params.Sort) && last.ReleasedAt == nil,
 		})
 		if err != nil {
 			return Page{}, apperror.Wrap(apperror.CodeInternalError, "could not create pagination cursor", err)
@@ -77,30 +97,37 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 }
 
 func queryFingerprint(params Params) string {
-	languages := append([]string(nil), params.Languages...)
-	setTypes := append([]string(nil), params.SetTypes...)
-	stringsToLower(languages)
-	stringsToLower(setTypes)
-	sort.Strings(languages)
-	sort.Strings(setTypes)
+	languages := cursorFilterValues(params.Languages)
+	setTypes := cursorFilterValues(params.SetTypes)
 	payload, _ := json.Marshal(struct {
 		Query     string   `json:"q"`
 		Languages []string `json:"languages"`
 		SetTypes  []string `json:"set_types"`
-	}{strings.ToLower(params.Query), languages, setTypes})
+	}{strings.ToLower(strings.TrimSpace(params.Query)), languages, setTypes})
 	sum := sha256.Sum256(payload)
 	return hex.EncodeToString(sum[:])
 }
 
-func stringsToLower(values []string) {
-	for i := range values {
-		values[i] = strings.ToLower(values[i])
+func cursorFilterValues(values []string) []string {
+	result := make([]string, 0, len(values))
+	seen := make(map[string]bool, len(values))
+	for _, value := range values {
+		value = strings.ToLower(value)
+		if !seen[value] {
+			seen[value] = true
+			result = append(result, value)
+		}
 	}
+	sort.Strings(result)
+	return result
 }
 
 func cursorValue(sort Sort, item Set) string {
 	switch sort {
 	case SortReleasedDesc, SortReleasedAsc:
+		if item.ReleasedAt == nil {
+			return ""
+		}
 		return item.ReleasedAt.Format("2006-01-02")
 	case SortNameAsc, SortNameDesc:
 		return item.Name
@@ -139,18 +166,24 @@ func decodeCursor(value string, sort Sort, fingerprint string) (cursorPosition, 
 	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
 		return cursorPosition{}, errors.New("cursor contains trailing data")
 	}
-	if payload.Version != cursorVersion || payload.Sort != sort || payload.Fingerprint != fingerprint || payload.SetID == "" || payload.Value == "" {
+	if payload.Version != cursorVersion || payload.Sort != sort || payload.Fingerprint != fingerprint || payload.Code == "" || payload.Value == "" && !payload.MissingDate {
 		return cursorPosition{}, errors.New("cursor metadata mismatch")
+	}
+	if payload.MissingDate && (!isDateSort(sort) || payload.Value != "") {
+		return cursorPosition{}, errors.New("cursor has an invalid null date")
 	}
 	if sort == SortCardCountAsc || sort == SortCardCountDesc {
 		if _, err := strconv.ParseUint(payload.Value, 10, 64); err != nil {
 			return cursorPosition{}, fmt.Errorf("invalid card count: %w", err)
 		}
 	}
-	if sort == SortReleasedAsc || sort == SortReleasedDesc {
+	if isDateSort(sort) && !payload.MissingDate {
 		if _, err := time.Parse("2006-01-02", payload.Value); err != nil {
 			return cursorPosition{}, fmt.Errorf("invalid release date: %w", err)
 		}
 	}
-	return cursorPosition{value: payload.Value, setID: payload.SetID}, nil
+	if (sort == SortCodeAsc || sort == SortCodeDesc) && payload.Value != payload.Code {
+		return cursorPosition{}, errors.New("cursor code does not match its sort position")
+	}
+	return cursorPosition{value: payload.Value, code: payload.Code, isNull: payload.MissingDate}, nil
 }

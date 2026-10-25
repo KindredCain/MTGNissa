@@ -28,19 +28,20 @@ func (s setListerStub) List(_ context.Context, params setlist.Params) (setlist.P
 
 func TestGetSetsReturnsContractDTO(t *testing.T) {
 	defaultLanguage := "en"
+	releasedAt := time.Date(2021, time.February, 5, 0, 0, 0, 0, time.UTC)
+	parentCode := "KHM"
 	nextCursor := "next-page"
 	service := &capturingSetLister{page: setlist.Page{
 		Items: []setlist.Set{{
-			SetID:           "00000000-0000-0000-0000-000000000001",
-			Code:            "khm",
+			Code:            "KHM",
 			Name:            "Kaldheim",
 			DisplayName:     "凯德海姆",
 			SetType:         "expansion",
 			CardCount:       405,
-			ReleasedAt:      time.Date(2021, time.February, 5, 0, 0, 0, 0, time.UTC),
+			ReleasedAt:      &releasedAt,
 			Languages:       []setlist.Language{{Code: "en", DisplayName: "英文", SortOrder: 1, Available: true}, {Code: "ja", DisplayName: "日文", SortOrder: 2, Available: false}},
 			DefaultLanguage: &defaultLanguage,
-		}},
+		}, {Code: "TKHM", Name: "Kaldheim Tokens", SetType: "token", ParentCode: &parentCode, Depth: 1}},
 		Total:      1,
 		NextCursor: &nextCursor,
 	}}
@@ -65,7 +66,9 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 				DisplayName     string  `json:"display_name"`
 				ReleasedAt      *string `json:"released_at"`
 				DefaultLanguage *string `json:"default_language"`
-				ParentSetID     *string `json:"parent_set_id"`
+				ParentCode      *string `json:"parent_code"`
+				Depth           int     `json:"depth"`
+				Languages       []any   `json:"languages"`
 			} `json:"items"`
 			Total      int64   `json:"total"`
 			NextCursor *string `json:"next_cursor"`
@@ -75,8 +78,18 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 		t.Fatalf("decode response: %v", err)
 	}
 	item := envelope.Data.Items[0]
-	if item.DisplayName != "凯德海姆" || item.ReleasedAt == nil || *item.ReleasedAt != "2021-02-05" || item.DefaultLanguage == nil || *item.DefaultLanguage != "en" || item.ParentSetID != nil {
+	if item.DisplayName != "凯德海姆" || item.ReleasedAt == nil || *item.ReleasedAt != "2021-02-05" || item.DefaultLanguage == nil || *item.DefaultLanguage != "en" || item.ParentCode != nil || item.Depth != 0 {
 		t.Fatalf("item = %#v", item)
+	}
+	child := envelope.Data.Items[1]
+	if child.ParentCode == nil || *child.ParentCode != parentCode || child.Depth != 1 || child.ReleasedAt != nil || child.DefaultLanguage != nil || child.Languages == nil || len(child.Languages) != 0 {
+		t.Fatalf("token child = %#v", child)
+	}
+	if strings.Contains(response.Body.String(), `"set_id"`) || strings.Contains(response.Body.String(), `"parent_set_id"`) {
+		t.Fatalf("response contains obsolete identifiers: %s", response.Body.String())
+	}
+	if envelope.Data.Total != 1 || envelope.Data.NextCursor == nil || *envelope.Data.NextCursor != nextCursor {
+		t.Fatalf("pagination = %#v", envelope.Data)
 	}
 }
 
