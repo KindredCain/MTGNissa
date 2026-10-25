@@ -4,7 +4,7 @@
 
 MTGNissa 是一个面向个人部署的万智牌管理 Web 服务。
 
-当前后端提供 Go HTTP 服务、双 MySQL 数据源连接、个人数据库自动迁移，以及从固定目录全量加载卡牌数据的维护接口。Card DB 在日常业务中只读，显式启用的维护接口可以全量替换其固定白名单表；App DB 保存收藏、愿望单、卡组和操作日志。
+服务采用 Go HTTP 服务和双 MySQL 数据源，支持个人数据库自动迁移，以及从固定目录全量加载卡牌数据。Card DB 在日常业务中只读，显式启用的数据加载功能可以全量替换其固定白名单表；App DB 保存收藏、愿望单、卡组和操作日志。
 
 ## 部署
 
@@ -19,7 +19,7 @@ docker run \
 
 也可以设置 `CONFIG_FILE=/config/mtgnissa.yaml`，此时不需要传 `-config`。命令行参数优先于 `CONFIG_FILE`。
 
-加载顺序为：内置默认值 → YAML 文件 → 环境变量。可选的 `app.display_name` 用于页面标识当前是谁的卡牌库，默认是空字符串，也可由 `APP_DISPLAY_NAME` 覆盖。`app.timezone` 用于页面时间展示，使用 IANA 时区名称，默认是 `UTC`，也可由 `APP_TIMEZONE` 覆盖；它不修改数据库会话时区。数据库密码等敏感值可以不写入文件，而通过 `CARD_DB_PASSWORD`、`APP_DB_PASSWORD` 或 Docker Secret 注入。原有的 `HTTP_ADDR`、`CARD_DB_*`、`APP_DB_*`、`CARD_DATA_*` 环境变量仍然可用。
+加载顺序为：内置默认值 → YAML 文件 → 环境变量。可选的 `app.display_name` 用于页面标识当前是谁的卡牌库，默认是空字符串，也可由 `APP_DISPLAY_NAME` 覆盖。`app.timezone` 是页面时间展示、操作日志自然日查询及每日汇总的权威时区，使用 IANA 时区名称，默认是 `UTC`，也可由 `APP_TIMEZONE` 覆盖；它不修改数据库会话时区。数据库密码等敏感值可以不写入文件，而通过 `CARD_DB_PASSWORD`、`APP_DB_PASSWORD` 或 Docker Secret 注入。原有的 `HTTP_ADDR`、`CARD_DB_*`、`APP_DB_*`、`CARD_DATA_*` 环境变量仍然可用。
 
 卡牌数据加载能力默认关闭。需要使用时，在 YAML 中配置只读数据目录并显式启用：
 
@@ -29,11 +29,17 @@ card_data:
   load_enabled: true
 ```
 
-该目录必须包含功能需求文档约定的九个 NDJSON/JSONL 文件，包括 `rulings.jsonl` 和 `oracle-tags.jsonl`。
+该目录必须包含以下九个文件，具体字段和处理规则见[新数据字典](docs/card-data-dictionary.md)：
+
+- 标准 JSON：`AllPrintings.json`，提供普通卡、Token、系列、英文裁定和赛制等元数据。
+- 旧 NDJSON：`scryfall_card.json`、`zhs_card.json`、`zhs_flavor.json`、`zhs_oracle.json`、`zhs_ruling.json`、`zhs_set.json`、`zhs_type.json`；其中 `scryfall_card.json` 只用于旧翻译 UUID 映射，不提供卡牌元数据。
+- 标准 JSONL：`oracle-tags.jsonl`。
+
+加载器按文件真实格式流式读取；旧 NDJSON 按字典移除一层重复转义，标准 JSON／JSONL 不应用该处理。`rulings.jsonl` 已废弃，不再需要。预览系列及其子系列整体排除，正式 Card DB 按新字典固定白名单原子替换。
 
 ## 接口说明
 
-以下为当前已经实现的 HTTP 接口；完整业务接口会随功能实现继续补充。
+本节说明健康检查与卡牌数据加载入口。具体业务接口统一见 [API 契约](docs/api-contract.md)。
 
 ### 健康检查
 

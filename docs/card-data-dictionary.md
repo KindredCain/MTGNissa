@@ -44,7 +44,7 @@
 
 作用：保存普通印刷卡及双面卡的英文基础印刷信息；一张多面卡按卡面拆行，`uuid` 为卡面记录主键。
 
-关键约束：`uuid` 为主键；`scryfall_id` 必填，但多面卡可共享同一值，唯一性由 `(scryfall_id, face_index)` 保证；`set_code` 必须存在于 `mtgnissa_set.code`。默认展示、图片和翻译查询由本表的 `scryfall_id` 直接进入翻译链路；不因引入语言表而移除该字段。
+关键约束：`uuid` 为主键；`scryfall_id` 必填，但多面卡可共享同一值，唯一性由 `(scryfall_id, face_index)` 保证；`set_code` 必须存在于 `mtgnissa_set.code`。本表的 `scryfall_id` 继续作为基础语言卡面的公开 ID 和图片回退 ID，并用于不需要区分具体印刷语言的卡面查询；不因引入语言印刷表而移除该字段。
 
 | 列名 | 列类型 | 列说明 | 数据来源 |
 | --- | --- | --- | --- |
@@ -116,7 +116,7 @@
 
 作用：保存 Token、徽记等 Token 类印刷卡面，与普通印刷卡物理分表；Token 仅进入 Token Set 卡牌列表。
 
-关键约束：`uuid` 为主键；`set_code` 指向 Token 专用系列；`oracle_id` 和 `scryfall_id` 可为空；Token 不写入 `oracle_legality`，且不继承普通系列的语言列表。Token 不提供普通卡牌详情、收藏、愿望单、卡组、全局搜索或语言展示。
+关键约束：`uuid` 为主键；`set_code` 指向 Token 专用系列；`oracle_id` 和 `scryfall_id` 可为空；Token 不写入 `oracle_legality`，且不继承普通系列的语言列表。Token 不提供普通卡牌详情、收藏、愿望单、卡组、全局搜索或语言展示。Token Set 列表只展示总数及卡图，不提供搜索、筛选或排序控件，卡图不跳转普通卡牌详情；缺少图片 ID 时使用缺图占位。
 
 | 列名 | 列类型 | 列说明 | 数据来源 |
 | --- | --- | --- | --- |
@@ -185,7 +185,7 @@
 
 作用：保存印刷语言变体中真正需要随语言变化的三个文字字段，并保留该语言变体的印刷卡面 ID。
 
-关键约束：`uuid` 为主键，`card_uuid` 外键指向 `mtgnissa_card.uuid`，`(card_uuid, language_code)` 唯一。语言名称必须先转换为项目内置 `scryfall_language.code`。同一卡牌的语言行以 `foreignData[]` 为优先来源：先按转换后的语言代码导入全部 `foreignData[]`；若 `foreignData[]` 已包含与外层 `cards[].language` 相同的语言，则不再新增基础语言行，并将该语言行的 `uuid` 改用外层 `cards[].uuid`，其 `scryfall_id` 和三个印刷文字字段仍取该 `foreignData[]`；若没有相同语言，才由外层卡牌补充基础语言行，此时 `uuid = card_uuid` 且 `scryfall_id = mtgnissa_card.scryfall_id`。同一卡牌的 `foreignData[]` 若在语言转换后仍产生重复代码，导入必须报错，不得静默覆盖。没有印刷文字时不创建无意义行；Token 不进入本表。
+关键约束：`uuid` 为主键，`card_uuid` 外键指向 `mtgnissa_card.uuid`，`(card_uuid, language_code)` 唯一。`uuid` 是具体语言印刷卡面的内部业务标识，不依赖可空的 `scryfall_id`；对外印刷版本业务入口采用主牌面的本表 `uuid`，详见第 8 节。语言名称必须先转换为项目内置 `scryfall_language.code`。同一卡牌的语言行以 `foreignData[]` 为优先来源：先按转换后的语言代码导入全部 `foreignData[]`；若 `foreignData[]` 已包含与外层 `cards[].language` 相同的语言，则不再新增基础语言行，并将该语言行的 `uuid` 改用外层 `cards[].uuid`，其 `scryfall_id` 和三个印刷文字字段仍取该 `foreignData[]`；若没有相同语言，才由外层卡牌补充基础语言行，此时 `uuid = card_uuid` 且 `scryfall_id = mtgnissa_card.scryfall_id`。同一卡牌的 `foreignData[]` 若在语言转换后仍产生重复代码，导入必须报错，不得静默覆盖。没有印刷文字时不创建无意义行；Token 不进入本表。
 
 | 列名 | 列类型 | 列说明 | 数据来源 |
 | --- | --- | --- | --- |
@@ -197,7 +197,7 @@
 | printed_text | LONGTEXT NULL | 该语言印刷规则文字。 | 优先取 `cards[].foreignData[].text`；外层补充行取 `cards[].printedText`，缺失时回退 `cards[].text` |
 | printed_type_line | VARCHAR(512) NULL | 该语言印刷类别行。 | 优先取 `cards[].foreignData[].type`；外层补充行取 `cards[].printedType`，缺失时回退 `cards[].type` |
 
-建议索引：`card_uuid`、`scryfall_id`、`language_code`。
+建议索引：`card_uuid`、`scryfall_id`、`language_code`、`printed_name(191)`。其中 `printed_name` 前缀索引用于自动名称联想的 `q%` 查询；正式搜索由用户点击搜索按钮或联想项主动触发，查询频率较低，当前直接使用 `printed_name LIKE '%q%'`，不要求额外设计搜索索引或搜索引擎。
 
 ## 3. 翻译表
 
@@ -630,7 +630,14 @@
 
 ## 8. 查询路径
 
-- 默认卡牌展示：`mtgnissa_card` 通过其保留的 `scryfall_id` 直接关联翻译和图片业务；不需要经过语言变体表。
-- 指定印刷语言时：`mtgnissa_card_printing -> mtgnissa_card`，使用该行的印刷文字与 `scryfall_id`；语言变体没有图片 ID 时回退到基础卡面的 `scryfall_id`。
-- 系列语言列表只描述普通系列可用语言；Token 不以系列语言维度区分。
-- 赛制查询以 `oracle_legality` 为准，裁定查询以 `oracle_ruling` 为准；显示正文时可选关联 `ruling_translation`，优先使用非空 `translation`，否则回退到 `oracle_ruling.text`。
+- 普通卡牌具体语言印刷版本统一使用 `mtgnissa_card_printing.uuid` 作业务标识，页面说明中记为 `printing_uuid`。单面牌使用自身语言印刷行的 UUID；多牌面牌统一使用同一印刷、同一语言主牌面（`face_index = 0`）的语言印刷 UUID 作为版本入口，后端随同返回其余牌面，收藏及愿望单不按牌面拆分。详情、语言及版本跳转、收藏、愿望单、卡组候选上下文、封面版本引用和操作日志均使用该业务标识，通过 `card_uuid` 关联基础卡面；`scryfall_id` 可为空，不再承担这些场景的业务键、独立分组键或稳定排序兜底。卡组持久化身份仍为 `oracle_id`，Token 仍使用自身表标识。
+- 总体原则：普通卡牌除全局搜索、卡组代码解析、逻辑卡聚合与统计以及 Oracle 级查询等不需要区分具体印刷语言的场景外，所有涉及具体卡牌展示、详情、收藏、愿望单、卡组展示与编辑以及操作日志快照生成的业务查询，均以 `mtgnissa_card_printing` 为入口，通过 `card_uuid` 关联 `mtgnissa_card`，再通过 `mtgnissa_card.uuid` 或 `oracle_id` 关联翻译及 Oracle 数据；不需要具体印刷语言的场景可以直接以 `mtgnissa_card` 为入口。Token 使用下述独立读取链路。
+- 具体印刷语言业务：使用 `mtgnissa_card_printing -> mtgnissa_card -> 翻译或 Oracle 数据`；当前语言、印刷文字和该版本的公开 ID 取自语言印刷行，其余卡面属性取自基础卡面。只有卡图解析可以使用 `COALESCE(NULLIF(mtgnissa_card_printing.scryfall_id, ''), mtgnissa_card.scryfall_id)` 选择图片来源；语言印刷行缺少图片 ID 时回退基础卡图。此回退不改变原始公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组或操作日志快照；不能将用于图片的回退 ID 当作原语言版本的业务 ID，也不能因图片来源相同而合并不同版本。
+- 收藏以具体印刷版本为业务粒度；系列、收藏编号和语言是版本属性，普通与闪卡数量保存在同一条收藏记录中，多牌面共用该印刷版本的收藏。图片回退不改变收藏所属版本及其语言，也不使不同语言版本共用收藏或愿望单状态。
+- 卡组只接受 `oracle_id` 非空的普通卡牌；增加卡牌、代码导入及保存均校验该条件。缺少 Oracle 身份时不使用印刷 ID 替代写入卡组；全局搜索维持现有查询规则，不增加无 Oracle 卡牌的可检索性要求。
+- 全局搜索按既定规则选定代表印刷后，单面牌取 `face_index = -1`、多牌面牌取 `face_index = 0` 的主牌面作为摘要及排序基准，同时组织完整牌面信息；不能仅按共享的 `scryfall_id` 任意选择卡面。
+- 卡面中文基础翻译使用 `mtgnissa_card.uuid -> card_translation.card_id`；Oracle 卡面翻译使用 `mtgnissa_card.uuid -> card_oracle_translation_mapping.card_uuid -> oracle_translation.face_oracle_id`；风味翻译经 `card_flavor_translation_mapping` 取得。`mtgnissa_card` 没有 `face_oracle_id` 字段，不得直接按 `oracle_id` 将多个卡面的翻译混合关联；逐字段沿用已有翻译优先级，中文为空时回退当前基础卡面的英文内容。
+- 非语言卡面业务：全局搜索、卡组代码解析、逻辑卡聚合与统计、卡面展开字段查询以及 Oracle 级查询可以直接使用 `mtgnissa_card -> 翻译、卡面展开表或 Oracle 数据`，不为这些计算建立具体印刷语言上下文。
+- 系列语言列表只描述普通系列可用语言；Token 不以系列语言维度区分，直接从 `mtgnissa_token` 读取完整 Token Set，不进入普通卡牌语言印刷链路。
+- Token 列表按具体印刷展示；同一非空 `scryfall_id` 的双面或多牌面记录按 `face_index` 组织为单个可翻面卡位，不按 `oracle_id` 合并不同印刷。缺少公开 ID 且无法可靠配对的记录按 `uuid` 独立保留并展示缺图占位。Token 列表总数按组织后的印刷项计数；`mtgnissa_set.card_count` 继续表示导入卡面数。
+- 赛制查询以 `oracle_legality` 为准，裁定查询以 `oracle_ruling` 为准；显示正文时可选关联 `ruling_translation`，优先使用非空 `translation`，否则回退到 `oracle_ruling.text`。裁定只展示发布日期和正文，不展示来源，不构造或补充 `source` 字段。

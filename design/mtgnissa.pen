@@ -498,7 +498,7 @@
       "x": -2,
       "y": 3929,
       "name": "Screen / Deck Detail — Full Page",
-      "context": "同一卡组详情连续页面；主牌、备牌、备选自上而下排列，共用固定八列坐标，缺失类型不渲染但不改变其他类型列位置。 同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → scryfall_id 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 复制卡组代码成功显示不可交互、约 2.5 秒自动消失且不阻断页面的提示；失败使用统一错误弹窗。",
+      "context": "同一卡组详情连续页面；主牌、备牌、备选自上而下排列，共用固定八列坐标，缺失类型不渲染但不改变其他类型列位置。 同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → printing_uuid 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 复制卡组代码成功显示不可交互、约 2.5 秒自动消失且不阻断页面的提示；失败使用统一错误弹窗。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 卡组仅接受 oracle_id 非空的普通卡牌；增牌正式候选排除空 Oracle，代码导入和保存均校验，不以印刷 ID 替代 Oracle 身份。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 1480,
@@ -5941,7 +5941,7 @@
       "x": -2,
       "y": -768,
       "name": "Screen / Card Detail",
-      "context": "UI 中所有“语言”交互均指卡牌原语言；卡图、面包屑和版本选择跟随卡牌原语言。卡牌名称、类别、规则文字等说明统一使用翻译后语言，当前为简体中文，缺失时回退英文；UI 不显示“原语言”或“翻译后语言”术语。语言可见名称原样使用 scryfall_language.display_name；语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。",
+      "context": "UI 中所有“语言”交互均指卡牌原语言；卡图、面包屑和版本选择跟随卡牌原语言。卡牌名称、类别、规则文字等说明统一使用翻译后语言，当前为简体中文，缺失时回退英文；UI 不显示“原语言”或“翻译后语言”术语。语言可见名称原样使用 scryfall_language.display_name；语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 中文基础翻译通过 mtgnissa_card.uuid -> card_translation.card_id；Oracle 卡面翻译经 card_oracle_translation_mapping -> oracle_translation.face_oracle_id，逐字段沿用既有优先级，不直接按 oracle_id 混合多个卡面翻译。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -7396,7 +7396,7 @@
       "x": 1534,
       "y": 264,
       "name": "Screen / Set Card List",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外，接口值保持 common、uncommon、rare、mythic、special、bonus。",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外，接口值保持 common、uncommon、rare、mythic、special、bonus。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -8451,7 +8451,7 @@
       "x": -2,
       "y": 264,
       "name": "Screen / All Cards — Set Index",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 语言按钮与语言筛选来自 scryfall_language，直接原样显示 display_name，固定按 sort_order 升序、code 升序兜底后只取前 11 个；其余特殊语言保留在字典中但不出现在本页。该范围是固定数量规则，不依赖 zht 或其他具体语言代码。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 Set 父子缩进仅为后端开发阶段预留：后端可结合发行时间、系列名称与 set_type 验证关系，能够可靠判断时显式返回层级信息；前端只消费该结果。后端未返回或关系不可靠时全部平铺，不做缩进或前端推断。",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 语言按钮与语言筛选来自 scryfall_language，直接原样显示 display_name，固定按 sort_order 升序、code 升序兜底后只取前 11 个；其余特殊语言保留在字典中但不出现在本页。该范围是固定数量规则，不依赖 zht 或其他具体语言代码。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 Set 父子关系唯一依据 mtgnissa_set.parent_code；只对 parent_code IS NULL 的顶层父 Set 查询、筛选、排序及游标分页，类型筛选排除仅子节点具备的类型。命中父 Set 后完整子树始终跟随并缩进，分页不拆分子树。同一父节点先普通子 Set 后 Token Set，两组内均按 released_at ASC、code ASC 递归前序展开；不得根据时间、名称或类型推断父子关系。Token Set 的语言单元格留空，整行进入无语言参数的 Token 列表。样例仅示意层级，实际关系及类型由数据返回。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -8624,7 +8624,7 @@
                           "type": "text",
                           "id": "TpqKZ",
                           "name": "Global Set Search Placeholder",
-                          "context": "Set 列表中间搜索框；仅作为 Set list 接口的名称或缩写关键字参数，不解析查询语法",
+                          "context": "只对顶层父 Set 名称或 code 执行关键字匹配；命中父 Set 的完整子树跟随并缩进。",
                           "fill": "#7A8580",
                           "content": "按系列名称或缩写搜索",
                           "fontFamily": "$font",
@@ -8637,7 +8637,7 @@
                       "type": "frame",
                       "id": "mFrJK",
                       "name": "卡牌原语言 Filter",
-                      "context": "按卡牌原语言筛选 Set；卡牌原语言来自 scryfall_card.lang",
+                      "context": "语言筛选只判断顶层父 Set 的 mtgnissa_set.languages；命中后完整子树跟随，Token Set 不显示语言按钮。",
                       "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
@@ -8722,7 +8722,7 @@
                       "type": "frame",
                       "id": "VVfXu",
                       "name": "排序 Filter",
-                      "context": "Set 排序选项按所选主字段排序，主排序值相同时统一按 set_id 升序兜底",
+                      "context": "仅顶层父 Set 参与所选排序，主排序相同时按 code ASC；子树始终跟随，同父节点内普通子 Set 在前、Token Set 在后，两组内 released_at ASC、code ASC。",
                       "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
@@ -8764,7 +8764,7 @@
                   "id": "cS8QW",
                   "name": "Set Result Count",
                   "fill": "#7A8580",
-                  "content": "全部系列 · 已加载 9 / 1,064",
+                  "content": "已加载 4 个父系列 · 9 行",
                   "fontFamily": "$font",
                   "fontSize": 12,
                   "fontWeight": "normal"
@@ -9333,12 +9333,427 @@
                 },
                 {
                   "type": "frame",
-                  "id": "jnsBe",
-                  "name": "Set Row MH3",
-                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
+                  "id": "LIvQB",
+                  "name": "Set Row PSOS — Child",
+                  "context": "parent_code = SOS；普通子系列示意。点击语言进入对应语言列表，点击行其他区域进入第一可用语言。",
                   "width": "fill_container",
                   "height": 67,
                   "fill": "#F4F5F2",
+                  "stroke": "#E1E4E0",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "SHX2r",
+                      "name": "CMM Name Cell",
+                      "width": 520,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16,
+                        0,
+                        34
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "zaceG",
+                          "name": "CMM Names",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FVt1V",
+                              "name": "CMM Chinese Name",
+                              "fill": "#18201D",
+                              "content": "Secrets of Strixhaven Promos",
+                              "fontFamily": "$font",
+                              "fontSize": 14,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JBqyr",
+                              "name": "CMM Code",
+                              "fill": "#7A8580",
+                              "content": "PSOS",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "600",
+                              "letterSpacing": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D0Tbp",
+                      "name": "CMM Type Cell",
+                      "width": 180,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "lZxKi",
+                          "name": "CMM Type Chip",
+                          "fill": "#EDF0EC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EUvjO",
+                              "name": "CMM Type",
+                              "fill": "#53605A",
+                              "content": "赠卡",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BtrSk",
+                      "name": "CMM Count Cell",
+                      "width": 100,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NR9F3",
+                          "name": "CMM Card Count",
+                          "fill": "#18201D",
+                          "content": "80",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ys89f",
+                      "name": "CMM Date Cell",
+                      "width": 150,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Vv6YM",
+                          "name": "CMM Date",
+                          "fill": "#53605A",
+                          "content": "2026-04-24",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MToO4",
+                      "name": "PSOS Available Languages",
+                      "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 3,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "jk3FV",
+                          "name": "PSOS Language EN",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "H9fJmf",
+                              "name": "PSOS Language EN Label",
+                              "fill": "#247650",
+                              "content": "英文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SmJG5",
+                          "name": "PSOS Language ES",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "l0236",
+                              "name": "PSOS Language ES Label",
+                              "fill": "#247650",
+                              "content": "西语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CF6Nf",
+                          "name": "PSOS Language FR",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qxrmw",
+                              "name": "PSOS Language FR Label",
+                              "fill": "#247650",
+                              "content": "法语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gylx3",
+                          "name": "PSOS Language DE",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "pMtpw",
+                              "name": "PSOS Language DE Label",
+                              "fill": "#247650",
+                              "content": "德语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "itZPK",
+                          "name": "PSOS Language IT",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "aL2tT",
+                              "name": "PSOS Language IT Label",
+                              "fill": "#247650",
+                              "content": "意语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "tz0vM",
+                          "name": "PSOS Language PT",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "x77RN2",
+                              "name": "PSOS Language PT Label",
+                              "fill": "#A8B0AC",
+                              "content": "葡语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "K0Kde",
+                          "name": "PSOS Language JA",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "g6A2V",
+                              "name": "PSOS Language JA Label",
+                              "fill": "#247650",
+                              "content": "日文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "A81bOK",
+                          "name": "PSOS Language KO",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "w2wSd",
+                              "name": "PSOS Language KO Label",
+                              "fill": "#A8B0AC",
+                              "content": "韩文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ttimR",
+                          "name": "PSOS Language RU",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JMV6y",
+                              "name": "PSOS Language RU Label",
+                              "fill": "#A8B0AC",
+                              "content": "俄语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "v7hDX",
+                          "name": "PSOS Language 简",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "S9H3f",
+                              "name": "PSOS Language 简 Label",
+                              "fill": "#A8B0AC",
+                              "content": "简中",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Fi7EK",
+                          "name": "PSOS Language 繁",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "G4rfQ",
+                              "name": "PSOS Language 繁 Label",
+                              "fill": "#A8B0AC",
+                              "content": "繁中",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jnsBe",
+                  "name": "Set Row SOA — Child",
+                  "context": "parent_code = SOS；普通子系列示意。点击语言进入对应语言列表，点击行其他区域进入第一可用语言。",
+                  "width": "fill_container",
+                  "height": 67,
+                  "fill": "#FFFFFF",
                   "stroke": "#E1E4E0",
                   "strokeWidth": {
                     "bottom": 1
@@ -9748,1254 +10163,9 @@
                 },
                 {
                   "type": "frame",
-                  "id": "LIvQB",
-                  "name": "Set Row CMM",
-                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
-                  "width": "fill_container",
-                  "height": 67,
-                  "fill": "#FFFFFF",
-                  "stroke": "#E1E4E0",
-                  "strokeWidth": {
-                    "bottom": 1
-                  },
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "SHX2r",
-                      "name": "CMM Name Cell",
-                      "width": 520,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16,
-                        0,
-                        34
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "zaceG",
-                          "name": "CMM Names",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "FVt1V",
-                              "name": "CMM Chinese Name",
-                              "fill": "#18201D",
-                              "content": "Secrets of Strixhaven Promos",
-                              "fontFamily": "$font",
-                              "fontSize": 14,
-                              "fontWeight": "650"
-                            },
-                            {
-                              "type": "text",
-                              "id": "JBqyr",
-                              "name": "CMM Code",
-                              "fill": "#7A8580",
-                              "content": "PSOS",
-                              "fontFamily": "$font",
-                              "fontSize": 10,
-                              "fontWeight": "600",
-                              "letterSpacing": 1
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "D0Tbp",
-                      "name": "CMM Type Cell",
-                      "width": 180,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "lZxKi",
-                          "name": "CMM Type Chip",
-                          "fill": "#EDF0EC",
-                          "cornerRadius": 6,
-                          "padding": [
-                            5,
-                            8
-                          ],
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "EUvjO",
-                              "name": "CMM Type",
-                              "fill": "#53605A",
-                              "content": "指挥官",
-                              "fontFamily": "$font",
-                              "fontSize": 11,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "BtrSk",
-                      "name": "CMM Count Cell",
-                      "width": 100,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "NR9F3",
-                          "name": "CMM Card Count",
-                          "fill": "#18201D",
-                          "content": "80",
-                          "fontFamily": "$font",
-                          "fontSize": 13,
-                          "fontWeight": "650"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ys89f",
-                      "name": "CMM Date Cell",
-                      "width": 150,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "Vv6YM",
-                          "name": "CMM Date",
-                          "fill": "#53605A",
-                          "content": "2026-04-24",
-                          "fontFamily": "$font",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "MToO4",
-                      "name": "PSOS Available Languages",
-                      "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "gap": 3,
-                      "padding": [
-                        0,
-                        12
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "jk3FV",
-                          "name": "PSOS Language EN",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "H9fJmf",
-                              "name": "PSOS Language EN Label",
-                              "fill": "#247650",
-                              "content": "英文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "SmJG5",
-                          "name": "PSOS Language ES",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "l0236",
-                              "name": "PSOS Language ES Label",
-                              "fill": "#247650",
-                              "content": "西语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "CF6Nf",
-                          "name": "PSOS Language FR",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "qxrmw",
-                              "name": "PSOS Language FR Label",
-                              "fill": "#247650",
-                              "content": "法语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "gylx3",
-                          "name": "PSOS Language DE",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "pMtpw",
-                              "name": "PSOS Language DE Label",
-                              "fill": "#247650",
-                              "content": "德语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "itZPK",
-                          "name": "PSOS Language IT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "aL2tT",
-                              "name": "PSOS Language IT Label",
-                              "fill": "#247650",
-                              "content": "意语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "tz0vM",
-                          "name": "PSOS Language PT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "x77RN2",
-                              "name": "PSOS Language PT Label",
-                              "fill": "#A8B0AC",
-                              "content": "葡语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "K0Kde",
-                          "name": "PSOS Language JA",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "g6A2V",
-                              "name": "PSOS Language JA Label",
-                              "fill": "#247650",
-                              "content": "日文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "A81bOK",
-                          "name": "PSOS Language KO",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "w2wSd",
-                              "name": "PSOS Language KO Label",
-                              "fill": "#A8B0AC",
-                              "content": "韩文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "ttimR",
-                          "name": "PSOS Language RU",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "JMV6y",
-                              "name": "PSOS Language RU Label",
-                              "fill": "#A8B0AC",
-                              "content": "俄语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "v7hDX",
-                          "name": "PSOS Language 简",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "S9H3f",
-                              "name": "PSOS Language 简 Label",
-                              "fill": "#A8B0AC",
-                              "content": "简中",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "Fi7EK",
-                          "name": "PSOS Language 繁",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "G4rfQ",
-                              "name": "PSOS Language 繁 Label",
-                              "fill": "#A8B0AC",
-                              "content": "繁中",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "uq3Lh",
-                  "name": "Set Row WOE",
-                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
-                  "width": "fill_container",
-                  "height": 67,
-                  "fill": "#F4F5F2",
-                  "stroke": "#E1E4E0",
-                  "strokeWidth": {
-                    "bottom": 1
-                  },
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "tr89m",
-                      "name": "WOE Name Cell",
-                      "width": 520,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16,
-                        0,
-                        34
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "F44ty",
-                          "name": "WOE Names",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "z9u3Y",
-                              "name": "WOE Chinese Name",
-                              "fill": "#18201D",
-                              "content": "Secrets of Strixhaven Tokens",
-                              "fontFamily": "$font",
-                              "fontSize": 14,
-                              "fontWeight": "650"
-                            },
-                            {
-                              "type": "text",
-                              "id": "fbD4i",
-                              "name": "WOE Code",
-                              "fill": "#7A8580",
-                              "content": "TSOS",
-                              "fontFamily": "$font",
-                              "fontSize": 10,
-                              "fontWeight": "600",
-                              "letterSpacing": 1
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "eNKAX",
-                      "name": "WOE Type Cell",
-                      "width": 180,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "pQvFT",
-                          "name": "WOE Type Chip",
-                          "fill": "#EDF0EC",
-                          "cornerRadius": 6,
-                          "padding": [
-                            5,
-                            8
-                          ],
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "yNeL8",
-                              "name": "WOE Type",
-                              "fill": "#53605A",
-                              "content": "扩展系列",
-                              "fontFamily": "$font",
-                              "fontSize": 11,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "s4qIe",
-                      "name": "WOE Count Cell",
-                      "width": 100,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "JTK6N",
-                          "name": "WOE Card Count",
-                          "fill": "#18201D",
-                          "content": "14",
-                          "fontFamily": "$font",
-                          "fontSize": 13,
-                          "fontWeight": "650"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "xx1N0",
-                      "name": "WOE Date Cell",
-                      "width": 150,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "FUvho",
-                          "name": "WOE Date",
-                          "fill": "#53605A",
-                          "content": "2026-04-24",
-                          "fontFamily": "$font",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "hUKTk",
-                      "name": "TSOS Available Languages",
-                      "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "gap": 3,
-                      "padding": [
-                        0,
-                        12
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "S3E7w",
-                          "name": "TSOS Language EN",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "ZCW32",
-                              "name": "TSOS Language EN Label",
-                              "fill": "#247650",
-                              "content": "英文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "vUR9O",
-                          "name": "TSOS Language ES",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "wwbsI",
-                              "name": "TSOS Language ES Label",
-                              "fill": "#A8B0AC",
-                              "content": "西语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "Xtvip",
-                          "name": "TSOS Language FR",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "TY1SS",
-                              "name": "TSOS Language FR Label",
-                              "fill": "#A8B0AC",
-                              "content": "法语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "QZPKq",
-                          "name": "TSOS Language DE",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "hGB97",
-                              "name": "TSOS Language DE Label",
-                              "fill": "#A8B0AC",
-                              "content": "德语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "UP5w6",
-                          "name": "TSOS Language IT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "gJ1Q4",
-                              "name": "TSOS Language IT Label",
-                              "fill": "#A8B0AC",
-                              "content": "意语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "flRvG",
-                          "name": "TSOS Language PT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "sXDTd",
-                              "name": "TSOS Language PT Label",
-                              "fill": "#A8B0AC",
-                              "content": "葡语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "B1Xmjz",
-                          "name": "TSOS Language JA",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Sd6B0",
-                              "name": "TSOS Language JA Label",
-                              "fill": "#A8B0AC",
-                              "content": "日文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "X9NtyA",
-                          "name": "TSOS Language KO",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "TookU",
-                              "name": "TSOS Language KO Label",
-                              "fill": "#A8B0AC",
-                              "content": "韩文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "quKXe",
-                          "name": "TSOS Language RU",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "xzghz",
-                              "name": "TSOS Language RU Label",
-                              "fill": "#A8B0AC",
-                              "content": "俄语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "hwErk",
-                          "name": "TSOS Language 简",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "h26J8",
-                              "name": "TSOS Language 简 Label",
-                              "fill": "#A8B0AC",
-                              "content": "简中",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "IDyhe",
-                          "name": "TSOS Language 繁",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "ZWGMF",
-                              "name": "TSOS Language 繁 Label",
-                              "fill": "#A8B0AC",
-                              "content": "繁中",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "V8ON2",
-                  "name": "Set Row LCI",
-                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
-                  "width": "fill_container",
-                  "height": 67,
-                  "fill": "#FFFFFF",
-                  "stroke": "#E1E4E0",
-                  "strokeWidth": {
-                    "bottom": 1
-                  },
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "GGuFY",
-                      "name": "LCI Name Cell",
-                      "width": 520,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16,
-                        0,
-                        34
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "vEd8l",
-                          "name": "LCI Names",
-                          "layout": "vertical",
-                          "gap": 2,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "xTX7X",
-                              "name": "LCI Chinese Name",
-                              "fill": "#18201D",
-                              "content": "Alchemy: Secrets of Strixhaven",
-                              "fontFamily": "$font",
-                              "fontSize": 14,
-                              "fontWeight": "650"
-                            },
-                            {
-                              "type": "text",
-                              "id": "HTdAR",
-                              "name": "LCI Code",
-                              "fill": "#7A8580",
-                              "content": "YSOS",
-                              "fontFamily": "$font",
-                              "fontSize": 10,
-                              "fontWeight": "600",
-                              "letterSpacing": 1
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "K4FOL",
-                      "name": "LCI Type Cell",
-                      "width": 180,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "Q4wFq",
-                          "name": "LCI Type Chip",
-                          "fill": "#EDF0EC",
-                          "cornerRadius": 6,
-                          "padding": [
-                            5,
-                            8
-                          ],
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "WSoDV",
-                              "name": "LCI Type",
-                              "fill": "#53605A",
-                              "content": "扩展系列",
-                              "fontFamily": "$font",
-                              "fontSize": 11,
-                              "fontWeight": "normal"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "O3w1s",
-                      "name": "LCI Count Cell",
-                      "width": 100,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "NqxBk",
-                          "name": "LCI Card Count",
-                          "fill": "#18201D",
-                          "content": "32",
-                          "fontFamily": "$font",
-                          "fontSize": 13,
-                          "fontWeight": "650"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "A1qUQ",
-                      "name": "LCI Date Cell",
-                      "width": 150,
-                      "height": "fill_container",
-                      "padding": [
-                        0,
-                        16
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "hSbRP",
-                          "name": "LCI Date",
-                          "fill": "#53605A",
-                          "content": "2026-05-19",
-                          "fontFamily": "$font",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "xq6uM",
-                      "name": "YSOS Available Languages",
-                      "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
-                      "width": "fill_container",
-                      "height": "fill_container",
-                      "gap": 3,
-                      "padding": [
-                        0,
-                        12
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "NByuA",
-                          "name": "YSOS Language EN",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "HqFi3",
-                              "name": "YSOS Language EN Label",
-                              "fill": "#247650",
-                              "content": "英文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "sc6yY",
-                          "name": "YSOS Language ES",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "NMlNz",
-                              "name": "YSOS Language ES Label",
-                              "fill": "#A8B0AC",
-                              "content": "西语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "ZYpRo",
-                          "name": "YSOS Language FR",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Mb9fk",
-                              "name": "YSOS Language FR Label",
-                              "fill": "#A8B0AC",
-                              "content": "法语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "uiMUN",
-                          "name": "YSOS Language DE",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "BH62s",
-                              "name": "YSOS Language DE Label",
-                              "fill": "#A8B0AC",
-                              "content": "德语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "lFW56",
-                          "name": "YSOS Language IT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "zP9dp",
-                              "name": "YSOS Language IT Label",
-                              "fill": "#A8B0AC",
-                              "content": "意语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "r97WG",
-                          "name": "YSOS Language PT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "qci1t",
-                              "name": "YSOS Language PT Label",
-                              "fill": "#A8B0AC",
-                              "content": "葡语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "ynD5S",
-                          "name": "YSOS Language JA",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "A3SPgN",
-                              "name": "YSOS Language JA Label",
-                              "fill": "#A8B0AC",
-                              "content": "日文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "VIcw0",
-                          "name": "YSOS Language KO",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "khUQp",
-                              "name": "YSOS Language KO Label",
-                              "fill": "#A8B0AC",
-                              "content": "韩文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "GJt5m",
-                          "name": "YSOS Language RU",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "vC9BD",
-                              "name": "YSOS Language RU Label",
-                              "fill": "#A8B0AC",
-                              "content": "俄语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "HJull",
-                          "name": "YSOS Language 简",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "O65I3",
-                              "name": "YSOS Language 简 Label",
-                              "fill": "#A8B0AC",
-                              "content": "简中",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "L7W3y",
-                          "name": "YSOS Language 繁",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#EFF1EF",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "ALk14",
-                              "name": "YSOS Language 繁 Label",
-                              "fill": "#A8B0AC",
-                              "content": "繁中",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
                   "id": "S2xzQP",
-                  "name": "Set Row MKM",
-                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
+                  "name": "Set Row SOC — Child",
+                  "context": "parent_code = SOS；普通子系列示意。点击语言进入对应语言列表，点击行其他区域进入第一可用语言。",
                   "width": "fill_container",
                   "height": 67,
                   "fill": "#F4F5F2",
@@ -11078,7 +10248,7 @@
                               "id": "Q1qVe",
                               "name": "MKM Type",
                               "fill": "#53605A",
-                              "content": "扩展系列",
+                              "content": "指挥官",
                               "fontFamily": "$font",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -11408,9 +10578,9 @@
                 },
                 {
                   "type": "frame",
-                  "id": "FydjG",
-                  "name": "Set Row OTJ",
-                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
+                  "id": "V8ON2",
+                  "name": "Set Row YSOS — Child",
+                  "context": "parent_code = SOS；普通子系列示意。点击语言进入对应语言列表，点击行其他区域进入第一可用语言。",
                   "width": "fill_container",
                   "height": 67,
                   "fill": "#FFFFFF",
@@ -11421,39 +10591,41 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "Q31Ig",
-                      "name": "OTJ Name Cell",
+                      "id": "GGuFY",
+                      "name": "LCI Name Cell",
                       "width": 520,
                       "height": "fill_container",
                       "padding": [
                         0,
-                        16
+                        16,
+                        0,
+                        34
                       ],
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "kHKSh",
-                          "name": "OTJ Names",
+                          "id": "vEd8l",
+                          "name": "LCI Names",
                           "layout": "vertical",
                           "gap": 2,
                           "children": [
                             {
                               "type": "text",
-                              "id": "GdTJJ",
-                              "name": "OTJ Chinese Name",
+                              "id": "xTX7X",
+                              "name": "LCI Chinese Name",
                               "fill": "#18201D",
-                              "content": "雷霆引擎之外",
+                              "content": "Alchemy: Secrets of Strixhaven",
                               "fontFamily": "$font",
                               "fontSize": 14,
                               "fontWeight": "650"
                             },
                             {
                               "type": "text",
-                              "id": "KpoFA",
-                              "name": "OTJ Code",
+                              "id": "HTdAR",
+                              "name": "LCI Code",
                               "fill": "#7A8580",
-                              "content": "OTJ",
+                              "content": "YSOS",
                               "fontFamily": "$font",
                               "fontSize": 10,
                               "fontWeight": "600",
@@ -11465,8 +10637,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "XYvkf",
-                      "name": "OTJ Type Cell",
+                      "id": "K4FOL",
+                      "name": "LCI Type Cell",
                       "width": 180,
                       "height": "fill_container",
                       "padding": [
@@ -11477,8 +10649,8 @@
                       "children": [
                         {
                           "type": "frame",
-                          "id": "bZYx8",
-                          "name": "OTJ Type Chip",
+                          "id": "Q4wFq",
+                          "name": "LCI Type Chip",
                           "fill": "#EDF0EC",
                           "cornerRadius": 6,
                           "padding": [
@@ -11488,10 +10660,10 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "t2dugU",
-                              "name": "OTJ Type",
+                              "id": "WSoDV",
+                              "name": "LCI Type",
                               "fill": "#53605A",
-                              "content": "扩展系列",
+                              "content": "炼金",
                               "fontFamily": "$font",
                               "fontSize": 11,
                               "fontWeight": "normal"
@@ -11502,8 +10674,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "SGhhk",
-                      "name": "OTJ Count Cell",
+                      "id": "O3w1s",
+                      "name": "LCI Count Cell",
                       "width": 100,
                       "height": "fill_container",
                       "padding": [
@@ -11514,10 +10686,10 @@
                       "children": [
                         {
                           "type": "text",
-                          "id": "d8wLA",
-                          "name": "OTJ Card Count",
+                          "id": "NqxBk",
+                          "name": "LCI Card Count",
                           "fill": "#18201D",
-                          "content": "374",
+                          "content": "32",
                           "fontFamily": "$font",
                           "fontSize": 13,
                           "fontWeight": "650"
@@ -11526,8 +10698,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "whz1y",
-                      "name": "OTJ Date Cell",
+                      "id": "A1qUQ",
+                      "name": "LCI Date Cell",
                       "width": 150,
                       "height": "fill_container",
                       "padding": [
@@ -11538,10 +10710,10 @@
                       "children": [
                         {
                           "type": "text",
-                          "id": "IQBIt",
-                          "name": "OTJ Date",
+                          "id": "hSbRP",
+                          "name": "LCI Date",
                           "fill": "#53605A",
-                          "content": "2024-04-19",
+                          "content": "2026-05-19",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -11550,8 +10722,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "hJ1UY",
-                      "name": "OTJ Available Languages",
+                      "id": "xq6uM",
+                      "name": "YSOS Available Languages",
                       "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
                       "width": "fill_container",
                       "height": "fill_container",
@@ -11564,8 +10736,8 @@
                       "children": [
                         {
                           "type": "frame",
-                          "id": "Dizev",
-                          "name": "OTJ Language EN",
+                          "id": "NByuA",
+                          "name": "YSOS Language EN",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -11575,8 +10747,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "pZc15",
-                              "name": "OTJ Language EN Label",
+                              "id": "HqFi3",
+                              "name": "YSOS Language EN Label",
                               "fill": "#247650",
                               "content": "英文",
                               "fontFamily": "$font",
@@ -11587,169 +10759,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "oBHIv",
-                          "name": "OTJ Language ES",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "fdQ1x",
-                              "name": "OTJ Language ES Label",
-                              "fill": "#247650",
-                              "content": "西语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "IUANr",
-                          "name": "OTJ Language FR",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "yDaXZ",
-                              "name": "OTJ Language FR Label",
-                              "fill": "#247650",
-                              "content": "法语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "zm0Jb",
-                          "name": "OTJ Language DE",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "iWWtp",
-                              "name": "OTJ Language DE Label",
-                              "fill": "#247650",
-                              "content": "德语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "di1Fm",
-                          "name": "OTJ Language IT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Z8ZcnX",
-                              "name": "OTJ Language IT Label",
-                              "fill": "#247650",
-                              "content": "意语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "Wign2",
-                          "name": "OTJ Language PT",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "qzjyq",
-                              "name": "OTJ Language PT Label",
-                              "fill": "#247650",
-                              "content": "葡语",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "duuAx",
-                          "name": "OTJ Language JA",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "IXXZg",
-                              "name": "OTJ Language JA Label",
-                              "fill": "#247650",
-                              "content": "日文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "txZ1F",
-                          "name": "OTJ Language KO",
-                          "width": 24,
-                          "height": 22,
-                          "fill": "#DFF1E8",
-                          "cornerRadius": 4,
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "uWXH7",
-                              "name": "OTJ Language KO Label",
-                              "fill": "#247650",
-                              "content": "韩文",
-                              "fontFamily": "$font",
-                              "fontSize": 8,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "QWRqy",
-                          "name": "OTJ Language RU",
+                          "id": "sc6yY",
+                          "name": "YSOS Language ES",
                           "width": 24,
                           "height": 22,
                           "fill": "#EFF1EF",
@@ -11759,8 +10770,169 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "gY35O",
-                              "name": "OTJ Language RU Label",
+                              "id": "NMlNz",
+                              "name": "YSOS Language ES Label",
+                              "fill": "#A8B0AC",
+                              "content": "西语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ZYpRo",
+                          "name": "YSOS Language FR",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Mb9fk",
+                              "name": "YSOS Language FR Label",
+                              "fill": "#A8B0AC",
+                              "content": "法语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "uiMUN",
+                          "name": "YSOS Language DE",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "BH62s",
+                              "name": "YSOS Language DE Label",
+                              "fill": "#A8B0AC",
+                              "content": "德语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lFW56",
+                          "name": "YSOS Language IT",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "zP9dp",
+                              "name": "YSOS Language IT Label",
+                              "fill": "#A8B0AC",
+                              "content": "意语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "r97WG",
+                          "name": "YSOS Language PT",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qci1t",
+                              "name": "YSOS Language PT Label",
+                              "fill": "#A8B0AC",
+                              "content": "葡语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ynD5S",
+                          "name": "YSOS Language JA",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "A3SPgN",
+                              "name": "YSOS Language JA Label",
+                              "fill": "#A8B0AC",
+                              "content": "日文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VIcw0",
+                          "name": "YSOS Language KO",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "khUQp",
+                              "name": "YSOS Language KO Label",
+                              "fill": "#A8B0AC",
+                              "content": "韩文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "GJt5m",
+                          "name": "YSOS Language RU",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "vC9BD",
+                              "name": "YSOS Language RU Label",
                               "fill": "#A8B0AC",
                               "content": "俄语",
                               "fontFamily": "$font",
@@ -11771,8 +10943,374 @@
                         },
                         {
                           "type": "frame",
-                          "id": "Lri8a",
-                          "name": "OTJ Language 简",
+                          "id": "HJull",
+                          "name": "YSOS Language 简",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "O65I3",
+                              "name": "YSOS Language 简 Label",
+                              "fill": "#A8B0AC",
+                              "content": "简中",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "L7W3y",
+                          "name": "YSOS Language 繁",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ALk14",
+                              "name": "YSOS Language 繁 Label",
+                              "fill": "#A8B0AC",
+                              "content": "繁中",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "uq3Lh",
+                  "name": "Set Row TSOS — Token Child",
+                  "context": "parent_code = SOS；set_type = token；在同父节点普通子系列后显示。无语言按钮，整行进入该 Token Set 全部卡图列表，不携带语言参数。",
+                  "width": "fill_container",
+                  "height": 67,
+                  "fill": "#F4F5F2",
+                  "stroke": "#E1E4E0",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "tr89m",
+                      "name": "WOE Name Cell",
+                      "width": 520,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16,
+                        0,
+                        34
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "F44ty",
+                          "name": "WOE Names",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "z9u3Y",
+                              "name": "WOE Chinese Name",
+                              "fill": "#18201D",
+                              "content": "Secrets of Strixhaven Tokens",
+                              "fontFamily": "$font",
+                              "fontSize": 14,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "fbD4i",
+                              "name": "WOE Code",
+                              "fill": "#7A8580",
+                              "content": "TSOS",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "600",
+                              "letterSpacing": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eNKAX",
+                      "name": "WOE Type Cell",
+                      "width": 180,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "pQvFT",
+                          "name": "WOE Type Chip",
+                          "fill": "#EDF0EC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "yNeL8",
+                              "name": "WOE Type",
+                              "fill": "#53605A",
+                              "content": "Token",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "s4qIe",
+                      "name": "WOE Count Cell",
+                      "width": 100,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JTK6N",
+                          "name": "WOE Card Count",
+                          "fill": "#18201D",
+                          "content": "14",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xx1N0",
+                      "name": "WOE Date Cell",
+                      "width": 150,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FUvho",
+                          "name": "WOE Date",
+                          "fill": "#53605A",
+                          "content": "2026-04-24",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hUKTk",
+                      "name": "TSOS Empty Language Cell",
+                      "context": "Token Set 无语言，单元格留空；点击空白执行整行 Token 列表跳转。",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 3,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "v4bL0d",
+                  "name": "Set Row DSK",
+                  "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
+                  "width": "fill_container",
+                  "height": 67,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E1E4E0",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "M9BX8i",
+                      "name": "DSK Name Cell",
+                      "width": 520,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "j0kG6",
+                          "name": "DSK Names",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Y8Dd5Q",
+                              "name": "DSK Chinese Name",
+                              "fill": "#18201D",
+                              "content": "暮悲邸：鬼屋惊魂",
+                              "fontFamily": "$font",
+                              "fontSize": 14,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "text",
+                              "id": "RVQMu",
+                              "name": "DSK Code",
+                              "fill": "#7A8580",
+                              "content": "DSK",
+                              "fontFamily": "$font",
+                              "fontSize": 10,
+                              "fontWeight": "600",
+                              "letterSpacing": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "y0Ie9",
+                      "name": "DSK Type Cell",
+                      "width": 180,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "TauQg",
+                          "name": "DSK Type Chip",
+                          "fill": "#EDF0EC",
+                          "cornerRadius": 6,
+                          "padding": [
+                            5,
+                            8
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "D5OxI",
+                              "name": "DSK Type",
+                              "fill": "#53605A",
+                              "content": "扩展系列",
+                              "fontFamily": "$font",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DCjJ4",
+                      "name": "DSK Count Cell",
+                      "width": 100,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Q1MxHM",
+                          "name": "DSK Card Count",
+                          "fill": "#18201D",
+                          "content": "417",
+                          "fontFamily": "$font",
+                          "fontSize": 13,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vCMC2",
+                      "name": "DSK Date Cell",
+                      "width": 150,
+                      "height": "fill_container",
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iVfS9",
+                          "name": "DSK Date",
+                          "fill": "#53605A",
+                          "content": "2024-09-27",
+                          "fontFamily": "$font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gxTlJ",
+                      "name": "DSK Available Languages",
+                      "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 3,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qGq5F",
+                          "name": "DSK Language EN",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -11782,8 +11320,215 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "cHVG3",
-                              "name": "OTJ Language 简 Label",
+                              "id": "QqH03",
+                              "name": "DSK Language EN Label",
+                              "fill": "#247650",
+                              "content": "英文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "z0cnk9",
+                          "name": "DSK Language ES",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FPRVB",
+                              "name": "DSK Language ES Label",
+                              "fill": "#247650",
+                              "content": "西语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "oOc7q",
+                          "name": "DSK Language FR",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "YhMtF",
+                              "name": "DSK Language FR Label",
+                              "fill": "#247650",
+                              "content": "法语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gxGQh",
+                          "name": "DSK Language DE",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "q64SOI",
+                              "name": "DSK Language DE Label",
+                              "fill": "#247650",
+                              "content": "德语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cFNPg",
+                          "name": "DSK Language IT",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "CTNot",
+                              "name": "DSK Language IT Label",
+                              "fill": "#247650",
+                              "content": "意语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "M3H1zq",
+                          "name": "DSK Language PT",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "zoxus",
+                              "name": "DSK Language PT Label",
+                              "fill": "#247650",
+                              "content": "葡语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Nue8C",
+                          "name": "DSK Language JA",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UW5sF",
+                              "name": "DSK Language JA Label",
+                              "fill": "#247650",
+                              "content": "日文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Tb6YG",
+                          "name": "DSK Language KO",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "uefri",
+                              "name": "DSK Language KO Label",
+                              "fill": "#247650",
+                              "content": "韩文",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "PrzIw",
+                          "name": "DSK Language RU",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#EFF1EF",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "D8N2qR",
+                              "name": "DSK Language RU Label",
+                              "fill": "#A8B0AC",
+                              "content": "俄语",
+                              "fontFamily": "$font",
+                              "fontSize": 8,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "znQkh",
+                          "name": "DSK Language 简",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "#DFF1E8",
+                          "cornerRadius": 4,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "aI4hZ",
+                              "name": "DSK Language 简 Label",
                               "fill": "#247650",
                               "content": "简中",
                               "fontFamily": "$font",
@@ -11794,8 +11539,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "qWuFC",
-                          "name": "OTJ Language 繁",
+                          "id": "b0klCB",
+                          "name": "DSK Language 繁",
                           "width": 24,
                           "height": 22,
                           "fill": "#EFF1EF",
@@ -11805,8 +11550,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "P2yHNr",
-                              "name": "OTJ Language 繁 Label",
+                              "id": "i3vUPr",
+                              "name": "DSK Language 繁 Label",
                               "fill": "#A8B0AC",
                               "content": "繁中",
                               "fontFamily": "$font",
@@ -12234,8 +11979,8 @@
                 },
                 {
                   "type": "frame",
-                  "id": "v4bL0d",
-                  "name": "Set Row DSK",
+                  "id": "FydjG",
+                  "name": "Set Row OTJ",
                   "context": "整条 Set 横条可点击；点击语言按钮以外区域，跳转到本行从左到右第一个正常显示（非置灰）的语言对应的 Set 卡牌列表。语言按钮点击优先并阻止行级跳转",
                   "width": "fill_container",
                   "height": 67,
@@ -12247,8 +11992,8 @@
                   "children": [
                     {
                       "type": "frame",
-                      "id": "M9BX8i",
-                      "name": "DSK Name Cell",
+                      "id": "Q31Ig",
+                      "name": "OTJ Name Cell",
                       "width": 520,
                       "height": "fill_container",
                       "padding": [
@@ -12259,27 +12004,27 @@
                       "children": [
                         {
                           "type": "frame",
-                          "id": "j0kG6",
-                          "name": "DSK Names",
+                          "id": "kHKSh",
+                          "name": "OTJ Names",
                           "layout": "vertical",
                           "gap": 2,
                           "children": [
                             {
                               "type": "text",
-                              "id": "Y8Dd5Q",
-                              "name": "DSK Chinese Name",
+                              "id": "GdTJJ",
+                              "name": "OTJ Chinese Name",
                               "fill": "#18201D",
-                              "content": "暮悲邸：鬼屋惊魂",
+                              "content": "雷霆引擎之外",
                               "fontFamily": "$font",
                               "fontSize": 14,
                               "fontWeight": "650"
                             },
                             {
                               "type": "text",
-                              "id": "RVQMu",
-                              "name": "DSK Code",
+                              "id": "KpoFA",
+                              "name": "OTJ Code",
                               "fill": "#7A8580",
-                              "content": "DSK",
+                              "content": "OTJ",
                               "fontFamily": "$font",
                               "fontSize": 10,
                               "fontWeight": "600",
@@ -12291,8 +12036,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "y0Ie9",
-                      "name": "DSK Type Cell",
+                      "id": "XYvkf",
+                      "name": "OTJ Type Cell",
                       "width": 180,
                       "height": "fill_container",
                       "padding": [
@@ -12303,8 +12048,8 @@
                       "children": [
                         {
                           "type": "frame",
-                          "id": "TauQg",
-                          "name": "DSK Type Chip",
+                          "id": "bZYx8",
+                          "name": "OTJ Type Chip",
                           "fill": "#EDF0EC",
                           "cornerRadius": 6,
                           "padding": [
@@ -12314,8 +12059,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "D5OxI",
-                              "name": "DSK Type",
+                              "id": "t2dugU",
+                              "name": "OTJ Type",
                               "fill": "#53605A",
                               "content": "扩展系列",
                               "fontFamily": "$font",
@@ -12328,8 +12073,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "DCjJ4",
-                      "name": "DSK Count Cell",
+                      "id": "SGhhk",
+                      "name": "OTJ Count Cell",
                       "width": 100,
                       "height": "fill_container",
                       "padding": [
@@ -12340,10 +12085,10 @@
                       "children": [
                         {
                           "type": "text",
-                          "id": "Q1MxHM",
-                          "name": "DSK Card Count",
+                          "id": "d8wLA",
+                          "name": "OTJ Card Count",
                           "fill": "#18201D",
-                          "content": "417",
+                          "content": "374",
                           "fontFamily": "$font",
                           "fontSize": 13,
                           "fontWeight": "650"
@@ -12352,8 +12097,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "vCMC2",
-                      "name": "DSK Date Cell",
+                      "id": "whz1y",
+                      "name": "OTJ Date Cell",
                       "width": 150,
                       "height": "fill_container",
                       "padding": [
@@ -12364,10 +12109,10 @@
                       "children": [
                         {
                           "type": "text",
-                          "id": "iVfS9",
-                          "name": "DSK Date",
+                          "id": "IQBIt",
+                          "name": "OTJ Date",
                           "fill": "#53605A",
-                          "content": "2024-09-27",
+                          "content": "2024-04-19",
                           "fontFamily": "$font",
                           "fontSize": 12,
                           "fontWeight": "normal"
@@ -12376,8 +12121,8 @@
                     },
                     {
                       "type": "frame",
-                      "id": "gxTlJ",
-                      "name": "DSK Available Languages",
+                      "id": "hJ1UY",
+                      "name": "OTJ Available Languages",
                       "context": "语言按钮为独立热区：正常显示的按钮跳转本 Set 对应语言列表并阻止横条点击；置灰按钮不可点击；语言按钮之间及单元格空白仍执行横条的最左侧可用语言跳转",
                       "width": "fill_container",
                       "height": "fill_container",
@@ -12390,8 +12135,8 @@
                       "children": [
                         {
                           "type": "frame",
-                          "id": "qGq5F",
-                          "name": "DSK Language EN",
+                          "id": "Dizev",
+                          "name": "OTJ Language EN",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12401,8 +12146,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "QqH03",
-                              "name": "DSK Language EN Label",
+                              "id": "pZc15",
+                              "name": "OTJ Language EN Label",
                               "fill": "#247650",
                               "content": "英文",
                               "fontFamily": "$font",
@@ -12413,8 +12158,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "z0cnk9",
-                          "name": "DSK Language ES",
+                          "id": "oBHIv",
+                          "name": "OTJ Language ES",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12424,8 +12169,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "FPRVB",
-                              "name": "DSK Language ES Label",
+                              "id": "fdQ1x",
+                              "name": "OTJ Language ES Label",
                               "fill": "#247650",
                               "content": "西语",
                               "fontFamily": "$font",
@@ -12436,8 +12181,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "oOc7q",
-                          "name": "DSK Language FR",
+                          "id": "IUANr",
+                          "name": "OTJ Language FR",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12447,8 +12192,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "YhMtF",
-                              "name": "DSK Language FR Label",
+                              "id": "yDaXZ",
+                              "name": "OTJ Language FR Label",
                               "fill": "#247650",
                               "content": "法语",
                               "fontFamily": "$font",
@@ -12459,8 +12204,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "gxGQh",
-                          "name": "DSK Language DE",
+                          "id": "zm0Jb",
+                          "name": "OTJ Language DE",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12470,8 +12215,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "q64SOI",
-                              "name": "DSK Language DE Label",
+                              "id": "iWWtp",
+                              "name": "OTJ Language DE Label",
                               "fill": "#247650",
                               "content": "德语",
                               "fontFamily": "$font",
@@ -12482,8 +12227,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "cFNPg",
-                          "name": "DSK Language IT",
+                          "id": "di1Fm",
+                          "name": "OTJ Language IT",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12493,8 +12238,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "CTNot",
-                              "name": "DSK Language IT Label",
+                              "id": "Z8ZcnX",
+                              "name": "OTJ Language IT Label",
                               "fill": "#247650",
                               "content": "意语",
                               "fontFamily": "$font",
@@ -12505,8 +12250,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "M3H1zq",
-                          "name": "DSK Language PT",
+                          "id": "Wign2",
+                          "name": "OTJ Language PT",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12516,8 +12261,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "zoxus",
-                              "name": "DSK Language PT Label",
+                              "id": "qzjyq",
+                              "name": "OTJ Language PT Label",
                               "fill": "#247650",
                               "content": "葡语",
                               "fontFamily": "$font",
@@ -12528,8 +12273,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "Nue8C",
-                          "name": "DSK Language JA",
+                          "id": "duuAx",
+                          "name": "OTJ Language JA",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12539,8 +12284,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "UW5sF",
-                              "name": "DSK Language JA Label",
+                              "id": "IXXZg",
+                              "name": "OTJ Language JA Label",
                               "fill": "#247650",
                               "content": "日文",
                               "fontFamily": "$font",
@@ -12551,8 +12296,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "Tb6YG",
-                          "name": "DSK Language KO",
+                          "id": "txZ1F",
+                          "name": "OTJ Language KO",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12562,8 +12307,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "uefri",
-                              "name": "DSK Language KO Label",
+                              "id": "uWXH7",
+                              "name": "OTJ Language KO Label",
                               "fill": "#247650",
                               "content": "韩文",
                               "fontFamily": "$font",
@@ -12574,8 +12319,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "PrzIw",
-                          "name": "DSK Language RU",
+                          "id": "QWRqy",
+                          "name": "OTJ Language RU",
                           "width": 24,
                           "height": 22,
                           "fill": "#EFF1EF",
@@ -12585,8 +12330,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "D8N2qR",
-                              "name": "DSK Language RU Label",
+                              "id": "gY35O",
+                              "name": "OTJ Language RU Label",
                               "fill": "#A8B0AC",
                               "content": "俄语",
                               "fontFamily": "$font",
@@ -12597,8 +12342,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "znQkh",
-                          "name": "DSK Language 简",
+                          "id": "Lri8a",
+                          "name": "OTJ Language 简",
                           "width": 24,
                           "height": 22,
                           "fill": "#DFF1E8",
@@ -12608,8 +12353,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "aI4hZ",
-                              "name": "DSK Language 简 Label",
+                              "id": "cHVG3",
+                              "name": "OTJ Language 简 Label",
                               "fill": "#247650",
                               "content": "简中",
                               "fontFamily": "$font",
@@ -12620,8 +12365,8 @@
                         },
                         {
                           "type": "frame",
-                          "id": "b0klCB",
-                          "name": "DSK Language 繁",
+                          "id": "qWuFC",
+                          "name": "OTJ Language 繁",
                           "width": 24,
                           "height": 22,
                           "fill": "#EFF1EF",
@@ -12631,8 +12376,8 @@
                           "children": [
                             {
                               "type": "text",
-                              "id": "i3vUPr",
-                              "name": "DSK Language 繁 Label",
+                              "id": "P2yHNr",
+                              "name": "OTJ Language 繁 Label",
                               "fill": "#A8B0AC",
                               "content": "繁中",
                               "fontFamily": "$font",
@@ -12835,7 +12580,7 @@
       "x": 1495,
       "y": -768,
       "name": "Screen / Card Detail — Official Rulings",
-      "context": "UI 中所有“语言”交互均指卡牌原语言；官方释疑使用翻译后语言，当前为简体中文，缺失时回退英文；UI 不暴露两类语言术语。语言可见名称原样使用 scryfall_language.display_name；语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 官方释疑每条只显示一份正文：存在翻译时仅显示翻译；仅当翻译为空时回退英文 comment，不并列或折叠英文原文。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。",
+      "context": "UI 中所有“语言”交互均指卡牌原语言；官方释疑使用翻译后语言，当前为简体中文，缺失时回退英文；UI 不暴露两类语言术语。语言可见名称原样使用 scryfall_language.display_name；语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 官方释疑每条只显示一份正文：存在翻译时仅显示翻译；仅当翻译为空时回退oracle_ruling.text 英文正文，不并列或折叠英文原文。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。 官方释疑只显示发布日期和正文，不展示来源。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 中文基础翻译通过 mtgnissa_card.uuid -> card_translation.card_id；Oracle 卡面翻译经 card_oracle_translation_mapping -> oracle_translation.face_oracle_id，逐字段沿用既有优先级，不直接按 oracle_id 混合多个卡面翻译。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -13342,29 +13087,6 @@
                               "fontFamily": "$font",
                               "fontSize": 10,
                               "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "x9WiR",
-                              "name": "Official Ruling 01 Source Badge",
-                              "fill": "#E0F1E9",
-                              "cornerRadius": 5,
-                              "padding": [
-                                3,
-                                7
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "MXU3b",
-                                  "name": "Official Ruling 01 Source",
-                                  "fill": "#247650",
-                                  "content": "WotC",
-                                  "fontFamily": "$font",
-                                  "fontSize": 9,
-                                  "fontWeight": "700"
-                                }
-                              ]
                             }
                           ]
                         },
@@ -13414,29 +13136,6 @@
                               "fontFamily": "$font",
                               "fontSize": 10,
                               "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "L9paT",
-                              "name": "Official Ruling 02 Source Badge",
-                              "fill": "#E0F1E9",
-                              "cornerRadius": 5,
-                              "padding": [
-                                3,
-                                7
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "PbAVX",
-                                  "name": "Official Ruling 02 Source",
-                                  "fill": "#247650",
-                                  "content": "WotC",
-                                  "fontFamily": "$font",
-                                  "fontSize": 9,
-                                  "fontWeight": "700"
-                                }
-                              ]
                             }
                           ]
                         },
@@ -13486,29 +13185,6 @@
                               "fontFamily": "$font",
                               "fontSize": 10,
                               "fontWeight": "600"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "IgeT4",
-                              "name": "Official Ruling 03 Source Badge",
-                              "fill": "#E0F1E9",
-                              "cornerRadius": 5,
-                              "padding": [
-                                3,
-                                7
-                              ],
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "KEnyb",
-                                  "name": "Official Ruling 03 Source",
-                                  "fill": "#247650",
-                                  "content": "WotC",
-                                  "fontFamily": "$font",
-                                  "fontSize": 9,
-                                  "fontWeight": "700"
-                                }
-                              ]
                             }
                           ]
                         },
@@ -14434,7 +14110,7 @@
       "x": 2987,
       "y": -768,
       "name": "Screen / Card Detail — Function Tags",
-      "context": "UI 中所有“语言”交互均指卡牌原语言；卡牌说明使用翻译后语言，功能标签保持数据源标签值；UI 不暴露两类语言术语。语言可见名称原样使用 scryfall_language.display_name；语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。",
+      "context": "UI 中所有“语言”交互均指卡牌原语言；卡牌说明使用翻译后语言，功能标签保持数据源标签值；UI 不暴露两类语言术语。语言可见名称原样使用 scryfall_language.display_name；语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 中文基础翻译通过 mtgnissa_card.uuid -> card_translation.card_id；Oracle 卡面翻译经 card_oracle_translation_mapping -> oracle_translation.face_oracle_id，逐字段沿用既有优先级，不直接按 oracle_id 混合多个卡面翻译。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -16344,7 +16020,7 @@
       "x": -2,
       "y": 1687,
       "name": "Screen / My Cards",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 合并不同系列或语言时不提供版本明细交互；同一合并分组内候选印刷版本最终按发行日期从新到旧排序，汇总卡显示其中最新的具体印刷版本，点击卡图进入该展示版本详情页；日期相同时按 scryfall_id 升序兜底。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外。排序提供系列、颜色、法术力、名称；名称按英文卡名不区分大小写 A–Z，同名按 scryfall_id 升序。",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 合并不同系列或语言时不提供版本明细交互；同一合并分组内候选印刷版本最终按发行日期从新到旧排序，汇总卡显示其中最新的具体印刷版本，点击卡图进入该展示版本详情页；日期相同时按 printing_uuid 升序兜底。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外。排序提供系列、颜色、法术力、名称；名称按英文卡名不区分大小写 A–Z，同名按 printing_uuid 升序。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -16732,7 +16408,7 @@
                       "type": "frame",
                       "id": "G6gE1",
                       "name": "My Cards Sort",
-                      "context": "排序选项为系列、颜色、法术力、名称；名称按英文卡名不区分大小写 A–Z，同名按 scryfall_id 升序",
+                      "context": "排序选项为系列、颜色、法术力、名称；名称按英文卡名不区分大小写 A–Z，同名按 printing_uuid 升序",
                       "height": 36,
                       "fill": "#FFFFFF",
                       "cornerRadius": 8,
@@ -17378,7 +17054,7 @@
       "x": 1534,
       "y": 1687,
       "name": "Screen / My Cards — Color Sort",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 合并不同系列或语言时不提供版本明细交互；同一合并分组内候选印刷版本最终按发行日期从新到旧排序，汇总卡显示其中最新的具体印刷版本，点击卡图进入该展示版本详情页；日期相同时按 scryfall_id 升序兜底。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外。颜色相同按英文卡名不区分大小写 A–Z，再按 scryfall_id 升序。",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 合并不同系列或语言时不提供版本明细交互；同一合并分组内候选印刷版本最终按发行日期从新到旧排序，汇总卡显示其中最新的具体印刷版本，点击卡图进入该展示版本详情页；日期相同时按 printing_uuid 升序兜底。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外。颜色相同按英文卡名不区分大小写 A–Z，再按 printing_uuid 升序。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -18361,7 +18037,7 @@
       "x": 3040,
       "y": 1687,
       "name": "Screen / My Cards — Mana Sort",
-      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 合并不同系列或语言时不提供版本明细交互；同一合并分组内候选印刷版本最终按发行日期从新到旧排序，汇总卡显示其中最新的具体印刷版本，点击卡图进入该展示版本详情页；日期相同时按 scryfall_id 升序兜底。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外。法术力相同按英文卡名不区分大小写 A–Z，再按 scryfall_id 升序。",
+      "context": "桌面浏览器标准视口：1440 × 900；超出首屏的页面内容通过内部纵向滚动查看 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 合并不同系列或语言时不提供版本明细交互；同一合并分组内候选印刷版本最终按发行日期从新到旧排序，汇总卡显示其中最新的具体印刷版本，点击卡图进入该展示版本详情页；日期相同时按 printing_uuid 升序兜底。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 法术力筛选固定为 0、1、2、3、4、5、6、7、8+；稀有度显示为铁、银、金、秘稀、特殊、额外。法术力相同按英文卡名不区分大小写 A–Z，再按 printing_uuid 升序。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -19469,7 +19145,7 @@
       "x": 4698,
       "y": 1687,
       "name": "Screen / Wishlist",
-      "context": "愿望单初次进入时请求后端。愿望单状态切换等待后端成功后才更新；请求期间锁定星标并保持原状态，失败时状态不变并打开统一错误弹窗。成功后不刷新列表，移出项在当前页面保留以便再次操作，仅重新进入页面时重新请求并移除未加入愿望单的卡牌。系列标题末尾不显示计数，但保留连接系列信息与展开箭头的浅色分隔线 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 筛选与我的卡牌一致：法术力为 0、1、2、3、4、5、6、7、8+，稀有度显示为铁、银、金、秘稀、特殊、额外。排序同样提供系列、颜色、法术力、名称；只有系列排序显示系列分组，其余连续平铺；名称按英文卡名不区分大小写 A–Z，同名按 scryfall_id 升序。愿望单不显示合并开关。",
+      "context": "愿望单初次进入时请求后端。愿望单状态切换等待后端成功后才更新；请求期间锁定星标并保持原状态，失败时状态不变并打开统一错误弹窗。成功后不刷新列表，移出项在当前页面保留以便再次操作，仅重新进入页面时重新请求并移除未加入愿望单的卡牌。系列标题末尾不显示计数，但保留连接系列信息与展开箭头的浅色分隔线 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 多选筛选下拉框统一复用 Prototype / Multi-select Filter Dropdown — Open：打开后勾选只更新临时值；点击外部立即关闭，选择变化时在关闭完成后仅执行一次查询或本地筛选，未变化时不触发；不提供确定或取消按钮。 筛选与我的卡牌一致：法术力为 0、1、2、3、4、5、6、7、8+，稀有度显示为铁、银、金、秘稀、特殊、额外。排序同样提供系列、颜色、法术力、名称；只有系列排序显示系列分组，其余连续平铺；名称按英文卡名不区分大小写 A–Z，同名按 printing_uuid 升序。愿望单不显示合并开关。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -20663,7 +20339,7 @@
       "x": 4470,
       "y": -768,
       "name": "Screen / Card Detail — Double-Faced Card",
-      "context": "双面或多牌面印刷详情页原型：卡图下方提供独立正反面切换按钮；卡牌说明与名称右上角的法术力费用符号随当前牌面切换，费用直接读取当前 faces[] 项的 mana_cost，不重新请求详情；收藏、语言、其他系列版本和卡组使用情况仍属于同一具体印刷版本。语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。",
+      "context": "双面或多牌面印刷详情页原型：卡图下方提供独立正反面切换按钮；卡牌说明与名称右上角的法术力费用符号随当前牌面切换，费用直接读取当前 faces[] 项的 mana_cost，不重新请求详情；收藏、语言、其他系列版本和卡组使用情况仍属于同一具体印刷版本。语言列表按 scryfall_language.sort_order 升序、同序按语言代码升序，展示实际存在的全部语言而不限前 11 项；功能标签按 tag_id 升序；使用卡组按 updated_at 降序、同时间按 deck_id 升序。 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 我的收藏数量与愿望单操作采用后端确认后更新；任一请求未返回前锁定当前收藏面板全部相关操作且显示值不变，成功后更新并解锁，失败时原状态不变、解锁并打开统一错误弹窗。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 中文基础翻译通过 mtgnissa_card.uuid -> card_translation.card_id；Oracle 卡面翻译经 card_oracle_translation_mapping -> oracle_translation.face_oracle_id，逐字段沿用既有优先级，不直接按 oracle_id 混合多个卡面翻译。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -42929,7 +42605,7 @@
       "x": 7560,
       "y": 3929,
       "name": "Screen / Deck Edit — Full Page",
-      "context": "卡组编辑页面；本画板展示不跳转、不新增页面且不改变既有布局的同页封面选择模式。标头右侧依次显示增加卡牌、选择封面和保存卡组，其中选择封面按钮反色表示模式已开启；随后点击任一分区卡图，将该卡的 scryfall_id 记录为未保存的 cover_scryfall_id 并退出模式，按 Esc 或再次点击按钮取消，删除该逻辑卡最后一条记录时清空封面。普通状态点击卡牌切换固定看牌状态，不跳转卡牌详情。首次点击等效长时间悬停并保持完整展示，再次点击同牌取消。卡组代码输入框只作为读取配置的输入入口，下方卡牌编辑不反写文本框；保存时前端提交 cover_scryfall_id 和四个分区卡牌的 scryfall_id，后端统一解析 oracle_id，根据名称和四个真实分区生成标准代码并入库，并把封面逻辑身份保存为 cover_oracle_id。 增加卡牌、读取配置、跨区域拖放及保存前整理均重新应用：同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → scryfall_id 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。",
+      "context": "卡组编辑页面；本画板展示不跳转、不新增页面且不改变既有布局的同页封面选择模式。标头右侧依次显示增加卡牌、选择封面和保存卡组，其中选择封面按钮反色表示模式已开启；随后点击任一分区卡图，将该卡的 printing_uuid 记录为未保存的 cover_printing_uuid 并退出模式，按 Esc 或再次点击按钮取消，删除该逻辑卡最后一条记录时清空封面。普通状态点击卡牌切换固定看牌状态，不跳转卡牌详情。首次点击等效长时间悬停并保持完整展示，再次点击同牌取消。卡组代码输入框只作为读取配置的输入入口，下方卡牌编辑不反写文本框；保存时前端提交 cover_printing_uuid 和四个分区卡牌的 printing_uuid，后端统一解析 oracle_id，根据名称和四个真实分区生成标准代码并入库，并把封面逻辑身份保存为 cover_oracle_id。 增加卡牌、读取配置、跨区域拖放及保存前整理均重新应用：同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → printing_uuid 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 卡组仅接受 oracle_id 非空的普通卡牌；增牌正式候选排除空 Oracle，代码导入和保存均校验，不以印刷 ID 替代 Oracle 身份。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 1830,
@@ -43180,7 +42856,7 @@
                   "type": "frame",
                   "id": "AKDjk",
                   "name": "Read Deck Configuration Button",
-                  "context": "卡组代码最多 1000 行。先解析代码并取得后端选定的展示印刷，再将去重且未缓存的 scryfall_id 按每批最多 200 项取得编辑上下文；只有解析与全部上下文批次均成功且返回完整时，才一次性更新编辑态：About/Name 更新卡组名，Commander、Deck、Sideboard、Maybeboard 分别填充指挥官、主牌、备牌、备选。卡牌行只取 AMOUNT 与 CARDNAME，忽略 (SETCODE)、收藏编号和 *F*；任一请求失败均不做部分覆盖。",
+                  "context": "卡组代码最多 1000 行。先解析代码并取得后端选定的展示印刷，再将去重且未缓存的 printing_uuid 按每批最多 200 项取得编辑上下文；只有解析与全部上下文批次均成功且返回完整时，才一次性更新编辑态：About/Name 更新卡组名，Commander、Deck、Sideboard、Maybeboard 分别填充指挥官、主牌、备牌、备选。卡牌行只取 AMOUNT 与 CARDNAME，忽略 (SETCODE)、收藏编号和 *F*；任一请求失败均不做部分覆盖。",
                   "height": 32,
                   "fill": "#F4A621",
                   "cornerRadius": 7,
@@ -43427,7 +43103,7 @@
                           "x": 4,
                           "y": 0,
                           "name": "指挥官 Stack Card 1",
-                          "context": "当前封面逻辑卡。普通状态点击不跳转详情：首次点击固定完整看牌状态，再次点击同牌取消；封面选择模式下点击则把该卡的 scryfall_id 记录为 cover_scryfall_id 并退出模式。拖拽成立、数量按钮或状态页签操作必须阻止该点击切换。",
+                          "context": "当前封面逻辑卡。普通状态点击不跳转详情：首次点击固定完整看牌状态，再次点击同牌取消；封面选择模式下点击则把该卡的 printing_uuid 记录为 cover_printing_uuid 并退出模式。拖拽成立、数量按钮或状态页签操作必须阻止该点击切换。",
                           "clip": true,
                           "width": 150,
                           "height": 210,
@@ -48434,7 +48110,7 @@
       "x": 9080,
       "y": 3929,
       "name": "Screen / Deck Edit — Add Card Floating Window",
-      "context": "卡组编辑页点击增加卡牌后的模态状态。遮罩与悬浮窗固定在当前浏览器视口；遮罩只压暗并阻断底层交互，不使用背景模糊，点击遮罩不关闭。悬浮窗固定预留 10 条结果高度并通过结果区滚动持续加载；候选结果按 oracle_id 去重，再按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序。首次加入尚未缓存上下文的候选牌时，禁用当前行并以候选 scryfall_id 请求上下文，成功后才加入，失败则不加入；已缓存时直接加入。加入后将卡牌放入主牌对应固定类型列并应用：同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → scryfall_id 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。",
+      "context": "卡组编辑页点击增加卡牌后的模态状态。遮罩与悬浮窗固定在当前浏览器视口；遮罩只压暗并阻断底层交互，不使用背景模糊，点击遮罩不关闭。悬浮窗固定预留 10 条结果高度并通过结果区滚动持续加载；候选结果按 oracle_id 去重，再按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序。首次加入尚未缓存上下文的候选牌时，禁用当前行并以候选 printing_uuid 请求上下文，成功后才加入，失败则不加入；已缓存时直接加入。加入后将卡牌放入主牌对应固定类型列并应用：同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → printing_uuid 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 卡组仅接受 oracle_id 非空的普通卡牌；增牌正式候选排除空 Oracle，代码导入和保存均校验，不以印刷 ID 替代 Oracle 身份。 为节省画板同时绘制联想下拉框与结果行悬停气泡，分别表达两个独立交互状态，不代表实际同时展示；实现按当前输入或结果行悬停状态分别展示。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 1830,
@@ -48685,7 +48361,7 @@
                   "type": "frame",
                   "id": "I2864Q",
                   "name": "Read Deck Configuration Button",
-                  "context": "卡组代码最多 1000 行。先解析代码并取得后端选定的展示印刷，再将去重且未缓存的 scryfall_id 按每批最多 200 项取得编辑上下文；只有解析与全部上下文批次均成功且返回完整时，才一次性更新编辑态：About/Name 更新卡组名，Commander、Deck、Sideboard、Maybeboard 分别填充指挥官、主牌、备牌、备选。卡牌行只取 AMOUNT 与 CARDNAME，忽略 (SETCODE)、收藏编号和 *F*；任一请求失败均不做部分覆盖。",
+                  "context": "卡组代码最多 1000 行。先解析代码并取得后端选定的展示印刷，再将去重且未缓存的 printing_uuid 按每批最多 200 项取得编辑上下文；只有解析与全部上下文批次均成功且返回完整时，才一次性更新编辑态：About/Name 更新卡组名，Commander、Deck、Sideboard、Maybeboard 分别填充指挥官、主牌、备牌、备选。卡牌行只取 AMOUNT 与 CARDNAME，忽略 (SETCODE)、收藏编号和 *F*；任一请求失败均不做部分覆盖。",
                   "height": 32,
                   "fill": "#F4A621",
                   "cornerRadius": 7,
@@ -53873,8 +53549,8 @@
                   "type": "frame",
                   "id": "vJJV2",
                   "name": "Add Card Name Search Input",
-                  "context": "按卡名对全量逻辑卡执行模糊匹配；搜索结果按 oracle_id 去重，不展开不同印刷版本；去重后按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序。",
-                  "width": "fill_container",
+                  "context": "名称查询字段为 mtgnissa_card_printing.printed_name。输入去除首尾空白后，至少包含 3 个英文字母或 2 个中文字符时才防抖执行 q% 前缀联想；名称去重且最多返回 5 条，不刷新主结果。点击右侧搜索按钮不受字符类型或长度限制；点击联想项也会执行 %q% 正式查询。",
+                  "width": 744,
                   "height": 38,
                   "fill": "#FFFFFF",
                   "cornerRadius": 8,
@@ -53906,6 +53582,32 @@
                       "fontFamily": "Noto Sans SC",
                       "fontSize": 13,
                       "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "SrchB",
+                  "name": "Add Card Search Submit Button",
+                  "context": "点击后提交当前输入值并执行 %q% 名称模糊查询，不限制字符类型或最小长度。搜索请求进行中禁用，重复点击不并发提交。",
+                  "width": 72,
+                  "height": 38,
+                  "fill": "#F0F2EE",
+                  "cornerRadius": 8,
+                  "stroke": "#D6DBD6",
+                  "strokeWidth": 1,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SrchT",
+                      "name": "Add Card Search Submit Label",
+                      "fill": "#18201D",
+                      "content": "搜索",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 12,
+                      "fontWeight": "500"
                     }
                   ]
                 },
@@ -53999,7 +53701,7 @@
                       "type": "frame",
                       "id": "BrS3F",
                       "name": "Add Card Result Add Button 1",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54090,7 +53792,7 @@
                       "type": "frame",
                       "id": "R5Aem",
                       "name": "Add Card Result Add Button 2",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54181,7 +53883,7 @@
                       "type": "frame",
                       "id": "R58R5",
                       "name": "Add Card Result Add Button 3",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54272,7 +53974,7 @@
                       "type": "frame",
                       "id": "ufPkJ",
                       "name": "Add Card Result Add Button 4",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54363,7 +54065,7 @@
                       "type": "frame",
                       "id": "jcQ2U",
                       "name": "Add Card Result Add Button 5",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54454,7 +54156,7 @@
                       "type": "frame",
                       "id": "IOLNo",
                       "name": "Add Card Result Add Button 6",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54545,7 +54247,7 @@
                       "type": "frame",
                       "id": "Xirwk",
                       "name": "Add Card Result Add Button 7",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54636,7 +54338,7 @@
                       "type": "frame",
                       "id": "Fim0D",
                       "name": "Add Card Result Add Button 8",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54727,7 +54429,7 @@
                       "type": "frame",
                       "id": "Ev7cI",
                       "name": "Add Card Result Add Button 9",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54818,7 +54520,7 @@
                       "type": "frame",
                       "id": "E4pgV",
                       "name": "Add Card Result Add Button 10",
-                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 scryfall_id 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
+                      "context": "若该逻辑卡上下文未缓存，先禁用当前行并以候选 printing_uuid 请求上下文，成功后加入；失败不加入并显示统一错误弹窗。上下文已缓存时直接按当前数量加入；多次点击累加且不关闭悬浮窗。",
                       "width": 72,
                       "height": 34,
                       "fill": "#F0F2EE",
@@ -54877,7 +54579,7 @@
           "x": 500,
           "y": 224,
           "name": "Add Card Image Preview Bubble",
-          "context": "搜索结果行悬浮时显示的复合气泡；左侧为代表性卡图，右侧为翻译后的卡牌名、类别和规则文字。",
+          "context": "搜索结果行悬浮时显示的复合气泡；左侧为代表性卡图，右侧为翻译后的卡牌名、类别和规则文字。 为节省画板同时绘制联想下拉框与结果行悬停气泡，分别表达两个独立交互状态，不代表实际同时展示；实现按当前输入或结果行悬停状态分别展示。",
           "width": 440,
           "fill": "#FFFFFFF7",
           "cornerRadius": 12,
@@ -55050,6 +54752,159 @@
           "height": 18,
           "stroke": "#D7DBD6",
           "strokeWidth": 1
+        },
+        {
+          "type": "frame",
+          "id": "AcSug",
+          "layoutPosition": "absolute",
+          "x": 270,
+          "y": 211,
+          "name": "Add Card Name Suggestions — Open Sample",
+          "context": "输入去除首尾空白后，至少包含 3 个英文字母或 2 个中文字符时才防抖请求 printed_name LIKE 'q%'，名称去重且最多 5 条；未达到条件时关闭。此节点位于当前画板子节点末尾，作为最上层覆盖主结果区，不改变悬浮窗尺寸；点击任一项后回填完整名称、关闭下拉框，并立即执行与点击搜索按钮相同的 %q% 正式查询。 为节省画板同时绘制联想下拉框与结果行悬停气泡，分别表达两个独立交互状态，不代表实际同时展示；实现按当前输入或结果行悬停状态分别展示。",
+          "width": 744,
+          "height": 170,
+          "fill": "#FFFFFF",
+          "cornerRadius": 8,
+          "stroke": "#D7DBD6",
+          "strokeWidth": 1,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000026",
+            "offset": {
+              "x": 0,
+              "y": 6
+            },
+            "blur": 14
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "AcS01",
+              "name": "Suggestion 1 — Hovered",
+              "width": "fill_container",
+              "height": 34,
+              "fill": "#E8F3ED",
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AcT01",
+                  "name": "Suggestion 1 Label",
+                  "fill": "#18201D",
+                  "content": "妮莎，撼世之力",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AcS02",
+              "name": "Suggestion 2",
+              "width": "fill_container",
+              "height": 34,
+              "fill": "#FFFFFF",
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AcT02",
+                  "name": "Suggestion 2 Label",
+                  "fill": "#18201D",
+                  "content": "妮莎，活力觉醒",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AcS03",
+              "name": "Suggestion 3",
+              "width": "fill_container",
+              "height": 34,
+              "fill": "#FFFFFF",
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AcT03",
+                  "name": "Suggestion 3 Label",
+                  "fill": "#18201D",
+                  "content": "妮莎，世界之魂",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AcS04",
+              "name": "Suggestion 4",
+              "width": "fill_container",
+              "height": 34,
+              "fill": "#FFFFFF",
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AcT04",
+                  "name": "Suggestion 4 Label",
+                  "fill": "#18201D",
+                  "content": "妮莎的凯旋",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AcS05",
+              "name": "Suggestion 5",
+              "width": "fill_container",
+              "height": 34,
+              "fill": "#FFFFFF",
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AcT05",
+                  "name": "Suggestion 5 Label",
+                  "fill": "#18201D",
+                  "content": "妮莎的誓约",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -55059,7 +54914,7 @@
       "x": -2,
       "y": 7234,
       "name": "Screen / Operation Log",
-      "context": "操作日志一级菜单默认页面；卡牌日志中的语言直接原样显示写入时保存的 scryfall_language.display_name 快照；按日期和操作类型合并为每日汇总记录，使用传统页码分页。点击操作类型在当前列表页打开明细悬浮窗。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 空结果只显示空表格，不提供专用空状态。日期校验、查询和翻页错误统一打开错误弹窗。",
+      "context": "操作日志一级菜单默认页面；卡牌日志中的语言直接原样显示写入时保存的 scryfall_language.display_name 快照；按日期和操作类型合并为每日汇总记录，使用传统页码分页。点击操作类型在当前列表页打开明细悬浮窗。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 空结果只显示空表格，不提供专用空状态。日期校验、查询和翻页错误统一打开错误弹窗。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -75148,7 +75003,7 @@
       "x": 10600,
       "y": 3929,
       "name": "Screen / Deck Edit — Code Collapsed",
-      "context": "卡组代码折叠状态；仅保留 46px 标头，隐藏文本框和读取按钮，主牌及后续内容整体上移 304px，统计书签同步到 y=356px。 折叠状态下的卡牌区继续应用：同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → scryfall_id 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。",
+      "context": "卡组代码折叠状态；仅保留 46px 标头，隐藏文本框和读取按钮，主牌及后续内容整体上移 304px，统计书签同步到 y=356px。 折叠状态下的卡牌区继续应用：同一区域、同一固定类型列内统一按法术力值 cmc 从低到高 → 颜色组合 → 英文卡名不区分大小写 A–Z → printing_uuid 升序排序。颜色组合先按颜色数，再按 WUBRG 色环固定顺序：W/U/B/R/G；WU/UB/BR/RG/GW/WB/UR/BG/RW/GU；WUB/UBR/BRG/RGW/GWU/WBG/URW/BGU/RWB/GUR；WUBR/UBRG/BRGW/RGWU/GWUB；WUBRG；无色 C 最后。排序不跨区域或类型列。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 卡组仅接受 oracle_id 非空的普通卡牌；增牌正式候选排除空 Oracle，代码导入和保存均校验，不以印刷 ID 替代 Oracle 身份。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 1526,
@@ -80395,7 +80250,7 @@
       "x": 3054,
       "y": 264,
       "name": "Screen / Card Search Results",
-      "context": "右上角全局搜索或具体功能标签进入的语法搜索结果页。结果固定按 oracle_id 去重，每个 oracle_id 从其全部具体记录中按 scryfall_id 升序选择第一条代表印刷版本；去重后按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序；界面不暴露逻辑卡概念。复用 Set 卡牌列表的纯卡图网格与无限滚动；内容区不提供名称搜索、筛选或排序。 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。",
+      "context": "右上角全局搜索或具体功能标签进入的语法搜索结果页。结果固定按 oracle_id 去重，每个 oracle_id 从其全部具体记录中按 scryfall_id 升序选择第一条代表印刷版本；去重后按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序；界面不暴露逻辑卡概念。复用 Set 卡牌列表的纯卡图网格与无限滚动；内容区不提供名称搜索、筛选或排序。 所有能取得不同正反面卡图的双面或多牌面印刷均复用现有双面牌交互：单卡位默认正面并切换正反面；split、flip、adventure 等共用单张正面卡图的单面布局不显示翻面控件。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 代表印刷选定后取主牌面：单面 face_index=-1，多牌面 face_index=0；摘要、名称及排序使用主牌面字段，同时组织完整正反面信息，不在相同 scryfall_id 的卡面之间任意取行。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -80586,7 +80441,7 @@
                   "type": "frame",
                   "id": "j5rOT",
                   "name": "Set Card Grid",
-                  "context": "每个 oracle_id 只显示一张卡图。后端从该 oracle_id 的全部具体记录中按 scryfall_id 升序选择第一条代表印刷版本；卡图点击进入该代表印刷版本详情，前端不自行选择版本。结果按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序。",
+                  "context": "每个 oracle_id 只显示一张卡图。后端从该 oracle_id 的全部具体记录中按 scryfall_id 升序选择第一条代表印刷版本；卡图点击进入该代表印刷版本详情，前端不自行选择版本。结果按英文卡名不区分大小写 A–Z，同名按 oracle_id 升序。 代表印刷选定后取主牌面：单面 face_index=-1，多牌面 face_index=0；摘要、名称及排序使用主牌面字段，同时组织完整正反面信息，不在相同 scryfall_id 的卡面之间任意取行。 详情跳转使用后端在代表印刷选定后解析并返回的主牌面 printing_uuid；语言印刷表不参与全局搜索命中计算。",
                   "width": "fill_container",
                   "height": "fill_container",
                   "layout": "vertical",
@@ -80993,7 +80848,7 @@
       "x": 12126,
       "y": 3929,
       "name": "Screen / Deck Edit — Leave Confirmation Modal",
-      "context": "卡组编辑页存在当前会话内尚未提交的修改时，用户通过站内导航或其他标签离开编辑页，固定在当前浏览器视口中央显示确认弹窗。编辑页不提供草稿、临时保存或自动保存。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。",
+      "context": "卡组编辑页存在当前会话内尚未提交的修改时，用户通过站内导航或其他标签离开编辑页，固定在当前浏览器视口中央显示确认弹窗。编辑页不提供草稿、临时保存或自动保存。 全局小视口规则：页面主体最小布局宽度为 1280px；视口低于 1280px 时停止继续重排，由浏览器提供整页横向滚动；视口高度低于 720px 时使用浏览器正常纵向页面滚动；禁止整页等比缩放。模态弹窗与卡组统计抽屉仍锁定底层页面并使用自身内部滚动。 仅卡图解析可在语言印刷行缺少图片 ID 时回退 mtgnissa_card.scryfall_id 获取基础卡图。此回退不改变原公开 ID、印刷版本身份、语言、详情目标、收藏、愿望单、卡组、封面业务标识或日志；不能以图片回退 ID 替换业务标识，也不因相同卡图而合并不同版本。收藏以具体印刷版本为粒度，多牌面共用该版本的数量。 具体语言印刷版本业务键为 printing_uuid = mtgnissa_card_printing.uuid；单面使用自身 UUID，多牌面使用同一印刷、同一语言主牌面的语言印刷 UUID，完整牌面随同返回。详情、收藏、愿望单、卡组候选上下文和日志均使用此键；图片解析仍使用 scryfall_id，图片回退不改变 printing_uuid。封面版本引用记为 cover_printing_uuid，卡组最终仍保存 oracle_id。",
       "clip": true,
       "width": 1440,
       "height": 900,
@@ -81244,7 +81099,7 @@
                   "type": "frame",
                   "id": "l4dt7",
                   "name": "Read Deck Configuration Button",
-                  "context": "卡组代码最多 1000 行。先解析代码并取得后端选定的展示印刷，再将去重且未缓存的 scryfall_id 按每批最多 200 项取得编辑上下文；只有解析与全部上下文批次均成功且返回完整时，才一次性更新编辑态：About/Name 更新卡组名，Commander、Deck、Sideboard、Maybeboard 分别填充指挥官、主牌、备牌、备选。卡牌行只取 AMOUNT 与 CARDNAME，忽略 (SETCODE)、收藏编号和 *F*；任一请求失败均不做部分覆盖。",
+                  "context": "卡组代码最多 1000 行。先解析代码并取得后端选定的展示印刷，再将去重且未缓存的 printing_uuid 按每批最多 200 项取得编辑上下文；只有解析与全部上下文批次均成功且返回完整时，才一次性更新编辑态：About/Name 更新卡组名，Commander、Deck、Sideboard、Maybeboard 分别填充指挥官、主牌、备牌、备选。卡牌行只取 AMOUNT 与 CARDNAME，忽略 (SETCODE)、收藏编号和 *F*；任一请求失败均不做部分覆盖。",
                   "height": 32,
                   "fill": "#F4A621",
                   "cornerRadius": 7,
@@ -88018,6 +87873,300 @@
                           "fontWeight": "600"
                         }
                       ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "sjlSK",
+      "x": 6094,
+      "y": 264,
+      "name": "Screen / Token Set Card List",
+      "context": "Token Set 浏览模式：直接读取 mtgnissa_token，不指定语言，不提供名称搜索、筛选和排序控件。保留面包屑、完整结果总数与纯卡图网格。按收藏编号自然升序、uuid 升序兜底；一次取得完整轻量数据，按本地批次逐步渲染与加载图片。卡图不跳转普通卡牌详情，不提供收藏、愿望单或卡组操作；图片 ID 缺少时使用缺图占位。当前画板采用 Kaladesh Tokens 前三张真实卡图作布局样例。 双面或多牌面 Token 按同一非空 scryfall_id 组织并依 face_index 排列，主牌面默认展示；只占一个标准卡位，复用双面牌翻面逻辑，不将正反面计为两条结果。不按 oracle_id 合并不同印刷；空 ID 且无法可靠配对时按 uuid 独立保留缺图占位。总数表示组织后的印刷项数，Set 索引 card_count 仍为导入卡面数。",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$paper",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "Ez9h4",
+          "type": "ref",
+          "ref": "iBZdG",
+          "name": "Set Cards Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "AWg0B": {
+              "fill": "$text",
+              "fontWeight": "650"
+            },
+            "w3xgIT": {
+              "fill": "$muted",
+              "fontWeight": "450"
+            }
+          }
+        },
+        {
+          "id": "wMsh8",
+          "type": "ref",
+          "ref": "Cnctt",
+          "name": "Set Cards Secondary Navigation",
+          "width": "fill_container",
+          "descendants": {
+            "o3qr7k": {
+              "content": "全部卡牌"
+            },
+            "E9UQpW": {
+              "content": "查看全部卡牌"
+            },
+            "Au2ib": {
+              "fill": "$accent"
+            },
+            "kWB5M": {
+              "content": "全部卡牌",
+              "fill": "#18201D",
+              "fontWeight": "700"
+            },
+            "IB6bH": {
+              "fill": "#00000000"
+            },
+            "dYsmF": {
+              "content": "我的卡牌",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            },
+            "fGOIM": {
+              "fill": "#00000000"
+            },
+            "n2ies": {
+              "content": "愿望单",
+              "fill": "#C3CDC8",
+              "fontWeight": "500"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "HPCu2",
+          "name": "Set Card List Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "padding": [
+            22,
+            40,
+            30,
+            40
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "f6uv2M",
+              "name": "Set Cards Main",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "h0jjZ",
+                  "name": "Sticky Set Card Breadcrumb Row",
+                  "context": "Token Set 面包屑与总数吸顶；不带语言",
+                  "width": "fill_container",
+                  "height": 20,
+                  "fill": "$paper",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "mBokd",
+                      "name": "Set Card Breadcrumb",
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "efR3o",
+                          "name": "Card Center Breadcrumb Link",
+                          "context": "点击跳转 Screen / All Cards — Set Index",
+                          "fill": "#247650",
+                          "content": "卡牌中心",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "qSCyk",
+                          "name": "Card Center Breadcrumb Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "#87918C"
+                        },
+                        {
+                          "type": "text",
+                          "id": "PHRpp",
+                          "name": "All Cards Breadcrumb Link",
+                          "context": "点击跳转 Screen / All Cards — Set Index",
+                          "fill": "#247650",
+                          "content": "全部卡牌",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "QDVkB",
+                          "name": "All Cards Breadcrumb Chevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "#87918C"
+                        },
+                        {
+                          "type": "text",
+                          "id": "xCYeR",
+                          "name": "Set Card Breadcrumb Current",
+                          "context": "Token Set 名称，不附加语言括号",
+                          "fill": "#18201D",
+                          "content": "Kaladesh Tokens",
+                          "fontFamily": "$font",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bK3LM",
+                  "name": "Sticky Token Result Count Row",
+                  "context": "仅显示总数，无搜索、筛选或排序入口",
+                  "width": "fill_container",
+                  "height": 20,
+                  "fill": "$paper",
+                  "justifyContent": "end",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "W5wDi",
+                      "name": "Token Set Result Count",
+                      "fill": "#7A8580",
+                      "content": "13 张卡牌",
+                      "fontFamily": "$font",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "M9tPDZ",
+                  "name": "Token Card Grid",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "GiM0i",
+                      "name": "Token Card Row 1",
+                      "width": "fill_container",
+                      "gap": 35,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NXBiF",
+                          "name": "Token TKLD 1 Full Card Image",
+                          "context": "只供浏览，不进入普通卡牌详情",
+                          "clip": true,
+                          "width": 244,
+                          "height": 340,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/token-tkld-1.jpg",
+                            "mode": "contain"
+                          },
+                          "cornerRadius": 10
+                        },
+                        {
+                          "type": "frame",
+                          "id": "BdR4e",
+                          "name": "Token TKLD 2 Full Card Image",
+                          "context": "只供浏览，不进入普通卡牌详情",
+                          "clip": true,
+                          "width": 244,
+                          "height": 340,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/token-tkld-2.jpg",
+                            "mode": "contain"
+                          },
+                          "cornerRadius": 10
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ITEKQ",
+                          "name": "Token TKLD 3 Full Card Image",
+                          "context": "只供浏览，不进入普通卡牌详情",
+                          "clip": true,
+                          "width": 244,
+                          "height": 340,
+                          "fill": {
+                            "type": "image",
+                            "enabled": true,
+                            "url": "assets/card-samples/token-tkld-3.jpg",
+                            "mode": "contain"
+                          },
+                          "cornerRadius": 10
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "o1IXt",
+                  "name": "Set Card Infinite Scroll Status",
+                  "width": "fill_container",
+                  "height": 34,
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Rt45G",
+                      "name": "Set Card Loader Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "loader-circle",
+                      "library": "lucide",
+                      "fill": "#7A8580"
+                    },
+                    {
+                      "type": "text",
+                      "id": "LvTiu",
+                      "name": "Set Card Loader Text",
+                      "fill": "#7A8580",
+                      "content": "向下滚动时自动加载更多卡牌",
+                      "fontFamily": "$font",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
