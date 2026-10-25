@@ -6,6 +6,86 @@ import (
 	"testing"
 )
 
+func TestSetTranslationAllowsUntranslatedNames(t *testing.T) {
+	input := sourceSpec{table: tableSetTranslation, required: []string{"set_id"}}
+	for _, record := range []string{
+		`{"set_id":"95cd2c93-807b-48ea-9eba-37185ad49ae1","code":"YFRA","name":null,"source":null,"stage":0}`,
+		`{"set_id":"95cd2c93-807b-48ea-9eba-37185ad49ae1","code":"YFRA","source":null,"stage":0}`,
+	} {
+		obj, _, err := parseObject([]byte(record), input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		values, err := rowValues(obj, input)
+		if err != nil {
+			t.Fatalf("untranslated Set was rejected: %v", err)
+		}
+		want := []any{"95cd2c93-807b-48ea-9eba-37185ad49ae1", "YFRA", nil, nil, int64(0)}
+		if !reflect.DeepEqual(values, want) {
+			t.Fatalf("values = %#v, want %#v", values, want)
+		}
+	}
+}
+
+func TestAllTranslationContentsAllowMissingAndNull(t *testing.T) {
+	tests := []struct {
+		table  tableName
+		record string
+		fields []string
+	}{
+		{tableCardTranslation, `{"card_id":"card"}`, []string{"name", "face_name", "flavor_name", "type_line", "text", "flavor_text"}},
+		{tableFlavorTranslation, `{"flavor_id":"flavor"}`, []string{"translated_flavor_name", "translated_flavor_text"}},
+		{tableOracleTranslation, `{"face_oracle_id":"oracle"}`, []string{"translated_name", "translated_type", "translated_text"}},
+		{tableRulingTranslation, `{"ruling":"ruling","comment":"Original ruling"}`, []string{"translation"}},
+		{tableSetTranslation, `{"set_id":"set","code":"SET"}`, []string{"name"}},
+		{tableTypeTranslation, `{"type_name":"Creature","type_type":"type"}`, []string{"translation"}},
+	}
+	for _, test := range tests {
+		t.Run(string(test.table), func(t *testing.T) {
+			var input sourceSpec
+			for _, source := range sourceSpecs {
+				if source.table == test.table {
+					input = source
+					break
+				}
+			}
+			if input.file == "" {
+				t.Fatal("translation source is not configured")
+			}
+			for _, explicitNull := range []bool{false, true} {
+				obj, err := decodeObject(json.RawMessage(test.record))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if explicitNull {
+					for _, field := range test.fields {
+						obj[field] = json.RawMessage(`null`)
+					}
+				}
+				raw, err := json.Marshal(obj)
+				if err != nil {
+					t.Fatal(err)
+				}
+				obj, _, err = parseObject(raw, input)
+				if err != nil {
+					t.Fatal(err)
+				}
+				values, err := rowValues(obj, input)
+				if err != nil {
+					t.Fatalf("untranslated content was rejected (explicit null=%v): %v", explicitNull, err)
+				}
+				for i, column := range mustTableSpec(test.table).columns {
+					for _, field := range test.fields {
+						if column.name == field && values[i] != nil {
+							t.Errorf("missing %s = %#v, want nil", field, values[i])
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestTransformUniqueStringsIgnoresCaseAndWhitespace(t *testing.T) {
 	got := uniqueStrings([]string{
 		"Family gathering",

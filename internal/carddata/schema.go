@@ -370,7 +370,7 @@ var specs = []spec{
 		columns: []columnSpec{
 			col("set_id", "CHAR(36) NOT NULL", kindString),
 			col("code", "VARCHAR(32) NOT NULL", kindString),
-			col("name", "VARCHAR(512) NOT NULL", kindString),
+			col("name", "VARCHAR(512) NULL", kindString),
 			col("source", "VARCHAR(128) NULL", kindString),
 			col("stage", "INT NULL", kindInteger),
 		},

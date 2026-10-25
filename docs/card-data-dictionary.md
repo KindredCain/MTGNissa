@@ -201,6 +201,8 @@
 
 ## 3. 翻译表
 
+翻译内容列均允许 `NULL`。源记录缺少译文或显式提供 `null` 时保留为空，不因未翻译而拒绝加载，也不在导入时用英文填充译文列；读取时逐字段按既定翻译优先级回退，最终使用对应原文。翻译记录的主键、必需关联代码，以及用于匹配原文的结构字段仍须满足各表约束，不因译文可空而放宽。
+
 翻译表、既有翻译关联表及其物理字段、主键和翻译优先级均沿用原设计；本次变化仅发生在导入映射。`mtgnissa_card` 不新增任何翻译桥字段，继续仅保留本身已有的 `uuid` 与 `scryfall_id`。导入器在处理 `scryfall_card.json` 前建立任务级普通暂存表 `card_uuid_bridge__stage_<task_id>`；该表不属于目标数据字典、不在 `schema.go` 中定义、不参与正式表换表。全部源文件及两张翻译映射表写入完成后立即删除桥接表，再进入临时数据验证：
 
 1. 先从 `AllPrintings.json` 写入新的 `mtgnissa_card` 与 `mtgnissa_token`；预览系列及其子系列整体跳过，不为其中的卡牌或 Token 建立内存识别索引。
@@ -299,13 +301,13 @@
 
 作用：保存系列中文名称。
 
-关键约束：保持既有翻译表设计，`set_id` 为主键，`code` 保留为系列代码。导入时按 `code` 与新的 `mtgnissa_set.code` 对应，不改变翻译表的主键；Token 系列可按其 `parent_code` 复用普通系列翻译，不强制生成独立翻译行。
+关键约束：保持既有翻译表设计，`set_id` 为主键，`code` 保留为系列代码。导入时按 `code` 与新的 `mtgnissa_set.code` 对应，不改变翻译表的主键；尚无译名的记录保留 `name = NULL`，读取时按系列译名回退规则处理。Token 系列可按其 `parent_code` 复用普通系列翻译，不强制生成独立翻译行。
 
 | 列名 | 列类型 | 列说明 | 数据来源 |
 | --- | --- | --- | --- |
 | set_id | CHAR(36) | 既有系列翻译记录主键。 | `zhs_set.json: sets[].set_id` |
 | code | VARCHAR(32) | 与新 `mtgnissa_set.code` 匹配的系列代码。 | `zhs_set.json: sets[].code` |
-| name | VARCHAR(512) | 中文系列名称。 | `sets[].name` |
+| name | VARCHAR(512) NULL | 中文系列名称。 | `sets[].name` |
 | source | VARCHAR(128) NULL | 翻译来源。 | `sets[].source` |
 | stage | INT NULL | 翻译阶段。 | `sets[].stage` |
 
