@@ -2,10 +2,108 @@ package carddata
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
+
+func TestCardSchemaMatchesDictionary(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "card-data-dictionary.md"))
+	if err != nil {
+		t.Fatalf("read card dictionary: %v", err)
+	}
+	document := string(data)
+	headings := regexp.MustCompile("(?m)^### `([^`]+)`\\s*$").FindAllStringSubmatchIndex(document, -1)
+	columnPattern := regexp.MustCompile("(?m)^\\| (\\w+) \\| ([^|]+) \\|")
+	tables := make(map[tableName]spec)
+	for _, table := range allTableSpecs() {
+		tables[table.table] = table
+	}
+	for i, heading := range headings {
+		name := tableName(document[heading[2]:heading[3]])
+		table, ok := tables[name]
+		if !ok {
+			t.Errorf("dictionary table %q has no schema", name)
+			continue
+		}
+		delete(tables, name)
+		end := len(document)
+		if i+1 < len(headings) {
+			end = headings[i+1][0]
+		}
+		section := document[heading[1]:end]
+		t.Run(string(name), func(t *testing.T) {
+			columns := make(map[string]string)
+			for _, column := range table.columns {
+				columns[column.name] = column.ddl
+			}
+			for _, row := range columnPattern.FindAllStringSubmatch(section, -1) {
+				want := strings.TrimSpace(strings.ReplaceAll(row[2], "`", ""))
+				if !strings.HasSuffix(want, " NULL") {
+					want += " NOT NULL"
+				}
+				if got, ok := columns[row[1]]; !ok || got != want {
+					t.Errorf("column %s definition = %q, want dictionary definition %q", row[1], got, want)
+				}
+				delete(columns, row[1])
+			}
+			for column := range columns {
+				t.Errorf("schema column %q is missing from dictionary", column)
+			}
+			if strings.Contains(section, "`bit_value` 唯一") {
+				for _, index := range table.indexes {
+					if index.unique && reflect.DeepEqual(index.columns, []string{"bit_value"}) {
+						return
+					}
+				}
+				t.Error("dictionary requires a unique bit_value index")
+			}
+		})
+	}
+	for name := range tables {
+		t.Errorf("schema table %q is missing from dictionary", name)
+	}
+}
+
+func TestBuiltInDictionaryStringsFitColumns(t *testing.T) {
+	lengthPattern := regexp.MustCompile(`^(?:VAR)?CHAR\((\d+)\)`)
+	for name, rows := range dictionaryRows() {
+		t.Run(string(name), func(t *testing.T) {
+			table := mustTableSpec(name)
+			for _, row := range rows {
+				if len(row.values) != len(table.columns) {
+					t.Fatalf("dictionary row has %d values, want %d", len(row.values), len(table.columns))
+				}
+				for i, column := range table.columns {
+					value := row.values[i]
+					if value == nil {
+						if strings.Contains(column.ddl, "NOT NULL") {
+							t.Errorf("required dictionary column %s is null", column.name)
+						}
+						continue
+					}
+					text, ok := value.(string)
+					match := lengthPattern.FindStringSubmatch(column.ddl)
+					if !ok || len(match) != 2 {
+						continue
+					}
+					limit, err := strconv.Atoi(match[1])
+					if err != nil {
+						t.Fatalf("parse column %s length: %v", column.name, err)
+					}
+					if length := utf8.RuneCountInString(text); length > limit {
+						t.Errorf("dictionary column %s value has %d characters, limit %d", column.name, length, limit)
+					}
+				}
+			}
+		})
+	}
+}
 
 func TestLanguageDictionaryDisplayNames(t *testing.T) {
 	languages := dictionaryRows()[tableScryfallLanguage]

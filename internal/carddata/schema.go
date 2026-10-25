@@ -159,6 +159,11 @@ var specs = []spec{
 			idx("idx_mtgnissa_card_set_code", "set_code"),
 			idx("idx_mtgnissa_card_name", "name"),
 			idx("idx_mtgnissa_card_released_at", "released_at"),
+			idx("idx_mtgnissa_card_cmc", "cmc"),
+			idx("idx_mtgnissa_card_power_numeric", "power_numeric"),
+			idx("idx_mtgnissa_card_toughness_numeric", "toughness_numeric"),
+			idx("idx_mtgnissa_card_loyalty_numeric", "loyalty_numeric"),
+			idx("idx_mtgnissa_card_pt_numeric", "pt_numeric"),
 		},
 	},
 	{
@@ -225,6 +230,7 @@ var specs = []spec{
 			uniqueIdx("uq_mtgnissa_card_printing_language", "card_uuid", "language_code"),
 			idx("idx_mtgnissa_card_printing_scryfall_id", "scryfall_id"),
 			idx("idx_mtgnissa_card_printing_language", "language_code"),
+			idx("idx_mtgnissa_card_printing_printed_name", "printed_name"),
 		},
 	},
 	{
@@ -250,7 +256,7 @@ var specs = []spec{
 			col("name", "VARCHAR(512) NULL", kindString),
 			col("flavor_name", "VARCHAR(512) NULL", kindString),
 			col("flavor_text", "LONGTEXT NULL", kindString),
-			col("set", "VARCHAR(32) NULL", kindString),
+			col("set", "VARCHAR(16) NULL", kindString),
 			col("collector_number", "VARCHAR(64) NULL", kindString),
 			col("released_at", "DATE NULL", kindDate),
 			col("translated_flavor_name", "VARCHAR(512) NULL", kindString),
@@ -270,7 +276,7 @@ var specs = []spec{
 			col("face_oracle_id", "CHAR(36) NOT NULL", kindString),
 			col("oracle_id", "CHAR(36) NULL", kindString),
 			col("name", "VARCHAR(512) NULL", kindString),
-			col("set", "VARCHAR(32) NULL", kindString),
+			col("set", "VARCHAR(16) NULL", kindString),
 			col("collector_number", "VARCHAR(64) NULL", kindString),
 			col("released_at", "DATE NULL", kindDate),
 			col("type_line", "VARCHAR(512) NULL", kindString),
@@ -363,8 +369,8 @@ var specs = []spec{
 		table: tableSetTranslation, key: []string{"set_id"},
 		columns: []columnSpec{
 			col("set_id", "CHAR(36) NOT NULL", kindString),
-			col("code", "VARCHAR(32) NULL", kindString),
-			col("name", "VARCHAR(255) NULL", kindString),
+			col("code", "VARCHAR(32) NOT NULL", kindString),
+			col("name", "VARCHAR(512) NOT NULL", kindString),
 			col("source", "VARCHAR(128) NULL", kindString),
 			col("stage", "INT NULL", kindInteger),
 		},
@@ -388,7 +394,7 @@ var derivedSpecs = []spec{
 		table: tableScryfallCardKeyword, key: []string{"card_uuid", "keyword"},
 		columns: []columnSpec{
 			col("card_uuid", "CHAR(36) NOT NULL", kindString),
-			col("keyword", "VARCHAR(255) NOT NULL", kindString),
+			col("keyword", "VARCHAR(128) NOT NULL", kindString),
 		},
 		indexes: []indexSpec{idx("idx_scryfall_card_keyword_lookup", "keyword", "card_uuid")},
 	},
@@ -399,7 +405,7 @@ var derivedSpecs = []spec{
 			col("type_group", "VARCHAR(16) NOT NULL", kindString),
 			col("type_name", "VARCHAR(128) NOT NULL", kindString),
 		},
-		indexes: []indexSpec{idx("idx_scryfall_card_type_lookup", "type_group", "type_name", "card_uuid")},
+		indexes: []indexSpec{idx("idx_scryfall_card_type_lookup", "type_name", "type_group", "card_uuid")},
 	},
 	{
 		table: tableScryfallCardFrameEffect, key: []string{"card_uuid", "frame_effect"},
@@ -413,7 +419,7 @@ var derivedSpecs = []spec{
 		table: tableScryfallCardPromoType, key: []string{"card_uuid", "promo_type"},
 		columns: []columnSpec{
 			col("card_uuid", "CHAR(36) NOT NULL", kindString),
-			col("promo_type", "VARCHAR(128) NOT NULL", kindString),
+			col("promo_type", "VARCHAR(64) NOT NULL", kindString),
 		},
 		indexes: []indexSpec{idx("idx_scryfall_card_promo_type_lookup", "promo_type", "card_uuid")},
 	},
@@ -475,12 +481,13 @@ var dictionarySpecs = []spec{
 	{
 		table: tableScryfallColor, key: []string{"code"},
 		columns: []columnSpec{
-			col("code", "CHAR(1) NOT NULL", kindString),
-			col("bit_value", "TINYINT UNSIGNED NOT NULL", kindInteger),
-			col("name", "VARCHAR(32) NOT NULL", kindString),
-			col("description", "VARCHAR(255) NOT NULL", kindString),
-			col("sort_order", "TINYINT UNSIGNED NOT NULL", kindInteger),
+			col("code", "VARCHAR(8) NOT NULL", kindString),
+			col("bit_value", "BIGINT UNSIGNED NOT NULL", kindInteger),
+			col("name", "VARCHAR(64) NOT NULL", kindString),
+			col("description", "VARCHAR(255) NULL", kindString),
+			col("sort_order", "SMALLINT UNSIGNED NOT NULL", kindInteger),
 		},
+		indexes: []indexSpec{uniqueIdx("uq_scryfall_color_bit_value", "bit_value")},
 	},
 	{
 		table: tableScryfallLanguage, key: []string{"code"},
@@ -488,48 +495,50 @@ var dictionarySpecs = []spec{
 			col("code", "VARCHAR(8) NOT NULL", kindString),
 			col("name", "VARCHAR(64) NOT NULL", kindString),
 			col("display_name", "VARCHAR(64) NOT NULL", kindString),
-			col("sort_order", "TINYINT UNSIGNED NOT NULL", kindInteger),
+			col("sort_order", "SMALLINT UNSIGNED NOT NULL", kindInteger),
 		},
 	},
 	{
 		table: tableScryfallLayout, key: []string{"code"},
 		columns: []columnSpec{
-			col("code", "VARCHAR(64) NOT NULL", kindString),
-			col("name", "VARCHAR(128) NOT NULL", kindString),
-			col("description", "VARCHAR(512) NOT NULL", kindString),
+			col("code", "VARCHAR(32) NOT NULL", kindString),
+			col("name", "VARCHAR(64) NOT NULL", kindString),
+			col("description", "VARCHAR(255) NULL", kindString),
 			col("face_category", "VARCHAR(32) NOT NULL", kindString),
 		},
 	},
 	{
 		table: tableScryfallFrame, key: []string{"code"},
 		columns: []columnSpec{
-			col("code", "VARCHAR(32) NOT NULL", kindString),
-			col("name", "VARCHAR(128) NOT NULL", kindString),
-			col("description", "VARCHAR(512) NOT NULL", kindString),
+			col("code", "VARCHAR(16) NOT NULL", kindString),
+			col("name", "VARCHAR(64) NOT NULL", kindString),
+			col("description", "VARCHAR(255) NULL", kindString),
 		},
 	},
 	{
 		table: tableScryfallFrameEffectDef, key: []string{"code"},
 		columns: []columnSpec{
 			col("code", "VARCHAR(64) NOT NULL", kindString),
-			col("description", "VARCHAR(512) NOT NULL", kindString),
+			col("description", "VARCHAR(255) NULL", kindString),
 		},
 	},
 	{
 		table: tableScryfallFinish, key: []string{"code"},
 		columns: []columnSpec{
 			col("code", "VARCHAR(32) NOT NULL", kindString),
-			col("bit_value", "TINYINT UNSIGNED NOT NULL", kindInteger),
+			col("bit_value", "BIGINT UNSIGNED NOT NULL", kindInteger),
 			col("name", "VARCHAR(64) NOT NULL", kindString),
 		},
+		indexes: []indexSpec{uniqueIdx("uq_scryfall_finish_bit_value", "bit_value")},
 	},
 	{
 		table: tableScryfallGame, key: []string{"code"},
 		columns: []columnSpec{
 			col("code", "VARCHAR(32) NOT NULL", kindString),
-			col("bit_value", "TINYINT UNSIGNED NOT NULL", kindInteger),
+			col("bit_value", "BIGINT UNSIGNED NOT NULL", kindInteger),
 			col("name", "VARCHAR(64) NOT NULL", kindString),
 		},
+		indexes: []indexSpec{uniqueIdx("uq_scryfall_game_bit_value", "bit_value")},
 	},
 }
 

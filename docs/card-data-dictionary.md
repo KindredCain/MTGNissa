@@ -108,7 +108,7 @@
 | commander_leader | BOOLEAN | 是否可作 Commander 指挥官。 | `cards[].leadershipSkills.commander` |
 | oathbreaker_leader | BOOLEAN | 是否可作 Oathbreaker 誓约破坏者。 | `cards[].leadershipSkills.oathbreaker` |
 
-建议索引：`oracle_id`、`set_code`、`name`、`released_at`，以及唯一索引 `(scryfall_id, face_index)`。
+索引：唯一索引 `(scryfall_id, face_index)`；普通索引分别为 `(oracle_id)`、`(set_code)`、`(name)`、`(released_at)`、`(cmc)`、`(power_numeric)`、`(toughness_numeric)`、`(loyalty_numeric)`、`(pt_numeric)`。数值索引用于与常量比较；字段间比较仍使用数值列，不保证由单列索引直接完成。
 
 ### `mtgnissa_token`
 
@@ -197,7 +197,7 @@
 | printed_text | LONGTEXT NULL | 该语言印刷规则文字。 | 优先取 `cards[].foreignData[].text`；外层补充行取 `cards[].printedText`，缺失时回退 `cards[].text` |
 | printed_type_line | VARCHAR(512) NULL | 该语言印刷类别行。 | 优先取 `cards[].foreignData[].type`；外层补充行取 `cards[].printedType`，缺失时回退 `cards[].type` |
 
-建议索引：`card_uuid`、`scryfall_id`、`language_code`、`printed_name(191)`。其中 `printed_name` 前缀索引用于自动名称联想的 `q%` 查询；正式搜索由用户点击搜索按钮或联想项主动触发，查询频率较低，当前直接使用 `printed_name LIKE '%q%'`，不要求额外设计搜索索引或搜索引擎。
+索引：唯一索引 `(card_uuid, language_code)`；普通索引分别为 `(scryfall_id)`、`(language_code)`、`(printed_name)`。`printed_name` 使用完整字段的普通非唯一索引，不指定索引前缀长度，用于自动名称联想的 `q%` 查询；正式搜索由用户点击搜索按钮或联想项主动触发，查询频率较低，直接使用 `printed_name LIKE '%q%'`，不要求额外设计搜索索引或搜索引擎。
 
 ## 3. 翻译表
 
@@ -496,6 +496,8 @@
 | card_uuid | CHAR(36) | 印刷卡面 ID。 | `cards[].uuid` |
 | type_group | VARCHAR(16) | 类型层级。 | 由 `cards[].supertypes/types/subtypes` 判定 |
 | type_name | VARCHAR(128) | 类型名称。 | `cards[].supertypes`、`types`、`subtypes` |
+
+普通索引：`(type_name, type_group, card_uuid)`，用于按类型词搜索；以 `type_name` 为首列，支持不指定类型层级的查询。联合主键仍为 `(card_uuid, type_group, type_name)`，用于按基础卡面读取类型记录。
 
 ### `scryfall_card_frame_effect`
 

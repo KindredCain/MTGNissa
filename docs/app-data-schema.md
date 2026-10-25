@@ -60,7 +60,7 @@ operation_log
 | `created_at` | `DATETIME(6)` | 首次被个人数据引用的时间。 |
 | `last_verified_at` | `DATETIME(6)` | 最近一次从 Card DB 验证成功的时间。 |
 
-索引：`(oracle_id)`、`(set_code, collector_number, lang)`、`(lang, oracle_id)`。
+普通索引：`(oracle_id)`、`(set_code, lang, collector_number)`、`(lang, oracle_id)`。系列复合索引以 `set_code`、`lang` 为前两列，支持只指定系列或同时指定系列与语言的查询；收藏编号保留在末尾用于版本分组，不承担自然排序。
 
 每个 `printing_uuid` 唯一指向一条主牌面语言印刷记录；后端按其基础卡面关系组织同一印刷、同一语言的完整牌面，并确认 Oracle、系列、收藏编号及语言一致。其他牌面不各自建立个人引用，也不因共用图片或图片缺失而合并不同语言版本。
 

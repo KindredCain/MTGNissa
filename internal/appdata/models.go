@@ -59,11 +59,10 @@ func (f FinishKind) Valid() bool {
 	return f == FinishNormal || f == FinishFoil
 }
 
-// CardPrintRef stores the stable card-print identity referenced by application data.
+// CardPrintRef stores the main-face language-print identity referenced by application data.
 type CardPrintRef struct {
-	ScryfallID      string    `db:"scryfall_id"`
+	PrintingUUID    string    `db:"printing_uuid"`
 	OracleID        *string   `db:"oracle_id"`
-	SetID           string    `db:"set_id"`
 	SetCode         string    `db:"set_code"`
 	CollectorNumber string    `db:"collector_number"`
 	Lang            string    `db:"lang"`
@@ -73,7 +72,7 @@ type CardPrintRef struct {
 
 // CollectionItem stores owned normal and foil quantities for one card print.
 type CollectionItem struct {
-	ScryfallID     string    `db:"scryfall_id"`
+	PrintingUUID   string    `db:"printing_uuid"`
 	NormalQuantity uint32    `db:"normal_quantity"`
 	FoilQuantity   uint32    `db:"foil_quantity"`
 	CreatedAt      time.Time `db:"created_at"`
@@ -82,8 +81,8 @@ type CollectionItem struct {
 
 // WishlistItem records when a card print was added to the wishlist.
 type WishlistItem struct {
-	ScryfallID string    `db:"scryfall_id"`
-	CreatedAt  time.Time `db:"created_at"`
+	PrintingUUID string    `db:"printing_uuid"`
+	CreatedAt    time.Time `db:"created_at"`
 }
 
 // Deck stores a deck definition, its selected cover card, and normalized source text.
@@ -115,13 +114,16 @@ type OperationLog struct {
 // OperationCardDetail stores the card-specific snapshot and quantity change for an operation.
 type OperationCardDetail struct {
 	OperationID     uint64      `db:"operation_id"`
-	ScryfallID      string      `db:"scryfall_id"`
+	PrintingUUID    string      `db:"printing_uuid"`
 	OracleID        *string     `db:"oracle_id"`
 	CardName        string      `db:"card_name"`
 	SetCode         string      `db:"set_code"`
 	CollectorNumber string      `db:"collector_number"`
 	Lang            string      `db:"lang"`
 	LangDisplayName string      `db:"lang_display_name"`
+	FrontURL        *string     `db:"front_url"`
+	BackURL         *string     `db:"back_url"`
+	HasDistinctBack bool        `db:"has_distinct_back"`
 	FinishKind      *FinishKind `db:"finish_kind"`
 	QuantityDelta   *int64      `db:"quantity_delta"`
 }
