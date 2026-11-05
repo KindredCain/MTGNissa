@@ -330,13 +330,14 @@ func (m *Manager) switchLoadTables(ctx context.Context, tables []spec, tempNames
 }
 
 func (m *Manager) cleanupTables(id string, tables []spec, names map[tableName]string) error {
-	ctx, cancel := context.WithTimeout(m.ctx, cleanupTimeout)
-	defer cancel()
 	startedAt := time.Now()
 	for _, table := range tables {
 		name := names[table.table]
 		tableStartedAt := time.Now()
-		if _, err := m.db.ExecContext(ctx, "DROP TABLE IF EXISTS "+quote(name)); err != nil {
+		ctx, cancel := context.WithTimeout(m.ctx, cleanupTimeout)
+		_, err := m.db.ExecContext(ctx, "DROP TABLE IF EXISTS "+quote(name))
+		cancel()
+		if err != nil {
 			return fmt.Errorf("drop table %s: %w", name, err)
 		}
 		m.log.Info("card data table cleanup completed", "task_id", id, "table", name, "duration", time.Since(tableStartedAt))
