@@ -26,6 +26,7 @@ func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, 
 	cardDataAPI.POST("/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(loader, loadEnabled))
 	cardDataAPI.GET("/load/:task_id", rejectUnknownQueryParameters(), getLoad(loader, loadEnabled))
 	api.GET("/sets", rejectUnknownQueryParameters("q", "language", "set_type", "sort", "cursor"), getSets(sets))
+	api.GET("/sets/options", rejectUnknownQueryParameters(), getSetOptions(sets))
 
 	registerFallbackRoutes(router)
 	return router

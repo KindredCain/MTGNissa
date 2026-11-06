@@ -36,6 +36,7 @@ type cursorPosition struct {
 
 type setStore interface {
 	List(context.Context, Params, *cursorPosition, int) (Page, bool, error)
+	Options(context.Context) (Options, error)
 }
 
 // Service validates opaque cursors and coordinates Set list database queries.
@@ -47,6 +48,15 @@ type Service struct {
 // NewService creates a Set list service backed by the Card DB store.
 func NewService(store *Store, pageSize int) *Service {
 	return &Service{store: store, pageSize: pageSize}
+}
+
+// Options returns the dynamic filters available for the Set list.
+func (s *Service) Options(ctx context.Context) (Options, error) {
+	options, err := s.store.Options(ctx)
+	if err != nil {
+		return Options{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
+	}
+	return options, nil
 }
 
 // List returns one stable page and a cursor bound to the current query.

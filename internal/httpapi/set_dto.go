@@ -2,6 +2,17 @@ package httpapi
 
 import "mtgnissa/internal/setlist"
 
+type setOptionsResponse struct {
+	Languages []setOptionLanguageResponse `json:"languages"`
+	SetTypes  []string                    `json:"set_types"`
+}
+
+type setOptionLanguageResponse struct {
+	Code        string `json:"code"`
+	DisplayName string `json:"display_name"`
+	SortOrder   int    `json:"sort_order"`
+}
+
 type setListResponse struct {
 	Items      []setListItemResponse `json:"items"`
 	Total      int64                 `json:"total"`
@@ -26,6 +37,19 @@ type setLanguageResponse struct {
 	DisplayName string `json:"display_name"`
 	SortOrder   int    `json:"sort_order"`
 	Available   bool   `json:"available"`
+}
+
+func newSetOptionsResponse(options setlist.Options) setOptionsResponse {
+	response := setOptionsResponse{
+		Languages: make([]setOptionLanguageResponse, 0, len(options.Languages)),
+		SetTypes:  append([]string{}, options.SetTypes...),
+	}
+	for _, language := range options.Languages {
+		response.Languages = append(response.Languages, setOptionLanguageResponse{
+			Code: language.Code, DisplayName: language.DisplayName, SortOrder: language.SortOrder,
+		})
+	}
+	return response
 }
 
 func newSetListResponse(page setlist.Page) setListResponse {

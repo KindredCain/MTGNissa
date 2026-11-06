@@ -27,6 +27,14 @@ type capturingSetLister struct {
 	err    error
 }
 
+func (s setListerStub) Options(_ context.Context) (setlist.Options, error) {
+	return setlist.Options{}, s.err
+}
+
+func (s *capturingSetLister) Options(_ context.Context) (setlist.Options, error) {
+	return setlist.Options{}, s.err
+}
+
 func (s setListerStub) List(_ context.Context, params setlist.Params) (setlist.Page, error) {
 	s.params = params
 	return s.page, s.err

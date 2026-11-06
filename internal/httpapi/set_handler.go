@@ -16,6 +16,18 @@ import (
 
 type setLister interface {
 	List(context.Context, setlist.Params) (setlist.Page, error)
+	Options(context.Context) (setlist.Options, error)
+}
+
+func getSetOptions(service setLister) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		options, err := service.Options(c.Request.Context())
+		if err != nil {
+			httpresponse.WriteAppError(c, err)
+			return
+		}
+		httpresponse.WriteJSON(c, http.StatusOK, newSetOptionsResponse(options))
+	}
 }
 
 func getSets(service setLister) gin.HandlerFunc {

@@ -10,6 +10,10 @@ type pageStoreStub struct {
 	position *cursorPosition
 }
 
+func (s *pageStoreStub) Options(_ context.Context) (Options, error) {
+	return Options{}, nil
+}
+
 func (s *pageStoreStub) List(_ context.Context, _ Params, position *cursorPosition, _ int) (Page, bool, error) {
 	s.position = position
 	return s.page, true, nil

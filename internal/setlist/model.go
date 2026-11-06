@@ -3,6 +3,12 @@ package setlist
 
 import "time"
 
+// Options contains the available language and root Set type filters.
+type Options struct {
+	Languages []Language
+	SetTypes  []string
+}
+
 // Sort identifies the primary ordering applied to root Set groups.
 type Sort string
 
