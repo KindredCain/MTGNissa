@@ -21,6 +21,12 @@ type setListerStub struct {
 	err    error
 }
 
+type capturingSetLister struct {
+	page   setlist.Page
+	params setlist.Params
+	err    error
+}
+
 func (s setListerStub) List(_ context.Context, params setlist.Params) (setlist.Page, error) {
 	s.params = params
 	return s.page, s.err
@@ -116,12 +122,6 @@ func TestGetSetsRejectsInvalidInputs(t *testing.T) {
 			}
 		})
 	}
-}
-
-type capturingSetLister struct {
-	page   setlist.Page
-	params setlist.Params
-	err    error
 }
 
 func (s *capturingSetLister) List(_ context.Context, params setlist.Params) (setlist.Page, error) {

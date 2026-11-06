@@ -13,12 +13,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var mysqlDialect = goqu.Dialect("mysql")
-
 // Store reads Set list data from the Card DB.
 type Store struct {
 	db *sqlx.DB
 }
+
+type languageRow struct {
+	Code        string `db:"code"`
+	DisplayName string `db:"display_name"`
+	SortOrder   int    `db:"sort_order"`
+}
+
+type setRow struct {
+	Code        string     `db:"code"`
+	Name        string     `db:"name"`
+	DisplayName string     `db:"display_name"`
+	SetType     string     `db:"set_type"`
+	CardCount   uint64     `db:"card_count"`
+	ReleasedAt  *time.Time `db:"released_at"`
+	Languages   *string    `db:"languages"`
+	ParentCode  *string    `db:"parent_code"`
+}
+
+var mysqlDialect = goqu.Dialect("mysql")
 
 // NewStore creates a Card DB Set list store.
 func NewStore(db *sqlx.DB) *Store {
@@ -204,23 +221,6 @@ func buildSetDataset(params Params) *goqu.SelectDataset {
 		filters = append(filters, goqu.I("s.set_type").In(stringsToInterfaces(params.SetTypes)...))
 	}
 	return setDataset().Where(filters...)
-}
-
-type languageRow struct {
-	Code        string `db:"code"`
-	DisplayName string `db:"display_name"`
-	SortOrder   int    `db:"sort_order"`
-}
-
-type setRow struct {
-	Code        string     `db:"code"`
-	Name        string     `db:"name"`
-	DisplayName string     `db:"display_name"`
-	SetType     string     `db:"set_type"`
-	CardCount   uint64     `db:"card_count"`
-	ReleasedAt  *time.Time `db:"released_at"`
-	Languages   *string    `db:"languages"`
-	ParentCode  *string    `db:"parent_code"`
 }
 
 func cursorExpression(sort Sort, position cursorPosition) (exp.Expression, error) {

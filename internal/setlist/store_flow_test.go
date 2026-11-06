@@ -30,6 +30,11 @@ type setTestDatabase struct {
 	options   driver.TxOptions
 }
 
+type setTestRows struct {
+	columns []string
+	rows    [][]driver.Value
+}
+
 func (d *setTestDatabase) Connect(context.Context) (driver.Conn, error) {
 	return d, nil
 }
@@ -93,11 +98,6 @@ func (d *setTestDatabase) QueryContext(_ context.Context, query string, args []d
 		d.t.Errorf("query %d args = %#v, want %#v", d.index, values, step.args)
 	}
 	return &setTestRows{columns: step.columns, rows: step.rows}, nil
-}
-
-type setTestRows struct {
-	columns []string
-	rows    [][]driver.Value
 }
 
 func (r *setTestRows) Columns() []string {

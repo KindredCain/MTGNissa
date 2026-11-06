@@ -12,15 +12,6 @@ const (
 	DeckSectionMaybeboard DeckSection = "maybeboard"
 )
 
-func (s DeckSection) Valid() bool {
-	switch s {
-	case DeckSectionMainboard, DeckSectionSideboard, DeckSectionCommander, DeckSectionMaybeboard:
-		return true
-	default:
-		return false
-	}
-}
-
 // ActionType identifies the collection, wishlist, or deck operation being recorded.
 type ActionType uint8
 
@@ -35,18 +26,6 @@ const (
 	ActionModifyDeck
 )
 
-func (a ActionType) Valid() bool {
-	return a >= ActionAddCard && a <= ActionModifyDeck
-}
-
-func (a ActionType) IsCardAction() bool {
-	return a >= ActionAddCard && a <= ActionRemoveWishlist
-}
-
-func (a ActionType) IsDeckAction() bool {
-	return a >= ActionCreateDeck && a <= ActionModifyDeck
-}
-
 // FinishKind identifies the physical finish of a card involved in an operation.
 type FinishKind uint8
 
@@ -54,10 +33,6 @@ const (
 	FinishNormal FinishKind = iota + 1
 	FinishFoil
 )
-
-func (f FinishKind) Valid() bool {
-	return f == FinishNormal || f == FinishFoil
-}
 
 // CardPrintRef stores the main-face language-print identity referenced by application data.
 type CardPrintRef struct {
@@ -133,4 +108,29 @@ type OperationDeckDetail struct {
 	OperationID uint64 `db:"operation_id"`
 	DeckID      uint64 `db:"deck_id"`
 	DeckName    string `db:"deck_name"`
+}
+
+func (s DeckSection) Valid() bool {
+	switch s {
+	case DeckSectionMainboard, DeckSectionSideboard, DeckSectionCommander, DeckSectionMaybeboard:
+		return true
+	default:
+		return false
+	}
+}
+
+func (a ActionType) Valid() bool {
+	return a >= ActionAddCard && a <= ActionModifyDeck
+}
+
+func (a ActionType) IsCardAction() bool {
+	return a >= ActionAddCard && a <= ActionRemoveWishlist
+}
+
+func (a ActionType) IsDeckAction() bool {
+	return a >= ActionCreateDeck && a <= ActionModifyDeck
+}
+
+func (f FinishKind) Valid() bool {
+	return f == FinishNormal || f == FinishFoil
 }
