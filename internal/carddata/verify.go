@@ -84,14 +84,14 @@ func (m *Manager) verifyImportedData(ctx context.Context, id string, results []F
 			return stageFail(StageVerifying, s.file, 0, fmt.Errorf("row count mismatch: expected %d, inserted %d", expectedRows, count))
 		}
 		m.setProgress(s.file, count, expectedRows)
-		m.log.Info("card data table verification completed", "task_id", id, "table", s.table, "rows", count, "duration", time.Since(tableStartedAt))
+		m.log.Info("card data table verification completed", "task_id", id, "table", s.table, "rows", count, "duration_ms", time.Since(tableStartedAt).Milliseconds())
 	}
 	associationStartedAt := time.Now()
 	if err := validateImportedAssociations(ctx, m.db, tableNames); err != nil {
 		return stageFail(StageVerifying, "", 0, err)
 	}
-	m.log.Info("card data association validation completed", "task_id", id, "association_count", len(associationSpecs), "duration", time.Since(associationStartedAt))
-	m.stageCompleted(id, StageVerifying, "table_count", len(sourceSpecs), "association_count", len(associationSpecs), "duration", time.Since(startedAt))
+	m.log.Info("card data association validation completed", "task_id", id, "association_count", len(associationSpecs), "duration_ms", time.Since(associationStartedAt).Milliseconds())
+	m.stageCompleted(id, StageVerifying, "table_count", len(sourceSpecs), "association_count", len(associationSpecs), "duration_ms", time.Since(startedAt).Milliseconds())
 	return nil
 }
 

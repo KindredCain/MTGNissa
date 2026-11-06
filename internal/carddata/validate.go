@@ -44,9 +44,9 @@ func (m *Manager) validateAll(id string) ([]FileResult, *loadPlan, *TaskError) {
 		results = append(results, result)
 		m.setProgress(s.file, result.ReadRows, result.ReadRows)
 		m.files(id, results)
-		m.log.Info("card data file validation completed", "task_id", id, "file", s.file, "rows", result.ReadRows, "normalized_rows", result.NormalizedRows, "size_bytes", result.Size, "duration", time.Since(fileStartedAt))
+		m.log.Info("card data file validation completed", "task_id", id, "file", s.file, "rows", result.ReadRows, "normalized_rows", result.NormalizedRows, "size_bytes", result.Size, "duration_ms", time.Since(fileStartedAt).Milliseconds())
 	}
-	m.stageCompleted(id, StageValidating, "file_count", len(results), "duration", time.Since(stageStartedAt))
+	m.stageCompleted(id, StageValidating, "file_count", len(results), "duration_ms", time.Since(stageStartedAt).Milliseconds())
 	return results, plan, nil
 }
 

@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -10,6 +11,17 @@ import (
 
 	"mtgnissa/internal/health"
 )
+
+func TestRequestBodyLogValuePreservesJSONStructure(t *testing.T) {
+	body := []byte(`{"queue":[{"action":"add","card_id":"a"},{"action":"remove","card_id":"b"}]}`)
+	encoded, err := json.Marshal(requestBodyLogValue(body))
+	if err != nil {
+		t.Fatalf("marshal logged request body: %v", err)
+	}
+	if string(encoded) != string(body) {
+		t.Fatalf("logged request body = %s, want %s", encoded, body)
+	}
+}
 
 func TestHTTPErrorInterception(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))

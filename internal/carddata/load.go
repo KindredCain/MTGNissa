@@ -153,10 +153,10 @@ func (m *Manager) run(id string) {
 	if taskErr != nil {
 		t.Stage = StageFailed
 		t.Error = taskErr
-		m.log.Error("card data loading failed", "task_id", id, "stage", taskErr.Stage, "file", taskErr.File, "line", taskErr.Line, "duration", time.Since(startedAt), "error", taskErr.Message)
+		m.log.Error("card data loading failed", "task_id", id, "stage", taskErr.Stage, "file", taskErr.File, "line", taskErr.Line, "duration_ms", time.Since(startedAt).Milliseconds(), "error", taskErr.Message)
 	} else {
 		t.Stage = StageCompleted
-		m.log.Info("card data loading completed", "task_id", id, "duration", time.Since(startedAt))
+		m.log.Info("card data loading completed", "task_id", id, "duration_ms", time.Since(startedAt).Milliseconds())
 	}
 }
 
@@ -185,7 +185,7 @@ func (m *Manager) logHeartbeat(id string, startedAt time.Time, done <-chan struc
 			file, rows, total := m.progressFile, m.progressRows, m.progressTotal
 			m.mu.RUnlock()
 			if ok {
-				m.log.Info("card data loading still running", "task_id", id, "stage", stage, "file", file, "processed_rows", rows, "total_rows", total, "elapsed", time.Since(startedAt))
+				m.log.Info("card data loading still running", "task_id", id, "stage", stage, "file", file, "processed_rows", rows, "total_rows", total, "elapsed_ms", time.Since(startedAt).Milliseconds())
 			}
 		case <-done:
 			return
@@ -229,9 +229,9 @@ func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskErr
 		if err := insertRows(ctx, m.db, tempNames[table.table], table, seedRows[table.table]); err != nil {
 			return stageFail(StagePreparing, "", 0, fmt.Errorf("seed dictionary %s: %w", table.table, err))
 		}
-		m.log.Info("card data dictionary table seeding completed", "task_id", id, "table", table.table, "rows", len(seedRows[table.table]), "duration", time.Since(tableStartedAt))
+		m.log.Info("card data dictionary table seeding completed", "task_id", id, "table", table.table, "rows", len(seedRows[table.table]), "duration_ms", time.Since(tableStartedAt).Milliseconds())
 	}
-	m.stageCompleted(id, StagePreparing, "table_count", len(tables), "duration", time.Since(prepareStartedAt))
+	m.stageCompleted(id, StagePreparing, "table_count", len(tables), "duration_ms", time.Since(prepareStartedAt).Milliseconds())
 	m.stage(id, StageImporting)
 	importStartedAt := time.Now()
 	state := newImportState(plan)
@@ -252,7 +252,7 @@ func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskErr
 		}
 		results[i].InsertedRows = inserted
 		m.files(id, results)
-		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration", time.Since(fileStartedAt))
+		m.log.Info("card data file import completed", "task_id", id, "file", s.file, "inserted_rows", inserted, "duration_ms", time.Since(fileStartedAt).Milliseconds())
 		if s.kind == sourceLegacyCardBridge {
 			m.log.Info("legacy card UUID bridge import summarized",
 				"task_id", id,
@@ -280,7 +280,7 @@ func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskErr
 		return stageFail(StageImporting, "", 0, fmt.Errorf("drop card UUID bridge table: %w", err))
 	}
 	m.log.Info("card UUID bridge staging table dropped", "task_id", id, "table", bridgeName)
-	m.stageCompleted(id, StageImporting, "file_count", len(sourceSpecs), "duration", time.Since(importStartedAt))
+	m.stageCompleted(id, StageImporting, "file_count", len(sourceSpecs), "duration_ms", time.Since(importStartedAt).Milliseconds())
 	if taskErr := m.verifyImportedData(ctx, id, results, tempNames, state); taskErr != nil {
 		return taskErr
 	}
@@ -289,7 +289,7 @@ func (m *Manager) load(id string, results []FileResult, plan *loadPlan) *TaskErr
 	if err := m.switchLoadTables(ctx, tables, tempNames, backupNames); err != nil {
 		return stageFail(StageSwitching, "", 0, err)
 	}
-	m.stageCompleted(id, StageSwitching, "table_count", len(tables), "duration", time.Since(switchStartedAt))
+	m.stageCompleted(id, StageSwitching, "table_count", len(tables), "duration_ms", time.Since(switchStartedAt).Milliseconds())
 	m.stage(id, StageCleaning)
 	if err := m.cleanupTables(id, tables, backupNames); err != nil {
 		return stageFail(StageCleaning, "", 0, fmt.Errorf("card data tables switched but cleanup failed: %w", err))
@@ -303,7 +303,7 @@ func (m *Manager) createLoadTables(ctx context.Context, id string, tables []spec
 		if _, err := m.db.ExecContext(ctx, createTableSQL(names[table.table], table)); err != nil {
 			return err
 		}
-		m.log.Info("card data temporary table creation completed", "task_id", id, "table", table.table, "duration", time.Since(tableStartedAt))
+		m.log.Info("card data temporary table creation completed", "task_id", id, "table", table.table, "duration_ms", time.Since(tableStartedAt).Milliseconds())
 	}
 	return nil
 }
@@ -340,9 +340,9 @@ func (m *Manager) cleanupTables(id string, tables []spec, names map[tableName]st
 		if err != nil {
 			return fmt.Errorf("drop table %s: %w", name, err)
 		}
-		m.log.Info("card data table cleanup completed", "task_id", id, "table", name, "duration", time.Since(tableStartedAt))
+		m.log.Info("card data table cleanup completed", "task_id", id, "table", name, "duration_ms", time.Since(tableStartedAt).Milliseconds())
 	}
-	m.stageCompleted(id, StageCleaning, "table_count", len(tables), "duration", time.Since(startedAt))
+	m.stageCompleted(id, StageCleaning, "table_count", len(tables), "duration_ms", time.Since(startedAt).Milliseconds())
 	return nil
 }
 

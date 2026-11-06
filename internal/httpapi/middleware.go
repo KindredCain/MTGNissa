@@ -1,8 +1,11 @@
 package httpapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"mime"
 	"net/http"
@@ -14,6 +17,11 @@ import (
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/httpresponse"
 )
+
+type capturingReadCloser struct {
+	io.Reader
+	io.Closer
+}
 
 func recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -48,8 +56,27 @@ func requestID() gin.HandlerFunc {
 func accessLog(log *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
+		requestBody := &bytes.Buffer{}
+		if c.Request.Body != nil {
+			body := c.Request.Body
+			c.Request.Body = &capturingReadCloser{
+				Reader: io.TeeReader(body, requestBody),
+				Closer: body,
+			}
+		}
 		c.Next()
-		attributes := []any{"method", c.Request.Method, "path", c.Request.URL.Path, "status", c.Writer.Status(), "duration", time.Since(start), "request_id", c.GetString("request_id")}
+		if c.Request.Body != nil {
+			_, _ = io.Copy(io.Discard, c.Request.Body)
+		}
+		attributes := []any{
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"query_params", c.Request.URL.Query(),
+			"request_body", requestBodyLogValue(requestBody.Bytes()),
+			"status", c.Writer.Status(),
+			"duration_ms", time.Since(start).Milliseconds(),
+			"request_id", c.GetString("request_id"),
+		}
 		if last := c.Errors.Last(); last != nil {
 			cause := last.Err
 			code := apperror.CodeInternalError
@@ -70,6 +97,23 @@ func accessLog(log *slog.Logger) gin.HandlerFunc {
 		}
 		log.Info("http request", attributes...)
 	}
+}
+
+func requestBodyLogValue(body []byte) any {
+	body = bytes.TrimSpace(body)
+	if len(body) == 0 {
+		return nil
+	}
+	if !json.Valid(body) {
+		return string(body)
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+	var value any
+	if err := decoder.Decode(&value); err != nil {
+		return string(body)
+	}
+	return value
 }
 
 func bodyLimit(bytes int64) gin.HandlerFunc {
