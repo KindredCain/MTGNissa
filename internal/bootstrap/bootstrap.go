@@ -10,10 +10,12 @@ import (
 
 	"mtgnissa/internal/appdata"
 	"mtgnissa/internal/carddata"
+	"mtgnissa/internal/cards"
 	"mtgnissa/internal/config"
 	"mtgnissa/internal/database"
 	"mtgnissa/internal/health"
 	"mtgnissa/internal/httpapi"
+	"mtgnissa/internal/idempotency"
 	"mtgnissa/internal/sets"
 	"mtgnissa/internal/tokens"
 )
@@ -73,6 +75,7 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		},
 		Sets:   setService,
 		Tokens: tokens.NewService(tokens.NewStore(dbs.Card)),
+		Cards:  cards.NewService(cards.NewCardStore(dbs.Card), cards.NewAppStore(dbs.App), idempotency.New(4096)),
 	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

@@ -128,6 +128,9 @@ func rowValuesFor(obj map[string]json.RawMessage, tableSpec spec, input sourceSp
 		if err != nil {
 			return nil, fmt.Errorf("field %q: %w", column.name, err)
 		}
+		if text, ok := value.(string); ok && isTranslationTextColumn(tableSpec.table, column.name) {
+			value = normalizeTranslationNewlines(text)
+		}
 		values[i] = value
 	}
 	populateDerivedNumbers(obj, tableSpec, values)
@@ -140,6 +143,50 @@ func rowValuesFor(obj map[string]json.RawMessage, tableSpec spec, input sourceSp
 		}
 	}
 	return values, nil
+}
+
+func isTranslationTextColumn(table tableName, column string) bool {
+	switch table {
+	case tableCardTranslation:
+		return column == "text" || column == "flavor_text"
+	case tableOracleTranslation:
+		return column == "translated_text"
+	case tableFlavorTranslation:
+		return column == "translated_flavor_text"
+	case tableRulingTranslation:
+		return column == "translation"
+	default:
+		return false
+	}
+}
+
+// normalizeTranslationNewlines restores literal \n markers after JSON decoding.
+// Existing line breaks, other escapes, and paired literal backslashes are preserved.
+func normalizeTranslationNewlines(text string) string {
+	if !strings.Contains(text, `\n`) {
+		return text
+	}
+	var result strings.Builder
+	result.Grow(len(text))
+	for i := 0; i < len(text); {
+		if text[i] != '\\' {
+			result.WriteByte(text[i])
+			i++
+			continue
+		}
+		start := i
+		for i < len(text) && text[i] == '\\' {
+			i++
+		}
+		if (i-start)%2 == 0 || i == len(text) || text[i] != 'n' {
+			result.WriteString(text[start:i])
+			continue
+		}
+		result.WriteString(text[start : i-1])
+		result.WriteByte('\n')
+		i++
+	}
+	return result.String()
 }
 
 func populateDerivedNumbers(obj map[string]json.RawMessage, tableSpec spec, values []any) {

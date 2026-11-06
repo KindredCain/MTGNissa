@@ -22,6 +22,7 @@
 - `AllPrintings.json` 是一个标准 JSON 文档，顶层包含 `meta` 和 `data`；`data` 是以系列代码为键、系列对象为值的对象，不是 `sets` 数组。导入时遍历 `data` 的所有属性值，并校验属性键与系列对象内的 `code` 一致。本文为简化字段来源而使用的 `sets[]` 表示 `AllPrintings.json: data` 的系列对象集合；`sets[].cards[]`、`sets[].tokens[]` 分别表示每个系列对象内的 `cards[]`、`tokens[]`。
 - `scryfall_card.json`、`zhs_card.json`、`zhs_flavor.json`、`zhs_oracle.json`、`zhs_ruling.json`、`zhs_set.json` 和 `zhs_type.json` 虽使用 `.json` 扩展名，实际均为 NDJSON：每个非空物理行是一个独立 JSON 对象，文件整体不是 JSON 数组或单个 JSON 对象。本文对这些文件使用的 `cards[]`、`flavors[]`、`oracles[]`、`rulings[]`、`sets[]`、`types[]` 仅表示对应文件的逐行记录集合。
 - 上述旧 NDJSON 文件存在由上游重复添加的一层反斜杠转义。每行解析前必须先移除这一层重复转义，再按标准 JSON 对象解析；只能移除一层，不得继续反复解码文本内容。规范化后仍无法解析、不是 JSON 对象或缺少该文件必填标识字段的行必须报错。
+- 旧翻译 NDJSON 完成上述文件转义规范化和 JSON 解析后，在现有入库字段转换流程中，将 `card_translation.text`、`card_translation.flavor_text`、`oracle_translation.translated_text`、`flavor_translation.translated_flavor_text`、`ruling_translation.translation` 中的字面量 `\n` 还原为实际 LF 后入库。保留已有真实换行、字面量 `\r`、其他转义及成对反斜杠；不做整体或递归解码，不修改源文件、英文原文、名称或关联键。查询返回时不再转换；已有数据需重新导入才能应用此规则。
 - `oracle-tags.jsonl` 是标准 JSONL，每个非空物理行是一个独立 JSON 对象；不得应用旧 NDJSON 的反斜杠转义规范化。
 - 已废弃的 `rulings.jsonl` 不属于导入文件；英文裁定只读取 `AllPrintings.json` 各卡牌的 `rulings[]`。
 - 所有文件按 UTF-8 读取。大文件必须按其实际结构流式处理，不得要求将完整 `AllPrintings.json` 或整份 NDJSON 文件一次性载入内存。

@@ -19,6 +19,7 @@ type Dependencies struct {
 	App         AppConfig
 	Sets        setLister
 	Tokens      tokenLister
+	Cards       cardService
 }
 
 // New assembles the HTTP router, global middleware, health checks, and API modules.
@@ -33,12 +34,15 @@ func New(deps Dependencies) *gin.Engine {
 
 	api := router.Group("/api/v1")
 	api.GET("/app", rejectUnknownQueryParameters(), getApp(deps.App))
-	cardDataAPI := api.Group("/card_data")
-	cardDataAPI.POST("/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(deps.Loader, deps.LoadEnabled))
-	cardDataAPI.GET("/load/:task_id", rejectUnknownQueryParameters(), getLoad(deps.Loader, deps.LoadEnabled))
+	api.POST("/card_data/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(deps.Loader, deps.LoadEnabled))
+	api.GET("/card_data/load/:task_id", rejectUnknownQueryParameters(), getLoad(deps.Loader, deps.LoadEnabled))
 	api.GET("/sets", rejectUnknownQueryParameters("q", "language", "set_type", "sort", "cursor"), getSets(deps.Sets))
 	api.GET("/sets/options", rejectUnknownQueryParameters(), getSetOptions(deps.Sets))
 	api.GET("/tokens", rejectUnknownQueryParameters("set_code"), getTokens(deps.Tokens))
+	api.GET("/cards", rejectUnknownQueryParameters("set_code", "language", "q"), getCards(deps.Cards))
+	api.GET("/cards/:printing_uuid", rejectUnknownQueryParameters(), getCard(deps.Cards))
+	api.POST("/cards/:printing_uuid/collection_adjustments", requireJSONContentType(), rejectUnknownQueryParameters(), adjustCard(deps.Cards))
+	api.POST("/cards/:printing_uuid/wishlist_state", requireJSONContentType(), rejectUnknownQueryParameters(), setCardWishlist(deps.Cards))
 
 	registerFallbackRoutes(router)
 	return router

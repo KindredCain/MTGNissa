@@ -88,7 +88,7 @@ func accessLog(log *slog.Logger) gin.HandlerFunc {
 				}
 			}
 			attributes = append(attributes, "error_code", code, "error", cause)
-			if c.Writer.Status() >= http.StatusInternalServerError {
+			if c.Writer.Status() >= http.StatusInternalServerError || c.Writer.Status() < http.StatusBadRequest {
 				log.Error("http request failed", attributes...)
 			} else {
 				log.Warn("http request rejected", attributes...)
