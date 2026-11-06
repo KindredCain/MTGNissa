@@ -25,7 +25,7 @@ func TestRequestBodyLogValuePreservesJSONStructure(t *testing.T) {
 
 func TestHTTPErrorInterception(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := New(log, health.Handler{}, loaderStub{}, true, setListerStub{})
+	router := New(log, health.Handler{}, loaderStub{}, true, setListerStub{}, AppConfig{TimeZone: "UTC"})
 	tests := []struct {
 		name        string
 		method      string

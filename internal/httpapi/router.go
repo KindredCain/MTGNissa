@@ -11,7 +11,7 @@ import (
 )
 
 // New assembles the HTTP router, global middleware, health checks, and API modules.
-func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, loadEnabled bool, sets setLister) *gin.Engine {
+func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, loadEnabled bool, sets setLister, app AppConfig) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
@@ -21,6 +21,7 @@ func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, 
 	router.GET("/health/ready", healthHandler.Ready)
 
 	api := router.Group("/api/v1")
+	api.GET("/app", rejectUnknownQueryParameters(), getApp(app))
 	cardDataAPI := api.Group("/card_data")
 	cardDataAPI.POST("/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(loader, loadEnabled))
 	cardDataAPI.GET("/load/:task_id", rejectUnknownQueryParameters(), getLoad(loader, loadEnabled))

@@ -61,6 +61,9 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 	}
 	manager := carddata.NewManager(ctx, dbs.Card.DB, cfg.CardDB.Name, cfg.CardDataDir, log)
 	setService := setlist.NewService(setlist.NewStore(dbs.Card), cfg.CursorPageSize)
-	router := httpapi.New(log, health.Handler{Card: dbs.Card.DB, App: dbs.App.DB}, manager, cfg.LoadEnabled, setService)
+	router := httpapi.New(log, health.Handler{Card: dbs.Card.DB, App: dbs.App.DB}, manager, cfg.LoadEnabled, setService, httpapi.AppConfig{
+		DisplayName: cfg.DisplayName,
+		TimeZone:    cfg.TimeZone,
+	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

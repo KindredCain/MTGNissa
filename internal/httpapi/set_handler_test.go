@@ -131,5 +131,5 @@ func (s *capturingSetLister) List(_ context.Context, params setlist.Params) (set
 
 func newTestRouter(sets setLister) http.Handler {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return New(log, health.Handler{}, loaderStub{}, true, sets)
+	return New(log, health.Handler{}, loaderStub{}, true, sets, AppConfig{TimeZone: "UTC"})
 }
