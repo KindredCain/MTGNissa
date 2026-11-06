@@ -8,8 +8,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"mtgnissa/internal/health"
 )
 
 func TestRequestBodyLogValuePreservesJSONStructure(t *testing.T) {
@@ -25,7 +23,7 @@ func TestRequestBodyLogValuePreservesJSONStructure(t *testing.T) {
 
 func TestHTTPErrorInterception(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := New(log, health.Handler{}, loaderStub{}, true, setListerStub{}, AppConfig{TimeZone: "UTC"})
+	router := New(Dependencies{Logger: log})
 	tests := []struct {
 		name        string
 		method      string

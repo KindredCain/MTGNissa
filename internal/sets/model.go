@@ -1,5 +1,5 @@
-// Package setlist provides the query model and Card DB access for the Set list.
-package setlist
+// Package sets provides the query model and Card DB access for the Set list.
+package sets
 
 import "time"
 

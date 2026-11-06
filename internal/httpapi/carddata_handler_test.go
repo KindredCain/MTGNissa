@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"mtgnissa/internal/carddata"
-	"mtgnissa/internal/health"
 )
 
 type loaderStub struct{}
@@ -28,7 +27,11 @@ func (loaderStub) Get(id string) (carddata.Task, bool) {
 
 func TestLoadCardDataRoutes(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := New(log, health.Handler{}, loaderStub{}, true, setListerStub{}, AppConfig{TimeZone: "UTC"})
+	router := New(Dependencies{
+		Logger:      log,
+		Loader:      loaderStub{},
+		LoadEnabled: true,
+	})
 
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/card_data/load", bytes.NewBufferString(`{"confirmation":"LOAD_CARD_DATA"}`))
 	request.Header.Set("Content-Type", "application/json")

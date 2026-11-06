@@ -10,23 +10,35 @@ import (
 	"mtgnissa/internal/httpresponse"
 )
 
+// Dependencies contains runtime settings and services used by the HTTP router.
+type Dependencies struct {
+	Logger      *slog.Logger
+	Health      health.Handler
+	Loader      cardDataLoader
+	LoadEnabled bool
+	App         AppConfig
+	Sets        setLister
+	Tokens      tokenLister
+}
+
 // New assembles the HTTP router, global middleware, health checks, and API modules.
-func New(log *slog.Logger, healthHandler health.Handler, loader cardDataLoader, loadEnabled bool, sets setLister, app AppConfig) *gin.Engine {
+func New(deps Dependencies) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
-	router.Use(requestID(), accessLog(log), recovery(), bodyLimit(1<<20))
+	router.Use(requestID(), accessLog(deps.Logger), recovery(), bodyLimit(1<<20))
 
-	router.GET("/health/live", healthHandler.Live)
-	router.GET("/health/ready", healthHandler.Ready)
+	router.GET("/health/live", deps.Health.Live)
+	router.GET("/health/ready", deps.Health.Ready)
 
 	api := router.Group("/api/v1")
-	api.GET("/app", rejectUnknownQueryParameters(), getApp(app))
+	api.GET("/app", rejectUnknownQueryParameters(), getApp(deps.App))
 	cardDataAPI := api.Group("/card_data")
-	cardDataAPI.POST("/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(loader, loadEnabled))
-	cardDataAPI.GET("/load/:task_id", rejectUnknownQueryParameters(), getLoad(loader, loadEnabled))
-	api.GET("/sets", rejectUnknownQueryParameters("q", "language", "set_type", "sort", "cursor"), getSets(sets))
-	api.GET("/sets/options", rejectUnknownQueryParameters(), getSetOptions(sets))
+	cardDataAPI.POST("/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(deps.Loader, deps.LoadEnabled))
+	cardDataAPI.GET("/load/:task_id", rejectUnknownQueryParameters(), getLoad(deps.Loader, deps.LoadEnabled))
+	api.GET("/sets", rejectUnknownQueryParameters("q", "language", "set_type", "sort", "cursor"), getSets(deps.Sets))
+	api.GET("/sets/options", rejectUnknownQueryParameters(), getSetOptions(deps.Sets))
+	api.GET("/tokens", rejectUnknownQueryParameters("set_code"), getTokens(deps.Tokens))
 
 	registerFallbackRoutes(router)
 	return router

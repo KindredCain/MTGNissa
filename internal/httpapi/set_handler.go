@@ -11,12 +11,12 @@ import (
 
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/httpresponse"
-	"mtgnissa/internal/setlist"
+	"mtgnissa/internal/sets"
 )
 
 type setLister interface {
-	List(context.Context, setlist.Params) (setlist.Page, error)
-	Options(context.Context) (setlist.Options, error)
+	List(context.Context, sets.Params) (sets.Page, error)
+	Options(context.Context) (sets.Options, error)
 }
 
 func getSetOptions(service setLister) gin.HandlerFunc {
@@ -46,38 +46,38 @@ func getSets(service setLister) gin.HandlerFunc {
 	}
 }
 
-func parseSetListParams(c *gin.Context) (setlist.Params, error) {
+func parseSetListParams(c *gin.Context) (sets.Params, error) {
 	query := c.Request.URL.Query()
 	for _, field := range []string{"q", "sort", "cursor"} {
 		if len(query[field]) > 1 {
-			return setlist.Params{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
+			return sets.Params{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
 		}
 	}
-	params := setlist.Params{
+	params := sets.Params{
 		Query:  strings.TrimSpace(query.Get("q")),
-		Sort:   setlist.SortReleasedDesc,
+		Sort:   sets.SortReleasedDesc,
 		Cursor: query.Get("cursor"),
 	}
 	if containsNUL(params.Query) || utf8.RuneCountInString(params.Query) > 512 {
-		return setlist.Params{}, validationError("q", "must_not_contain_nul_and_must_be_at_most_512_characters")
+		return sets.Params{}, validationError("q", "must_not_contain_nul_and_must_be_at_most_512_characters")
 	}
 	if value := query.Get("sort"); value != "" {
-		params.Sort = setlist.Sort(value)
+		params.Sort = sets.Sort(value)
 	}
 	if !validSetSort(params.Sort) {
-		return setlist.Params{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
+		return sets.Params{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
 	}
 	if containsNUL(params.Cursor) {
-		return setlist.Params{}, validationError("cursor", "must_not_contain_nul")
+		return sets.Params{}, validationError("cursor", "must_not_contain_nul")
 	}
 	var err error
 	params.Languages, err = normalizedMultiValue(query["language"], "language")
 	if err != nil {
-		return setlist.Params{}, err
+		return sets.Params{}, err
 	}
 	params.SetTypes, err = normalizedMultiValue(query["set_type"], "set_type")
 	if err != nil {
-		return setlist.Params{}, err
+		return sets.Params{}, err
 	}
 	return params, nil
 }
@@ -105,16 +105,16 @@ func normalizedMultiValue(values []string, field string) ([]string, error) {
 	return result, nil
 }
 
-func validSetSort(value setlist.Sort) bool {
+func validSetSort(value sets.Sort) bool {
 	switch value {
-	case setlist.SortReleasedDesc,
-		setlist.SortReleasedAsc,
-		setlist.SortNameAsc,
-		setlist.SortNameDesc,
-		setlist.SortCodeAsc,
-		setlist.SortCodeDesc,
-		setlist.SortCardCountDesc,
-		setlist.SortCardCountAsc:
+	case sets.SortReleasedDesc,
+		sets.SortReleasedAsc,
+		sets.SortNameAsc,
+		sets.SortNameDesc,
+		sets.SortCodeAsc,
+		sets.SortCodeDesc,
+		sets.SortCardCountDesc,
+		sets.SortCardCountAsc:
 		return true
 	default:
 		return false

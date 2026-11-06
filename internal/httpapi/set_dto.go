@@ -1,6 +1,6 @@
 package httpapi
 
-import "mtgnissa/internal/setlist"
+import "mtgnissa/internal/sets"
 
 type setOptionsResponse struct {
 	Languages []setOptionLanguageResponse `json:"languages"`
@@ -39,7 +39,7 @@ type setLanguageResponse struct {
 	Available   bool   `json:"available"`
 }
 
-func newSetOptionsResponse(options setlist.Options) setOptionsResponse {
+func newSetOptionsResponse(options sets.Options) setOptionsResponse {
 	response := setOptionsResponse{
 		Languages: make([]setOptionLanguageResponse, 0, len(options.Languages)),
 		SetTypes:  append([]string{}, options.SetTypes...),
@@ -52,7 +52,7 @@ func newSetOptionsResponse(options setlist.Options) setOptionsResponse {
 	return response
 }
 
-func newSetListResponse(page setlist.Page) setListResponse {
+func newSetListResponse(page sets.Page) setListResponse {
 	response := setListResponse{
 		Items:      make([]setListItemResponse, 0, len(page.Items)),
 		Total:      page.Total,

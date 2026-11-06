@@ -1,4 +1,4 @@
-package setlist
+package sets
 
 import (
 	"context"

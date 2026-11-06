@@ -165,6 +165,7 @@
 
 ## 9. Token Set 浏览模式
 
+- 使用 `GET /api/v1/tokens?set_code=TKLD` 获取列表，`set_code` 为当前 Token Set 的必填查询参数；普通卡牌列表使用并列的 `/api/v1/cards` 入口。
 - 直接按当前 Token Set 的 `set_code` 读取 `mtgnissa_token`，不关联 `mtgnissa_card_printing`，不指定语言，不进入全局语法搜索流程。
 - 页面保留全站导航、“全部卡牌”二级标头、无语言括号的 Set 面包屑、结果总数和纯卡图网格；面包屑及总数区域吸顶。内容区不提供名称搜索、筛选或排序控件，也不预留它们的空白位置。
 - 一次取得该 Token Set 的完整轻量记录，后端按具体印刷组织卡面。同一印刷中共享非空 `scryfall_id` 的双面或多牌面 Token 合为一个列表项，按 `face_index` 组织正反面，取主牌面作为默认展示；不按 `oracle_id` 合并不同印刷。缺少公开 ID 且无法可靠配对的记录按各自 `uuid` 保留，使用缺图占位，不将空 ID 归成同一项。

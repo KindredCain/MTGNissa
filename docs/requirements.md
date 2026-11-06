@@ -219,6 +219,8 @@ Set 父子层级唯一依据 `mtgnissa_set.parent_code`，是首版必须实现�
 
 ### 2.3 Token Set 浏览
 
+Token 列表通过 `GET /api/v1/tokens?set_code=TKLD` 查询，`set_code` 为必填的 Token Set 代码；与普通卡牌列表 `GET /api/v1/cards` 保持并列入口。Token 列表不接受语言、名称搜索、筛选、排序或分页参数。
+
 Token、徽记等对象直接从 `mtgnissa_token` 读取，只进入 Token Set 卡牌列表；不提供普通卡牌详情、全局搜索、收藏、愿望单或卡组入口，不继承普通系列语言。普通 Set 有 Token 时派生专用系列，其代码按数据字典的 `tokenSetCode`／`T + code` 规则生成，`parent_code` 指向来源普通系列，`languages = NULL`。
 
 Token 页面只保留导航、无语言括号的面包屑、完整结果总数及纯卡图网格，不提供名称搜索、语言选择、筛选或排序控件。接口不接受这些参数，也不使用后端分页；一次取得完整轻量结果，前端本地分批渲染和加载图片。

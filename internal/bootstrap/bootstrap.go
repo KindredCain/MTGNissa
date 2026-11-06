@@ -14,7 +14,8 @@ import (
 	"mtgnissa/internal/database"
 	"mtgnissa/internal/health"
 	"mtgnissa/internal/httpapi"
-	"mtgnissa/internal/setlist"
+	"mtgnissa/internal/sets"
+	"mtgnissa/internal/tokens"
 )
 
 // Application contains the initialized server dependencies and runtime configuration.
@@ -60,10 +61,18 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		return nil, err
 	}
 	manager := carddata.NewManager(ctx, dbs.Card.DB, cfg.CardDB.Name, cfg.CardDataDir, log)
-	setService := setlist.NewService(setlist.NewStore(dbs.Card), cfg.CursorPageSize)
-	router := httpapi.New(log, health.Handler{Card: dbs.Card.DB, App: dbs.App.DB}, manager, cfg.LoadEnabled, setService, httpapi.AppConfig{
-		DisplayName: cfg.DisplayName,
-		TimeZone:    cfg.TimeZone,
+	setService := sets.NewService(sets.NewStore(dbs.Card), cfg.CursorPageSize)
+	router := httpapi.New(httpapi.Dependencies{
+		Logger:      log,
+		Health:      health.Handler{Card: dbs.Card.DB, App: dbs.App.DB},
+		Loader:      manager,
+		LoadEnabled: cfg.LoadEnabled,
+		App: httpapi.AppConfig{
+			DisplayName: cfg.DisplayName,
+			TimeZone:    cfg.TimeZone,
+		},
+		Sets:   setService,
+		Tokens: tokens.NewService(tokens.NewStore(dbs.Card)),
 	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

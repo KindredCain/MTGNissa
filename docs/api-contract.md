@@ -237,7 +237,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `GET` | `/api/v1/sets/options` | Set 列表筛选项 |
 | `GET` | `/api/v1/sets` | Set 无限列表 |
 | `GET` | `/api/v1/cards` | 当前 Set、语言的完整轻量卡牌列表 |
-| `GET` | `/api/v1/sets/{set_code}/tokens` | 当前 Token Set 的完整轻量印刷列表，不带语言、搜索、筛选或排序参数 |
+| `GET` | `/api/v1/tokens` | 通过必填查询参数 `set_code` 获取当前 Token Set 的完整轻量印刷列表，不带语言、搜索、筛选或排序参数 |
 | `GET` | `/api/v1/cards/{printing_uuid}` | 卡牌详情 |
 | `POST` | `/api/v1/cards/{printing_uuid}/collection_adjustments` | 调整普通或闪卡数量 |
 | `POST` | `/api/v1/cards/{printing_uuid}/wishlist_state` | 设置愿望单状态 |
@@ -481,9 +481,17 @@ rarity: common | uncommon | rare | mythic | special | bonus
 - `oracle_tags[]` 的每项固定包含不可空的 `tag_id` 和 `query`，不再另行返回与查询语法重复的展示字段。`query` 由后端生成为可直接提交给全局搜索的规范查询，固定格式为 `otag:"<escaped label>"`；标签中的反斜杠先转义为 `\\`，双引号转义为 `\"`，即使标签不含空格也保留双引号。该字符串同时是前端的展示值和点击查询值：前端必须原样显示，并在点击时将同一值作为 `GET /api/v1/search` 的 `q` 参数提交，不得自行拼接、去引号、规范化或再次转义。
 - 翻译字段已经由后端按“简体中文优先，缺失回退英文”生成；前端不再实现语言选择逻辑。
 
-### 5.5 `GET /api/v1/sets/{set_code}/tokens`
+### 5.5 `GET /api/v1/tokens`
 
-路径 `set_code` 为 Token Set 的系列代码。本接口不接受任何查询参数，包括 `q`、`language`、筛选、`sort`、`cursor` 和 `limit`；传入返回 `400 invalid_request`。Set 不存在返回 `404 set_not_found`；存在但不是 `set_type = token` 时返回 `400 invalid_request`。只读查询，无个人数据或 mutation 入口。
+查询参数：
+
+| 参数 | 必填 | 说明 |
+| --- | --- | --- |
+| `set_code` | 是 | 当前 Token Set 的 `mtgnissa_set.code`，例如 `TKLD` |
+
+请求示例：`GET /api/v1/tokens?set_code=TKLD`。普通卡牌与 Token 列表分别使用并列的 `/cards` 和 `/tokens` 入口，系列代码均通过查询参数传入。
+
+缺少或传入空白 `set_code` 返回 `422 validation_failed`，在 `error.details[].field` 中定位 `set_code`；重复传入 `set_code` 返回 `400 invalid_request`。本接口除 `set_code` 外不接受其他查询参数，包括 `q`、`language`、筛选、`sort`、`cursor` 和 `limit`；传入返回 `400 invalid_request`。Set 不存在返回 `404 set_not_found`；存在但不是 `set_type = token` 时返回 `400 invalid_request`。只读查询，无个人数据或 mutation 入口。
 
 响应为 `TokenSetCardsDTO`，完整字段如下：
 
@@ -1261,7 +1269,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
 | 需求章节 | 对应接口 |
 | --- | --- |
 | 1 页面身份标识 | `GET /app` |
-| 2 卡牌查看与检索 | `GET /sets/options`、`GET /sets`、`GET /cards`、`GET /sets/{set_code}/tokens`、`GET /search` |
+| 2 卡牌查看与检索 | `GET /sets/options`、`GET /sets`、`GET /cards`、`GET /tokens`、`GET /search` |
 | 3 卡牌详情 | `GET /cards/{printing_uuid}` |
 | 4 我的卡牌 | `GET /collection/options`、`GET /collection`、`POST /cards/{printing_uuid}/collection_adjustments` |
 | 5 愿望单 | `GET /wishlist/options`、`GET /wishlist`、`POST /cards/{printing_uuid}/wishlist_state` |

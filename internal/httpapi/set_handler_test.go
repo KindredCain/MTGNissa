@@ -11,31 +11,30 @@ import (
 	"testing"
 	"time"
 
-	"mtgnissa/internal/health"
-	"mtgnissa/internal/setlist"
+	"mtgnissa/internal/sets"
 )
 
 type setListerStub struct {
-	page   setlist.Page
-	params setlist.Params
+	page   sets.Page
+	params sets.Params
 	err    error
 }
 
 type capturingSetLister struct {
-	page   setlist.Page
-	params setlist.Params
+	page   sets.Page
+	params sets.Params
 	err    error
 }
 
-func (s setListerStub) Options(_ context.Context) (setlist.Options, error) {
-	return setlist.Options{}, s.err
+func (s setListerStub) Options(_ context.Context) (sets.Options, error) {
+	return sets.Options{}, s.err
 }
 
-func (s *capturingSetLister) Options(_ context.Context) (setlist.Options, error) {
-	return setlist.Options{}, s.err
+func (s *capturingSetLister) Options(_ context.Context) (sets.Options, error) {
+	return sets.Options{}, s.err
 }
 
-func (s setListerStub) List(_ context.Context, params setlist.Params) (setlist.Page, error) {
+func (s setListerStub) List(_ context.Context, params sets.Params) (sets.Page, error) {
 	s.params = params
 	return s.page, s.err
 }
@@ -45,15 +44,15 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 	releasedAt := time.Date(2021, time.February, 5, 0, 0, 0, 0, time.UTC)
 	parentCode := "KHM"
 	nextCursor := "next-page"
-	service := &capturingSetLister{page: setlist.Page{
-		Items: []setlist.Set{{
+	service := &capturingSetLister{page: sets.Page{
+		Items: []sets.Set{{
 			Code:            "KHM",
 			Name:            "Kaldheim",
 			DisplayName:     "凯德海姆",
 			SetType:         "expansion",
 			CardCount:       405,
 			ReleasedAt:      &releasedAt,
-			Languages:       []setlist.Language{{Code: "en", DisplayName: "英文", SortOrder: 1, Available: true}, {Code: "ja", DisplayName: "日文", SortOrder: 2, Available: false}},
+			Languages:       []sets.Language{{Code: "en", DisplayName: "英文", SortOrder: 1, Available: true}, {Code: "ja", DisplayName: "日文", SortOrder: 2, Available: false}},
 			DefaultLanguage: &defaultLanguage,
 		}, {Code: "TKHM", Name: "Kaldheim Tokens", SetType: "token", ParentCode: &parentCode, Depth: 1}},
 		Total:      1,
@@ -67,7 +66,7 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
 	}
-	if service.params.Query != "Kaldheim" || service.params.Sort != setlist.SortNameAsc {
+	if service.params.Query != "Kaldheim" || service.params.Sort != sets.SortNameAsc {
 		t.Fatalf("params = %#v", service.params)
 	}
 	if strings.Join(service.params.Languages, ",") != "en,ja" {
@@ -132,12 +131,15 @@ func TestGetSetsRejectsInvalidInputs(t *testing.T) {
 	}
 }
 
-func (s *capturingSetLister) List(_ context.Context, params setlist.Params) (setlist.Page, error) {
+func (s *capturingSetLister) List(_ context.Context, params sets.Params) (sets.Page, error) {
 	s.params = params
 	return s.page, s.err
 }
 
 func newTestRouter(sets setLister) http.Handler {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	return New(log, health.Handler{}, loaderStub{}, true, sets, AppConfig{TimeZone: "UTC"})
+	return New(Dependencies{
+		Logger: log,
+		Sets:   sets,
+	})
 }
