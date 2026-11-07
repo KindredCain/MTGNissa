@@ -284,3 +284,35 @@ func TestListUsesOrdinarySetAndKnownLanguage(t *testing.T) {
 		}
 	}
 }
+
+func TestBatchSummariesKeepMainPrintingAndDistinctBack(t *testing.T) {
+	columns := []string{"printing_uuid", "source_id", "image_id", "face_index", "name", "display_name", "language_code", "face_category"}
+	id := "00000000-0000-4000-8000-000000000001"
+	source := "00000000-0000-4000-8000-000000000010"
+	db, backend := testDatabase(t, []dbStep{{query: "requested.uuid IN (?)", columns: columns,
+		args: []any{id}, absent: []string{"GROUP BY", "c.oracle_text", "c.flavor_text"},
+		rows: [][]driver.Value{
+			{"back", source, source, int64(1), "Front // Back", "Back translation", "en", "double_sided"},
+			{id, source, source, int64(0), "Front // Back", "Front translation", "en", "double_sided"},
+		}}})
+	result, err := NewCardStore(db).Summaries(context.Background(), []string{id})
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := result[id]
+	if len(result) != 1 || card.PrintingUUID != id || card.DisplayName != "Front translation // Back translation" || card.Images.BackURL == nil || !backend.committed || !backend.options.ReadOnly {
+		t.Fatalf("summary=%#v backend=%#v", card, backend)
+	}
+}
+
+func TestBatchSummariesRejectMissingPrintingAndSkipEmptyQuery(t *testing.T) {
+	db, _ := testDatabase(t, []dbStep{{query: "requested.uuid IN (?)", columns: []string{"printing_uuid"}}})
+	if _, err := NewCardStore(db).Summaries(context.Background(), []string{"missing"}); err == nil {
+		t.Fatal("missing canonical printing was silently omitted")
+	}
+	db, _ = testDatabase(t, nil)
+	result, err := NewCardStore(db).Summaries(context.Background(), nil)
+	if err != nil || result == nil || len(result) != 0 {
+		t.Fatalf("empty summaries=%#v error=%v", result, err)
+	}
+}

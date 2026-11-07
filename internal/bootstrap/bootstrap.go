@@ -11,6 +11,7 @@ import (
 	"mtgnissa/internal/appdata"
 	"mtgnissa/internal/carddata"
 	"mtgnissa/internal/cards"
+	"mtgnissa/internal/collection"
 	"mtgnissa/internal/config"
 	"mtgnissa/internal/database"
 	"mtgnissa/internal/health"
@@ -73,9 +74,10 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 			DisplayName: cfg.DisplayName,
 			TimeZone:    cfg.TimeZone,
 		},
-		Sets:   setService,
-		Tokens: tokens.NewService(tokens.NewStore(dbs.Card)),
-		Cards:  cards.NewService(cards.NewCardStore(dbs.Card), cards.NewAppStore(dbs.App), idempotency.New(4096)),
+		Sets:       setService,
+		Tokens:     tokens.NewService(tokens.NewStore(dbs.Card)),
+		Cards:      cards.NewService(cards.NewCardStore(dbs.Card), cards.NewAppStore(dbs.App), idempotency.New(4096)),
+		Collection: collection.NewService(collection.NewStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

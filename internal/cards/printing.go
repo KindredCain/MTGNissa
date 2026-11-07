@@ -89,14 +89,15 @@ func ValidUUID(value string) bool {
 
 func sortSummaries(items []Summary) {
 	sort.Slice(items, func(i, j int) bool {
-		if order := naturalCompare(items[i].CollectorNumber, items[j].CollectorNumber); order != 0 {
+		if order := CompareCollectorNumbers(items[i].CollectorNumber, items[j].CollectorNumber); order != 0 {
 			return order < 0
 		}
 		return items[i].PrintingUUID < items[j].PrintingUUID
 	})
 }
 
-func naturalCompare(a, b string) int {
+// CompareCollectorNumbers compares numeric and textual collector-number segments.
+func CompareCollectorNumbers(a, b string) int {
 	for len(a) > 0 && len(b) > 0 {
 		if a[0] >= '0' && a[0] <= '9' && b[0] >= '0' && b[0] <= '9' {
 			i, j := 0, 0

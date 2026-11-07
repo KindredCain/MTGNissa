@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -214,4 +215,43 @@ func (s *CardStore) printing(ctx context.Context, id string) (Summary, []Face, e
 		return Summary{}, nil, err
 	}
 	return card, faces, nil
+}
+
+// Summaries resolves canonical printing summaries and all their faces in batches.
+func (s *CardStore) Summaries(ctx context.Context, ids []string) (map[string]Summary, error) {
+	result := make(map[string]Summary, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	for start := 0; start < len(ids); start += 500 {
+		query, args, err := sqlx.In(summaryQuery+`
+ JOIN mtgnissa_card_printing requested ON requested.uuid IN (?)
+ JOIN mtgnissa_card seed ON seed.uuid=requested.card_uuid AND seed.face_index IN (-1,0)
+ WHERE c.scryfall_id=seed.scryfall_id AND p.language_code=requested.language_code`, ids[start:min(start+500, len(ids))])
+		if err != nil {
+			return nil, err
+		}
+		var rows []faceRow
+		if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
+			return nil, err
+		}
+		for _, group := range groupFaces(rows) {
+			card, _ := summarize(group)
+			result[card.PrintingUUID] = card
+		}
+	}
+	for _, id := range ids {
+		if _, ok := result[id]; !ok {
+			return nil, fmt.Errorf("printing %s is unavailable or not a main-face entry", id)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }

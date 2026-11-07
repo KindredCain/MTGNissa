@@ -20,6 +20,7 @@ type Dependencies struct {
 	Sets        setLister
 	Tokens      tokenLister
 	Cards       cardService
+	Collection  collectionLister
 }
 
 // New assembles the HTTP router, global middleware, health checks, and API modules.
@@ -43,6 +44,8 @@ func New(deps Dependencies) *gin.Engine {
 	api.GET("/cards/:printing_uuid", rejectUnknownQueryParameters(), getCard(deps.Cards))
 	api.POST("/cards/:printing_uuid/collection_adjustments", requireJSONContentType(), rejectUnknownQueryParameters(), adjustCard(deps.Cards))
 	api.POST("/cards/:printing_uuid/wishlist_state", requireJSONContentType(), rejectUnknownQueryParameters(), setCardWishlist(deps.Cards))
+	api.GET("/collection/options", rejectUnknownQueryParameters(), getCollectionOptions(deps.Collection))
+	api.GET("/collection", rejectUnknownQueryParameters("q", "set_code", "language", "color", "mana_value", "rarity", "sort", "merge_sets", "merge_languages", "cursor"), getCollection(deps.Collection))
 
 	registerFallbackRoutes(router)
 	return router
