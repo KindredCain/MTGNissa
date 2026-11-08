@@ -103,3 +103,30 @@ func TestCanceledWaitAndPanickedOwnerRelease(t *testing.T) {
 		t.Fatal("panic left a pending entry")
 	}
 }
+
+func TestResourceIDSurvivesRetriesAndFailedMutationsDoNotComplete(t *testing.T) {
+	cache := New(4)
+	calls := 0
+	mutation := func() (uint64, error) {
+		calls++
+		return 42, nil
+	}
+	id, duplicate, err := cache.DoResource(context.Background(), "create", "intent", mutation)
+	if err != nil || duplicate || id != 42 {
+		t.Fatalf("first creation: id=%d duplicate=%v error=%v", id, duplicate, err)
+	}
+	id, duplicate, err = cache.DoResource(context.Background(), "create", "intent", mutation)
+	if err != nil || !duplicate || id != 42 || calls != 1 {
+		t.Fatalf("creation replay: id=%d duplicate=%v calls=%d error=%v", id, duplicate, calls, err)
+	}
+	failure := errors.New("transaction failed")
+	if _, _, err := cache.DoResource(context.Background(), "copy", "intent", func() (uint64, error) {
+		return 99, failure
+	}); err != failure {
+		t.Fatal(err)
+	}
+	id, duplicate, err = cache.DoResource(context.Background(), "copy", "intent", mutation)
+	if err != nil || duplicate || id != 42 || calls != 2 {
+		t.Fatalf("failed mutation retry: id=%d duplicate=%v error=%v", id, duplicate, err)
+	}
+}

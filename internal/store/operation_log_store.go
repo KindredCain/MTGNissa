@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -12,6 +14,25 @@ import (
 // OperationLogTx writes historical snapshots in the same transaction as their mutations.
 type OperationLogTx struct {
 	tx *sqlx.Tx
+}
+
+// AppendDeck records the deck name snapshot in the same transaction as its mutation.
+func (s *OperationLogTx) AppendDeck(ctx context.Context, action string, id uint64, name string) error {
+	actions := map[string]appdata.ActionType{"create": appdata.ActionCreateDeck, "copy": appdata.ActionCopyDeck, "save": appdata.ActionModifyDeck, "delete": appdata.ActionDeleteDeck}
+	kind, ok := actions[action]
+	if !ok {
+		return fmt.Errorf("unknown deck operation %q", action)
+	}
+	result, err := s.tx.ExecContext(ctx, "INSERT INTO operation_log (action_type,occurred_at) VALUES (?,?)", kind, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	operationID, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	_, err = s.tx.ExecContext(ctx, "INSERT INTO operation_deck_detail (operation_id,deck_id,deck_name) VALUES (?,?,?)", operationID, id, name)
+	return err
 }
 
 // AppendCard writes a card operation and its display snapshot without committing.

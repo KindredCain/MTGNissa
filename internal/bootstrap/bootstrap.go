@@ -14,6 +14,7 @@ import (
 	"mtgnissa/internal/collection"
 	"mtgnissa/internal/config"
 	"mtgnissa/internal/database"
+	"mtgnissa/internal/decks"
 	"mtgnissa/internal/health"
 	"mtgnissa/internal/httpapi"
 	"mtgnissa/internal/idempotency"
@@ -67,6 +68,9 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 	}
 	manager := carddata.NewManager(ctx, dbs.Card.DB, cfg.CardDB.Name, cfg.CardDataDir, log)
 	setService := sets.NewService(store.NewSetStore(dbs.Card), cfg.CursorPageSize)
+	cardStore := store.NewCardStore(dbs.Card)
+	appTransactions := store.NewAppTransactions(dbs.App)
+	intents := idempotency.New(4096)
 	router := httpapi.New(httpapi.Dependencies{
 		Logger:      log,
 		Health:      health.Handler{Card: dbs.Card.DB, App: dbs.App.DB},
@@ -78,7 +82,8 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		},
 		Sets:       setService,
 		Tokens:     tokens.NewService(store.NewTokenStore(dbs.Card)),
-		Cards:      cards.NewService(store.NewCardStore(dbs.Card), store.NewAppTransactions(dbs.App), idempotency.New(4096)),
+		Cards:      cards.NewService(cardStore, appTransactions, intents),
+		Decks:      decks.NewService(cardStore, appTransactions, intents, cfg.CursorPageSize),
 		Collection: collection.NewService(store.NewCollectionStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 		Wishlist:   wishlist.NewService(store.NewWishlistStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 	})

@@ -22,6 +22,7 @@ type Dependencies struct {
 	Cards       cardService
 	Collection  collectionLister
 	Wishlist    wishlistLister
+	Decks       deckService
 }
 
 // New assembles the HTTP router, global middleware, health checks, and API modules.
@@ -49,6 +50,16 @@ func New(deps Dependencies) *gin.Engine {
 	api.GET("/collection", rejectUnknownQueryParameters("q", "set_code", "language", "color", "mana_value", "rarity", "sort", "merge_sets", "merge_languages", "cursor"), getCollection(deps.Collection))
 	api.GET("/wishlist/options", rejectUnknownQueryParameters(), getWishlistOptions(deps.Wishlist))
 	api.GET("/wishlist", rejectUnknownQueryParameters("q", "set_code", "language", "color", "mana_value", "rarity", "sort", "cursor"), getWishlist(deps.Wishlist))
+	api.GET("/decks", rejectUnknownQueryParameters("q", "sort", "cursor"), getDecks(deps.Decks))
+	api.POST("/decks", requireJSONContentType(), rejectUnknownQueryParameters(), createDeck(deps.Decks))
+	api.GET("/decks/:deck_id", rejectUnknownQueryParameters(), getDeck(deps.Decks))
+	api.POST("/decks/:deck_id/save", requireJSONContentType(), rejectUnknownQueryParameters(), saveDeck(deps.Decks))
+	api.POST("/decks/:deck_id/delete", rejectUnknownQueryParameters(), deleteDeck(deps.Decks))
+	api.POST("/decks/:deck_id/copies", rejectUnknownQueryParameters(), copyDeck(deps.Decks))
+	api.POST("/decks/:deck_id/parse_code", requireJSONContentType(), rejectUnknownQueryParameters(), parseDeckCode(deps.Decks))
+	api.GET("/decks/:deck_id/cards/search", rejectUnknownQueryParameters("q", "cursor"), searchDeckCards(deps.Decks))
+	api.GET("/decks/:deck_id/cards/name_suggestions", rejectUnknownQueryParameters("q"), deckNameSuggestions(deps.Decks))
+	api.POST("/decks/:deck_id/card_contexts", requireJSONContentType(), rejectUnknownQueryParameters(), deckCardContexts(deps.Decks))
 
 	registerFallbackRoutes(router)
 	return router

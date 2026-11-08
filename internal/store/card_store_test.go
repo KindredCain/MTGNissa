@@ -3,6 +3,7 @@ package store
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"mtgnissa/internal/model"
 )
@@ -44,5 +45,20 @@ func TestGroupingKeepsLanguagesAndPrintingsSeparate(t *testing.T) {
 	}
 	if !reflect.DeepEqual(ids, []string{"a", "b", "c", "z"}) {
 		t.Fatalf("order=%v", ids)
+	}
+}
+
+func TestDeckPrintingPreferenceUsesTierThenDateThenUUID(t *testing.T) {
+	oldDate := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	newDate := oldDate.AddDate(20, 0, 0)
+	owned := deckPrintingRow{UUID: "owned", ReleasedAt: &oldDate}
+	wishlist := deckPrintingRow{UUID: "wish", ReleasedAt: &newDate}
+	latest := deckPrintingRow{UUID: "latest", ReleasedAt: &newDate}
+	preferred := map[string]int{"owned": 1, "wish": 2}
+	if !preferredDeckPrinting(owned, wishlist, preferred) || !preferredDeckPrinting(wishlist, latest, preferred) || preferredDeckPrinting(latest, owned, preferred) {
+		t.Fatal("printing preference ignored ownership or wishlist")
+	}
+	if !preferredDeckPrinting(latest, deckPrintingRow{UUID: "a", ReleasedAt: &oldDate}, nil) || !preferredDeckPrinting(deckPrintingRow{UUID: "a", ReleasedAt: &newDate}, latest, nil) {
+		t.Fatal("printing date or UUID tie ordering changed")
 	}
 }

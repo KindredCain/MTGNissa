@@ -92,7 +92,9 @@ MTGNissa Docker 容器
 
 依赖方向为 `httpapi -> 业务 Service -> store`，Service 和 Store 都可引用 `model`；`model` 不反向引用 Service 或 Store。Service 按现有 API 模块组织流程，`/cards/{printing_uuid}/collection_adjustments` 和 `/cards/{printing_uuid}/wishlist_state` 继续由 `cards.Service` 编排，分别调用收藏和愿望单存储能力。
 
-Service 决定事务包含哪些业务步骤，`store.AppTransactions` 封装开启、提交与回滚。写入通过 `WithAppTx` 回调取得绑定到同一个 `sqlx.Tx` 的 `TxStores`，各业务存储不自行提交，也不在事务中改用普通 DB 连接。收藏调整与日志写入、愿望单实际变化与日志写入由 Service 在同一回调中组合；任何一步失败均回滚。事务成功提交后，才允许将进程内幂等记录标记为完成；提交后的响应查询失败不得导致重试重复写入。
+Service 决定事务包含哪些业务步骤，`store.AppTransactions` 封装开启、提交与回滚。写入通过 `WithAppTx` 回调取得绑定到同一个 `sqlx.Tx` 的 `TxStores`，各业务存储不自行提交，也不在事务中改用普通 DB 连接。业务变更及其操作日志由 Service 在同一回调中组合，任何一步失败均回滚。需要串行更新同一资源时，在事务中锁定对应记录，再读取和修改其关联数据；规范化后的业务状态未变化时，不更新数据、更新时间或操作日志。
+
+需要幂等保护的操作共用有界进程内缓存，只保存请求指纹、执行状态、过期时间及必要的资源标识，不缓存完整响应。事务成功提交后，才允许将记录标记为完成；重复请求重新查询对应资源的当前权威状态，提交后的响应查询失败不得导致重试重复写入。
 
 `WithAppRead` 提供只读、可重复读快照，用于组合详情中的收藏、愿望单及卡组占用，或查询调整后的权威汇总。Card DB 身份查询在开启 App DB 写事务前完成；两个数据源保持独立连接，不提供跨库原子事务或全局一致快照。数据导入、数据库迁移和健康检查保持原有基础设施边界。
 
@@ -249,6 +251,7 @@ mtgnissa/
 │   ├── store/
 │   ├── cards/
 │   ├── collection/
+│   ├── decks/
 │   ├── sets/
 │   ├── tokens/
 │   ├── wishlist/
