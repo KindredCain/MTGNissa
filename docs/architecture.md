@@ -253,6 +253,7 @@ mtgnissa/
 │   ├── collection/
 │   ├── decks/
 │   ├── sets/
+│   ├── search/
 │   ├── tokens/
 │   ├── wishlist/
 │   ├── apperror/

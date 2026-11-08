@@ -18,6 +18,7 @@ import (
 	"mtgnissa/internal/health"
 	"mtgnissa/internal/httpapi"
 	"mtgnissa/internal/idempotency"
+	"mtgnissa/internal/search"
 	"mtgnissa/internal/sets"
 	"mtgnissa/internal/store"
 	"mtgnissa/internal/tokens"
@@ -84,6 +85,7 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		Tokens:     tokens.NewService(store.NewTokenStore(dbs.Card)),
 		Cards:      cards.NewService(cardStore, appTransactions, intents),
 		Decks:      decks.NewService(cardStore, appTransactions, intents, cfg.CursorPageSize),
+		Search:     search.NewService(cardStore, cfg.CursorPageSize),
 		Collection: collection.NewService(store.NewCollectionStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 		Wishlist:   wishlist.NewService(store.NewWishlistStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 	})

@@ -23,6 +23,7 @@ type Dependencies struct {
 	Collection  collectionLister
 	Wishlist    wishlistLister
 	Decks       deckService
+	Search      searchLister
 }
 
 // New assembles the HTTP router, global middleware, health checks, and API modules.
@@ -37,6 +38,7 @@ func New(deps Dependencies) *gin.Engine {
 
 	api := router.Group("/api/v1")
 	api.GET("/app", rejectUnknownQueryParameters(), getApp(deps.App))
+	api.GET("/search", rejectUnknownQueryParameters("q", "cursor"), getSearch(deps.Search))
 	api.POST("/card_data/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(deps.Loader, deps.LoadEnabled))
 	api.GET("/card_data/load/:task_id", rejectUnknownQueryParameters(), getLoad(deps.Loader, deps.LoadEnabled))
 	api.GET("/sets", rejectUnknownQueryParameters("q", "language", "set_type", "sort", "cursor"), getSets(deps.Sets))

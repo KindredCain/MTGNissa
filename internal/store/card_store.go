@@ -89,9 +89,8 @@ type metadataRow struct {
 
 // Translation lookups are correlated by indexed card UUID. Do not join global
 // GROUP BY derived tables here: older MySQL versions materialize the full mapping.
-const printingSummaryColumns = `
- p.uuid AS printing_uuid, c.scryfall_id AS source_id,
- COALESCE(NULLIF(p.scryfall_id, ''), c.scryfall_id) AS image_id,
+const cardSummaryColumns = `
+ c.scryfall_id AS source_id,
  c.face_index, NULLIF(c.oracle_id, '') AS oracle_id, c.name,
  COALESCE(NULLIF(c.face_name, ''), c.name) AS face_name,
  COALESCE(NULLIF(ct.face_name, ''), NULLIF(ct.name, ''),
@@ -101,7 +100,13 @@ const printingSummaryColumns = `
  c.cmc, c.mana_cost, c.colors_mask, c.layout, ly.face_category, c.rarity, c.collector_number, c.released_at,
  s.code AS set_code, s.name AS set_name,
  COALESCE((SELECT MIN(NULLIF(TRIM(st.name), '')) FROM set_translation st WHERE st.code=s.code), s.name) AS set_display_name,
- s.released_at AS set_released_at,
+ s.released_at AS set_released_at
+`
+
+const printingSummaryColumns = `
+ p.uuid AS printing_uuid,
+ COALESCE(NULLIF(p.scryfall_id, ''), c.scryfall_id) AS image_id,
+` + cardSummaryColumns + `,
  l.code AS language_code, l.display_name AS language_name, l.sort_order AS language_order
 `
 
