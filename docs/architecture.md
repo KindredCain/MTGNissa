@@ -82,7 +82,7 @@ MTGNissa Docker 容器
 
 - OpenAPI 契约的发布、校验和后端同步流程
 
-业务数据访问统一使用 `sqlx` 的结构体映射、事务和查询辅助能力。动态 SQL 组装固定使用 `goqu`，范围只包括 `GET /api/v1/sets`、`GET /api/v1/search`、`GET /api/v1/collection` 和 `GET /api/v1/wishlist`；这四个接口的筛选、搜索表达式、分组、排序和游标条件由 Builder 组合，再交给 `sqlx` 执行。具体 Set 卡牌列表、选项、详情、卡组、日志和所有业务写入继续使用手写 SQL；迁移与卡牌数据导入也不使用 `goqu`。不得为了形式统一把结构固定的 SQL 改写为 Builder。
+业务数据访问统一使用 `sqlx` 的结构体映射、事务和查询辅助能力。需要动态 SQL 的系列列表、全局搜索等查询使用 `goqu` 组合筛选、排序和游标条件，再交给 `sqlx` 执行。当前收藏和愿望单列表先从 App DB 读取对应印刷身份，再通过 `CardStore` 每批最多 500 项查询轻量元数据，由各自 Service 完成筛选、排序和游标分页；收藏另外处理合并和汇总，愿望单始终按具体印刷展示。两个列表只为当前页补齐完整卡牌摘要，不扫描整个卡牌目录。具体 Set 卡牌列表、选项、详情、卡组、日志和所有业务写入继续使用手写 SQL；迁移与卡牌数据导入也不使用 `goqu`。不得为了形式统一把结构固定的 SQL 改写为 Builder。
 
 ## 后端分层与事务边界
 
@@ -251,6 +251,7 @@ mtgnissa/
 │   ├── collection/
 │   ├── sets/
 │   ├── tokens/
+│   ├── wishlist/
 │   ├── apperror/
 │   ├── bootstrap/
 │   ├── config/

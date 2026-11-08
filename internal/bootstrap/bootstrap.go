@@ -20,6 +20,7 @@ import (
 	"mtgnissa/internal/sets"
 	"mtgnissa/internal/store"
 	"mtgnissa/internal/tokens"
+	"mtgnissa/internal/wishlist"
 )
 
 // Application contains the initialized server dependencies and runtime configuration.
@@ -79,6 +80,7 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		Tokens:     tokens.NewService(store.NewTokenStore(dbs.Card)),
 		Cards:      cards.NewService(store.NewCardStore(dbs.Card), store.NewAppTransactions(dbs.App), idempotency.New(4096)),
 		Collection: collection.NewService(store.NewCollectionStore(dbs.App, dbs.Card), cfg.CursorPageSize),
+		Wishlist:   wishlist.NewService(store.NewWishlistStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

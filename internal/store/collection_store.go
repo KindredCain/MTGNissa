@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -18,7 +17,6 @@ import (
 // CollectionStore reads personal ownership and batches matching metadata from the Card DB.
 type CollectionStore struct {
 	app   *sqlx.DB
-	card  *sqlx.DB
 	faces *CardStore
 }
 
@@ -29,24 +27,6 @@ type ownedRow struct {
 	Number string  `db:"collector_number"`
 	Lang   string  `db:"lang"`
 	model.Quantity
-}
-
-type metadataRow struct {
-	UUID         string     `db:"printing_uuid"`
-	Oracle       *string    `db:"oracle_id"`
-	Name         string     `db:"name"`
-	Number       string     `db:"collector_number"`
-	Released     *time.Time `db:"released_at"`
-	CMC          float64    `db:"cmc"`
-	Colors       uint64     `db:"colors_mask"`
-	Rarity       string     `db:"rarity"`
-	SetCode      string     `db:"set_code"`
-	SetName      string     `db:"set_name"`
-	SetDisplay   string     `db:"set_display_name"`
-	SetReleased  *time.Time `db:"set_released_at"`
-	LanguageCode string     `db:"language_code"`
-	LanguageName string     `db:"language_name"`
-	LanguageSort int        `db:"language_order"`
 }
 
 // CollectionTx reads and changes collection quantities in the caller's transaction.
@@ -61,7 +41,7 @@ type versionQuantityRow struct {
 
 // NewCollectionStore creates a collection reader using separate application and card databases.
 func NewCollectionStore(app, card *sqlx.DB) *CollectionStore {
-	return &CollectionStore{app: app, card: card, faces: NewCardStore(card)}
+	return &CollectionStore{app: app, faces: NewCardStore(card)}
 }
 
 // Load reads only owned printings, without scanning the entire card catalogue.
@@ -84,36 +64,13 @@ func (s *CollectionStore) Load(ctx context.Context) ([]model.OwnedPrinting, erro
 	if len(owned) == 0 {
 		return []model.OwnedPrinting{}, nil
 	}
-	cardTx, err := s.card.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	ids := make([]string, 0, len(owned))
+	for _, row := range owned {
+		ids = append(ids, row.UUID)
+	}
+	metadata, err := s.faces.metadata(ctx, ids)
 	if err != nil {
 		return nil, err
-	}
-	defer cardTx.Rollback()
-	metadata := make(map[string]metadataRow, len(owned))
-	for start := 0; start < len(owned); start += 500 {
-		end := min(start+500, len(owned))
-		ids := make([]string, 0, end-start)
-		for _, row := range owned[start:end] {
-			ids = append(ids, row.UUID)
-		}
-		query, args, err := sqlx.In(`SELECT p.uuid AS printing_uuid,NULLIF(c.oracle_id,'') AS oracle_id,c.name,
- c.collector_number,c.released_at,c.cmc,c.colors_mask,c.rarity,
- s.code AS set_code,s.name AS set_name,s.released_at AS set_released_at,
- COALESCE((SELECT MIN(NULLIF(TRIM(st.name),'')) FROM set_translation st WHERE st.code=s.code),s.name) AS set_display_name,
- l.code AS language_code,l.display_name AS language_name,l.sort_order AS language_order
- FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
- JOIN mtgnissa_set s ON s.code=c.set_code JOIN scryfall_language l ON l.code=p.language_code
- WHERE p.uuid IN (?) AND c.face_index IN (-1,0)`, ids)
-		if err != nil {
-			return nil, err
-		}
-		var rows []metadataRow
-		if err := cardTx.SelectContext(ctx, &rows, query, args...); err != nil {
-			return nil, err
-		}
-		for _, row := range rows {
-			metadata[row.UUID] = row
-		}
 	}
 	result := make([]model.OwnedPrinting, 0, len(owned))
 	for _, row := range owned {
@@ -124,21 +81,7 @@ func (s *CollectionStore) Load(ctx context.Context) ([]model.OwnedPrinting, erro
 		if !sameOracle(row.Oracle, meta.Oracle) || row.Set != meta.SetCode || row.Number != meta.Number || row.Lang != meta.LanguageCode {
 			return nil, fmt.Errorf("owned printing %s identity does not match card data", row.UUID)
 		}
-		colors := make([]string, 0, 5)
-		for i, color := range []string{"W", "U", "B", "R", "G"} {
-			if meta.Colors&(1<<i) != 0 {
-				colors = append(colors, color)
-			}
-		}
-		result = append(result, model.OwnedPrinting{Quantity: row.Quantity, Card: model.CardSummary{
-			PrintingUUID: meta.UUID, OracleID: meta.Oracle, Name: meta.Name, CollectorNumber: meta.Number,
-			ReleasedAt: meta.Released, CMC: meta.CMC, Colors: colors, Rarity: meta.Rarity,
-			Set:      model.SetRef{Code: meta.SetCode, Name: meta.SetName, DisplayName: meta.SetDisplay, ReleasedAt: meta.SetReleased},
-			Language: model.Language{Code: meta.LanguageCode, DisplayName: meta.LanguageName, SortOrder: meta.LanguageSort},
-		}})
-	}
-	if err := cardTx.Commit(); err != nil {
-		return nil, err
+		result = append(result, model.OwnedPrinting{Quantity: row.Quantity, Card: meta.summary()})
 	}
 	return result, nil
 }
@@ -146,13 +89,6 @@ func (s *CollectionStore) Load(ctx context.Context) ([]model.OwnedPrinting, erro
 // Summaries resolves complete card summaries only for the current page.
 func (s *CollectionStore) Summaries(ctx context.Context, ids []string) (map[string]model.CardSummary, error) {
 	return s.faces.Summaries(ctx, ids)
-}
-
-func sameOracle(a, b *string) bool {
-	if a == nil || *a == "" {
-		return b == nil || *b == ""
-	}
-	return b != nil && strings.EqualFold(*a, *b)
 }
 
 // Adjust changes one precise printing and returns the event for transactional logging.
