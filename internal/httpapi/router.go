@@ -12,18 +12,19 @@ import (
 
 // Dependencies contains runtime settings and services used by the HTTP router.
 type Dependencies struct {
-	Logger      *slog.Logger
-	Health      health.Handler
-	Loader      cardDataLoader
-	LoadEnabled bool
-	App         AppConfig
-	Sets        setLister
-	Tokens      tokenLister
-	Cards       cardService
-	Collection  collectionLister
-	Wishlist    wishlistLister
-	Decks       deckService
-	Search      searchLister
+	Logger        *slog.Logger
+	Health        health.Handler
+	Loader        cardDataLoader
+	LoadEnabled   bool
+	App           AppConfig
+	Sets          setLister
+	Tokens        tokenLister
+	Cards         cardService
+	Collection    collectionLister
+	Wishlist      wishlistLister
+	Decks         deckService
+	Search        searchLister
+	OperationLogs operationLogService
 }
 
 // New assembles the HTTP router, global middleware, health checks, and API modules.
@@ -39,6 +40,8 @@ func New(deps Dependencies) *gin.Engine {
 	api := router.Group("/api/v1")
 	api.GET("/app", rejectUnknownQueryParameters(), getApp(deps.App))
 	api.GET("/search", rejectUnknownQueryParameters("q", "cursor"), getSearch(deps.Search))
+	api.GET("/operation_logs/summary", rejectUnknownQueryParameters("start_date", "end_date", "page"), getOperationSummary(deps.OperationLogs))
+	api.GET("/operation_logs", rejectUnknownQueryParameters("operation_date", "action_type", "page"), getOperationLogs(deps.OperationLogs))
 	api.POST("/card_data/load", requireJSONContentType(), rejectUnknownQueryParameters(), startLoad(deps.Loader, deps.LoadEnabled))
 	api.GET("/card_data/load/:task_id", rejectUnknownQueryParameters(), getLoad(deps.Loader, deps.LoadEnabled))
 	api.GET("/sets", rejectUnknownQueryParameters("q", "language", "set_type", "sort", "cursor"), getSets(deps.Sets))

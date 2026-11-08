@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -18,6 +19,7 @@ import (
 	"mtgnissa/internal/health"
 	"mtgnissa/internal/httpapi"
 	"mtgnissa/internal/idempotency"
+	"mtgnissa/internal/operationlogs"
 	"mtgnissa/internal/search"
 	"mtgnissa/internal/sets"
 	"mtgnissa/internal/store"
@@ -72,6 +74,11 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 	cardStore := store.NewCardStore(dbs.Card)
 	appTransactions := store.NewAppTransactions(dbs.App)
 	intents := idempotency.New(4096)
+	location, err := time.LoadLocation(cfg.TimeZone)
+	if err != nil {
+		dbs.Close()
+		return nil, fmt.Errorf("load application timezone: %w", err)
+	}
 	router := httpapi.New(httpapi.Dependencies{
 		Logger:      log,
 		Health:      health.Handler{Card: dbs.Card.DB, App: dbs.App.DB},
@@ -81,13 +88,14 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 			DisplayName: cfg.DisplayName,
 			TimeZone:    cfg.TimeZone,
 		},
-		Sets:       setService,
-		Tokens:     tokens.NewService(store.NewTokenStore(dbs.Card)),
-		Cards:      cards.NewService(cardStore, appTransactions, intents),
-		Decks:      decks.NewService(cardStore, appTransactions, intents, cfg.CursorPageSize),
-		Search:     search.NewService(cardStore, cfg.CursorPageSize),
-		Collection: collection.NewService(store.NewCollectionStore(dbs.App, dbs.Card), cfg.CursorPageSize),
-		Wishlist:   wishlist.NewService(store.NewWishlistStore(dbs.App, dbs.Card), cfg.CursorPageSize),
+		Sets:          setService,
+		Tokens:        tokens.NewService(store.NewTokenStore(dbs.Card)),
+		Cards:         cards.NewService(cardStore, appTransactions, intents),
+		Decks:         decks.NewService(cardStore, appTransactions, intents, cfg.CursorPageSize),
+		Search:        search.NewService(cardStore, cfg.CursorPageSize),
+		OperationLogs: operationlogs.NewService(store.NewOperationLogStore(dbs.App), location),
+		Collection:    collection.NewService(store.NewCollectionStore(dbs.App, dbs.Card), cfg.CursorPageSize),
+		Wishlist:      wishlist.NewService(store.NewWishlistStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }
