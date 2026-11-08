@@ -18,6 +18,7 @@ import (
 	"mtgnissa/internal/httpapi"
 	"mtgnissa/internal/idempotency"
 	"mtgnissa/internal/sets"
+	"mtgnissa/internal/store"
 	"mtgnissa/internal/tokens"
 )
 
@@ -64,7 +65,7 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		return nil, err
 	}
 	manager := carddata.NewManager(ctx, dbs.Card.DB, cfg.CardDB.Name, cfg.CardDataDir, log)
-	setService := sets.NewService(sets.NewStore(dbs.Card), cfg.CursorPageSize)
+	setService := sets.NewService(store.NewSetStore(dbs.Card), cfg.CursorPageSize)
 	router := httpapi.New(httpapi.Dependencies{
 		Logger:      log,
 		Health:      health.Handler{Card: dbs.Card.DB, App: dbs.App.DB},
@@ -75,9 +76,9 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 			TimeZone:    cfg.TimeZone,
 		},
 		Sets:       setService,
-		Tokens:     tokens.NewService(tokens.NewStore(dbs.Card)),
-		Cards:      cards.NewService(cards.NewCardStore(dbs.Card), cards.NewAppStore(dbs.App), idempotency.New(4096)),
-		Collection: collection.NewService(collection.NewStore(dbs.App, dbs.Card), cfg.CursorPageSize),
+		Tokens:     tokens.NewService(store.NewTokenStore(dbs.Card)),
+		Cards:      cards.NewService(store.NewCardStore(dbs.Card), store.NewAppTransactions(dbs.App), idempotency.New(4096)),
+		Collection: collection.NewService(store.NewCollectionStore(dbs.App, dbs.Card), cfg.CursorPageSize),
 	})
 	return &Application{Router: router, Databases: dbs, CardData: manager, Config: cfg, Logger: log}, nil
 }

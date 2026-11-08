@@ -15,28 +15,24 @@ import (
 	"time"
 
 	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/model"
+	"mtgnissa/internal/store"
 )
 
 const cursorVersion = 2
 
 type cursorPayload struct {
-	Version     int    `json:"v"`
-	Fingerprint string `json:"f"`
-	Sort        Sort   `json:"s"`
-	Value       string `json:"p"`
-	Code        string `json:"code"`
-	MissingDate bool   `json:"n,omitempty"`
-}
-
-type cursorPosition struct {
-	value  string
-	code   string
-	isNull bool
+	Version     int           `json:"v"`
+	Fingerprint string        `json:"f"`
+	Sort        model.SetSort `json:"s"`
+	Value       string        `json:"p"`
+	Code        string        `json:"code"`
+	MissingDate bool          `json:"n,omitempty"`
 }
 
 type setStore interface {
-	List(context.Context, Params, *cursorPosition, int) (Page, bool, error)
-	Options(context.Context) (Options, error)
+	List(context.Context, model.SetParams, *store.SetPosition, int) (model.SetPage, bool, error)
+	Options(context.Context) (model.SetOptions, error)
 }
 
 // Service validates opaque cursors and coordinates Set list database queries.
@@ -46,41 +42,41 @@ type Service struct {
 }
 
 // NewService creates a Set list service backed by the Card DB store.
-func NewService(store *Store, pageSize int) *Service {
+func NewService(store *store.SetStore, pageSize int) *Service {
 	return &Service{store: store, pageSize: pageSize}
 }
 
 // Options returns the dynamic filters available for the Set list.
-func (s *Service) Options(ctx context.Context) (Options, error) {
+func (s *Service) Options(ctx context.Context) (model.SetOptions, error) {
 	options, err := s.store.Options(ctx)
 	if err != nil {
-		return Options{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
+		return model.SetOptions{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
 	}
 	return options, nil
 }
 
 // List returns one stable page and a cursor bound to the current query.
-func (s *Service) List(ctx context.Context, params Params) (Page, error) {
+func (s *Service) List(ctx context.Context, params model.SetParams) (model.SetPage, error) {
 	params.Query = strings.TrimSpace(params.Query)
 	if params.Sort == "" {
-		params.Sort = SortReleasedDesc
+		params.Sort = model.SortReleasedDesc
 	}
 	fingerprint := queryFingerprint(params)
-	var position *cursorPosition
+	var position *store.SetPosition
 	if params.Cursor != "" {
 		decoded, err := decodeCursor(params.Cursor, params.Sort, fingerprint)
 		if err != nil {
-			return Page{}, apperror.Wrap(apperror.CodeInvalidCursor, "cursor is invalid or does not match this query", err)
+			return model.SetPage{}, apperror.Wrap(apperror.CodeInvalidCursor, "cursor is invalid or does not match this query", err)
 		}
 		position = &decoded
 	}
 
 	page, hasMore, err := s.store.List(ctx, params, position, s.pageSize)
 	if err != nil {
-		return Page{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
+		return model.SetPage{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
 	}
 	if hasMore {
-		var last *Set
+		var last *model.SetListItem
 		for i := len(page.Items) - 1; i >= 0; i-- {
 			if page.Items[i].ParentCode == nil {
 				last = &page.Items[i]
@@ -88,7 +84,7 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 			}
 		}
 		if last == nil {
-			return Page{}, apperror.New(apperror.CodeInternalError, "could not locate the pagination root")
+			return model.SetPage{}, apperror.New(apperror.CodeInternalError, "could not locate the pagination root")
 		}
 		cursor, err := encodeCursor(cursorPayload{
 			Version:     cursorVersion,
@@ -99,14 +95,14 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 			MissingDate: isDateSort(params.Sort) && last.ReleasedAt == nil,
 		})
 		if err != nil {
-			return Page{}, apperror.Wrap(apperror.CodeInternalError, "could not create pagination cursor", err)
+			return model.SetPage{}, apperror.Wrap(apperror.CodeInternalError, "could not create pagination cursor", err)
 		}
 		page.NextCursor = &cursor
 	}
 	return page, nil
 }
 
-func queryFingerprint(params Params) string {
+func queryFingerprint(params model.SetParams) string {
 	languages := cursorFilterValues(params.Languages)
 	setTypes := cursorFilterValues(params.SetTypes)
 	payload, _ := json.Marshal(struct {
@@ -132,18 +128,18 @@ func cursorFilterValues(values []string) []string {
 	return result
 }
 
-func cursorValue(sort Sort, item Set) string {
+func cursorValue(sort model.SetSort, item model.SetListItem) string {
 	switch sort {
-	case SortReleasedDesc, SortReleasedAsc:
+	case model.SortReleasedDesc, model.SortReleasedAsc:
 		if item.ReleasedAt == nil {
 			return ""
 		}
 		return item.ReleasedAt.Format("2006-01-02")
-	case SortNameAsc, SortNameDesc:
+	case model.SortNameAsc, model.SortNameDesc:
 		return item.Name
-	case SortCodeAsc, SortCodeDesc:
+	case model.SortCodeAsc, model.SortCodeDesc:
 		return item.Code
-	case SortCardCountDesc, SortCardCountAsc:
+	case model.SortCardCountDesc, model.SortCardCountAsc:
 		return strconv.FormatUint(item.CardCount, 10)
 	default:
 		return ""
@@ -158,42 +154,46 @@ func encodeCursor(payload cursorPayload) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(encoded), nil
 }
 
-func decodeCursor(value string, sort Sort, fingerprint string) (cursorPosition, error) {
+func decodeCursor(value string, sort model.SetSort, fingerprint string) (store.SetPosition, error) {
 	if len(value) > 4096 {
-		return cursorPosition{}, errors.New("cursor is too long")
+		return store.SetPosition{}, errors.New("cursor is too long")
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(value)
 	if err != nil {
-		return cursorPosition{}, err
+		return store.SetPosition{}, err
 	}
 	var payload cursorPayload
 	decoder := json.NewDecoder(strings.NewReader(string(raw)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&payload); err != nil {
-		return cursorPosition{}, err
+		return store.SetPosition{}, err
 	}
 	var extra any
 	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
-		return cursorPosition{}, errors.New("cursor contains trailing data")
+		return store.SetPosition{}, errors.New("cursor contains trailing data")
 	}
 	if payload.Version != cursorVersion || payload.Sort != sort || payload.Fingerprint != fingerprint || payload.Code == "" || payload.Value == "" && !payload.MissingDate {
-		return cursorPosition{}, errors.New("cursor metadata mismatch")
+		return store.SetPosition{}, errors.New("cursor metadata mismatch")
 	}
 	if payload.MissingDate && (!isDateSort(sort) || payload.Value != "") {
-		return cursorPosition{}, errors.New("cursor has an invalid null date")
+		return store.SetPosition{}, errors.New("cursor has an invalid null date")
 	}
-	if sort == SortCardCountAsc || sort == SortCardCountDesc {
+	if sort == model.SortCardCountAsc || sort == model.SortCardCountDesc {
 		if _, err := strconv.ParseUint(payload.Value, 10, 64); err != nil {
-			return cursorPosition{}, fmt.Errorf("invalid card count: %w", err)
+			return store.SetPosition{}, fmt.Errorf("invalid card count: %w", err)
 		}
 	}
 	if isDateSort(sort) && !payload.MissingDate {
 		if _, err := time.Parse("2006-01-02", payload.Value); err != nil {
-			return cursorPosition{}, fmt.Errorf("invalid release date: %w", err)
+			return store.SetPosition{}, fmt.Errorf("invalid release date: %w", err)
 		}
 	}
-	if (sort == SortCodeAsc || sort == SortCodeDesc) && payload.Value != payload.Code {
-		return cursorPosition{}, errors.New("cursor code does not match its sort position")
+	if (sort == model.SortCodeAsc || sort == model.SortCodeDesc) && payload.Value != payload.Code {
+		return store.SetPosition{}, errors.New("cursor code does not match its sort position")
 	}
-	return cursorPosition{value: payload.Value, code: payload.Code, isNull: payload.MissingDate}, nil
+	return store.SetPosition{Value: payload.Value, Code: payload.Code, IsNull: payload.MissingDate}, nil
+}
+
+func isDateSort(order model.SetSort) bool {
+	return order == model.SortReleasedAsc || order == model.SortReleasedDesc
 }

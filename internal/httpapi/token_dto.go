@@ -1,6 +1,8 @@
 package httpapi
 
-import "mtgnissa/internal/tokens"
+import (
+	"mtgnissa/internal/model"
+)
 
 type tokenListResponse struct {
 	Set   tokenSetResponse `json:"set"`
@@ -29,7 +31,7 @@ type tokenImageResponse struct {
 	HasDistinctBack bool    `json:"has_distinct_back"`
 }
 
-func newTokenListResponse(list tokens.List) tokenListResponse {
+func newTokenListResponse(list model.TokenList) tokenListResponse {
 	response := tokenListResponse{
 		Set:   tokenSetResponse{Code: list.Set.Code, Name: list.Set.Name, DisplayName: list.Set.DisplayName},
 		Items: make([]tokenResponse, 0, len(list.Items)), Total: len(list.Items),

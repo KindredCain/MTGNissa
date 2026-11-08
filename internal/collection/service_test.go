@@ -10,24 +10,24 @@ import (
 	"time"
 
 	"mtgnissa/internal/apperror"
-	"mtgnissa/internal/cards"
+	"mtgnissa/internal/model"
 )
 
 type fakeStore struct {
-	rows     []record
+	rows     []model.OwnedPrinting
 	loaded   int
 	resolved []string
 	err      error
 }
 
-func (f *fakeStore) Load(context.Context) ([]record, error) {
+func (f *fakeStore) Load(context.Context) ([]model.OwnedPrinting, error) {
 	f.loaded++
 	return f.rows, f.err
 }
 
-func (f *fakeStore) Summaries(_ context.Context, ids []string) (map[string]cards.Summary, error) {
+func (f *fakeStore) Summaries(_ context.Context, ids []string) (map[string]model.CardSummary, error) {
 	f.resolved = append(f.resolved, ids...)
-	result := make(map[string]cards.Summary)
+	result := make(map[string]model.CardSummary)
 	for _, row := range f.rows {
 		for _, id := range ids {
 			if row.Card.PrintingUUID == id {
@@ -38,7 +38,7 @@ func (f *fakeStore) Summaries(_ context.Context, ids []string) (map[string]cards
 	return result, nil
 }
 
-func fixtureRecord(index int, oracle, set, number, language, date string) record {
+func fixtureRecord(index int, oracle, set, number, language, date string) model.OwnedPrinting {
 	var oracleID *string
 	if oracle != "" {
 		oracleID = &oracle
@@ -48,15 +48,15 @@ func fixtureRecord(index int, oracle, set, number, language, date string) record
 		value, _ := time.Parse("2006-01-02", date)
 		released = &value
 	}
-	return record{Quantity: cards.Quantity{Normal: 1}, Card: cards.Summary{
+	return model.OwnedPrinting{Quantity: model.Quantity{Normal: 1}, Card: model.CardSummary{
 		PrintingUUID: fmt.Sprintf("00000000-0000-4000-8000-%012d", index), OracleID: oracleID,
-		Name: "Card", DisplayName: "Translation", Set: cards.Set{Code: set, DisplayName: set, ReleasedAt: released},
-		CollectorNumber: number, Language: cards.Language{Code: language}, ReleasedAt: released, Rarity: "common", Colors: []string{"W"},
+		Name: "Card", DisplayName: "Translation", Set: model.SetRef{Code: set, DisplayName: set, ReleasedAt: released},
+		CollectorNumber: number, Language: model.Language{Code: language}, ReleasedAt: released, Rarity: "common", Colors: []string{"W"},
 	}}
 }
 
-func ownershipFixture() []record {
-	return []record{
+func ownershipFixture() []model.OwnedPrinting {
+	return []model.OwnedPrinting{
 		fixtureRecord(1, "oracle", "OLD", "2", "en", "2020-01-01"),
 		fixtureRecord(2, "oracle", "OLD", "2", "ja", "2020-01-01"),
 		fixtureRecord(3, "oracle", "OLD", "10", "en", "2020-01-01"),
@@ -76,7 +76,7 @@ func TestCollectionMergeMatrixPreservesNullOraclesAndVariantNumbers(t *testing.T
 	} {
 		store := &fakeStore{rows: ownershipFixture()}
 		service := Service{store: store, pageSize: 50}
-		page, err := service.List(context.Background(), Params{Sort: "name", MergeSets: test.sets, MergeLanguages: test.languages})
+		page, err := service.List(context.Background(), model.CollectionParams{Sort: "name", MergeSets: test.sets, MergeLanguages: test.languages})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -104,10 +104,10 @@ func TestCollectionMergeMatrixPreservesNullOraclesAndVariantNumbers(t *testing.T
 
 func TestCollectionFiltersBeforeMergeAndKeepsAuthoritativeHeaders(t *testing.T) {
 	rows := ownershipFixture()
-	rows[0].Quantity = cards.Quantity{Normal: 2, Foil: 3}
-	rows[1].Quantity = cards.Quantity{Foil: 4}
+	rows[0].Quantity = model.Quantity{Normal: 2, Foil: 3}
+	rows[1].Quantity = model.Quantity{Foil: 4}
 	service := Service{store: &fakeStore{rows: rows}, pageSize: 50}
-	page, err := service.List(context.Background(), Params{Sort: "set", MergeLanguages: true, Sets: []string{"OLD"}, Languages: []string{"ja"}})
+	page, err := service.List(context.Background(), model.CollectionParams{Sort: "set", MergeLanguages: true, Sets: []string{"OLD"}, Languages: []string{"ja"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,16 +127,16 @@ func TestCollectionFiltersBeforeMergeAndKeepsAuthoritativeHeaders(t *testing.T) 
 func TestCollectionFiltersUseLiteralNamesOrWithinDimensionsAndExactMana(t *testing.T) {
 	row := fixtureRecord(1, "oracle", "SET", "1", "en", "2020-01-01")
 	row.Card.Name, row.Card.CMC, row.Card.Colors = "A%_ Card", 2.5, []string{"W", "U"}
-	if !matches(row.Card, Params{Query: "%_", Sets: []string{"other", "set"}, Colors: []string{"multicolor"}}) {
+	if !matches(row.Card, model.CollectionParams{Query: "%_", Sets: []string{"other", "set"}, Colors: []string{"multicolor"}}) {
 		t.Fatal("literal substring or OR selection failed")
 	}
-	for _, params := range []Params{{Query: "translation"}, {Languages: []string{"ja"}}, {Colors: []string{"W"}}, {ManaValues: []string{"2"}}, {Rarities: []string{"rare"}}} {
+	for _, params := range []model.CollectionParams{{Query: "translation"}, {Languages: []string{"ja"}}, {Colors: []string{"W"}}, {ManaValues: []string{"2"}}, {Rarities: []string{"rare"}}} {
 		if matches(row.Card, params) {
 			t.Fatalf("unexpected match: %#v", params)
 		}
 	}
 	row.Card.CMC = 8.5
-	if !matches(row.Card, Params{ManaValues: []string{"0", "8_plus"}}) {
+	if !matches(row.Card, model.CollectionParams{ManaValues: []string{"0", "8_plus"}}) {
 		t.Fatal("8_plus did not include a fractional value above eight")
 	}
 }
@@ -147,7 +147,7 @@ func TestCollectionCursorPagesAllSortsAndBindsEffectiveQuery(t *testing.T) {
 		rows[4].Card.Set.ReleasedAt = nil
 		store := &fakeStore{rows: rows}
 		service := Service{store: store, pageSize: 2}
-		params := Params{Sort: order, Languages: []string{"en", "ja"}}
+		params := model.CollectionParams{Sort: order, Languages: []string{"en", "ja"}}
 		var seen []string
 		for {
 			page, err := service.List(context.Background(), params)
@@ -192,12 +192,12 @@ func TestCollectionCursorPagesAllSortsAndBindsEffectiveQuery(t *testing.T) {
 func TestCollectionCursorMalformedAndEmptyResults(t *testing.T) {
 	service := Service{store: &fakeStore{}, pageSize: 2}
 	for _, cursor := range []string{"!", base64.RawURLEncoding.EncodeToString([]byte(`{"v":1,"unknown":true}`))} {
-		if _, err := service.List(context.Background(), Params{Cursor: cursor}); err == nil {
+		if _, err := service.List(context.Background(), model.CollectionParams{Cursor: cursor}); err == nil {
 			t.Fatal("malformed cursor was accepted")
 		}
 	}
-	page, err := service.List(context.Background(), Params{})
-	if err != nil || page.Items == nil || page.Total != 0 || page.NextCursor != nil || page.Summary != (cards.Totals{}) {
+	page, err := service.List(context.Background(), model.CollectionParams{})
+	if err != nil || page.Items == nil || page.Total != 0 || page.NextCursor != nil || page.Summary != (model.OwnershipTotals{}) {
 		t.Fatalf("empty page=%#v error=%v", page, err)
 	}
 }
@@ -215,7 +215,7 @@ func TestCollectionPrimarySortsAndRepresentativeTieBreak(t *testing.T) {
 		{"name", []int{1, 3, 2, 0}}, {"color", []int{0, 1, 2, 3}}, {"mana_value", []int{1, 3, 2, 0}},
 	} {
 		service := Service{store: &fakeStore{rows: rows}, pageSize: 50}
-		page, err := service.List(context.Background(), Params{Sort: test.order})
+		page, err := service.List(context.Background(), model.CollectionParams{Sort: test.order})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -227,7 +227,7 @@ func TestCollectionPrimarySortsAndRepresentativeTieBreak(t *testing.T) {
 	}
 	rows[3].Card.ReleasedAt = rows[0].Card.ReleasedAt
 	service := Service{store: &fakeStore{rows: rows}, pageSize: 50}
-	page, err := service.List(context.Background(), Params{Sort: "name", MergeSets: true, MergeLanguages: true})
+	page, err := service.List(context.Background(), model.CollectionParams{Sort: "name", MergeSets: true, MergeLanguages: true})
 	if err != nil || len(page.Items) != 1 || page.Items[0].Card.PrintingUUID != rows[0].Card.PrintingUUID {
 		t.Fatalf("representative tie break: %#v error=%v", page, err)
 	}
@@ -237,8 +237,8 @@ func TestCollectionOptionsUseAllPositiveHoldingsAndStableDictionaryOrder(t *test
 	rows := ownershipFixture()
 	rows[1].Card.Language.SortOrder = 2
 	rows[0].Card.Language.SortOrder = 1
-	rows[4].Card.Set = cards.Set{Code: "UNDATED"}
-	rows[5].Quantity = cards.Quantity{}
+	rows[4].Card.Set = model.SetRef{Code: "UNDATED"}
+	rows[5].Quantity = model.Quantity{}
 	service := Service{store: &fakeStore{rows: rows}}
 	options, err := service.Options(context.Background())
 	if err != nil {

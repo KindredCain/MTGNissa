@@ -7,20 +7,21 @@ import (
 	"testing"
 
 	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/model"
 )
 
 type storeStub struct {
 	err error
 }
 
-func (s storeStub) Read(context.Context, string) (Set, []Face, error) {
-	return Set{Code: "TKLD"}, nil, s.err
+func (s storeStub) Read(context.Context, string) (model.TokenSet, []model.TokenFace, error) {
+	return model.TokenSet{Code: "TKLD"}, nil, s.err
 }
 
 func TestOrganizeGroupsFacesAndPreservesMissingImages(t *testing.T) {
 	id := "01234567-1234-1234-1234-123456789abc"
 	blank := ""
-	faces := []Face{
+	faces := []model.TokenFace{
 		{UUID: "back", ScryfallID: &id, FaceIndex: 1, CollectorNumber: "20", Layout: "double_faced_token"},
 		{UUID: "front", ScryfallID: &id, FaceIndex: 0, Name: "Beast", CollectorNumber: "10", Layout: "double_faced_token"},
 		{UUID: "missing-b", ScryfallID: &blank, FaceIndex: -1, CollectorNumber: "2", Layout: "token"},
@@ -50,17 +51,6 @@ func TestOrganizeGroupsFacesAndPreservesMissingImages(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, organize(faces)) {
 		t.Fatal("output depends on database row order")
-	}
-}
-
-func TestNaturalCompareLargeNumbersAndSuffixes(t *testing.T) {
-	for _, pair := range [][2]string{{"2", "10"}, {"2", "2a"}, {"2a", "2b"}, {"999999999999999999999999", "1000000000000000000000000"}} {
-		if naturalCompare(pair[0], pair[1]) >= 0 || naturalCompare(pair[1], pair[0]) <= 0 {
-			t.Fatalf("incorrect natural ordering for %v", pair)
-		}
-	}
-	if naturalCompare("02", "2") != 0 {
-		t.Fatal("equal numeric values should use the UUID tie breaker")
 	}
 }
 

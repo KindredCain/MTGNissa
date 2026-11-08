@@ -11,15 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mtgnissa/internal/apperror"
-	"mtgnissa/internal/cards"
 	"mtgnissa/internal/httpresponse"
+	"mtgnissa/internal/model"
 )
 
 type cardService interface {
-	List(context.Context, string, string, string) (cards.List, error)
-	Detail(context.Context, string) (cards.Detail, error)
-	Adjust(context.Context, string, string, int, string) (cards.CollectionState, bool, error)
-	SetWishlist(context.Context, string, bool, string) (cards.Summary, bool, bool, error)
+	List(context.Context, string, string, string) (model.CardList, error)
+	Detail(context.Context, string) (model.CardDetail, error)
+	Adjust(context.Context, string, string, int, string) (model.CollectionState, bool, error)
+	SetWishlist(context.Context, string, bool, string) (model.CardSummary, bool, bool, error)
 }
 
 func getCards(service cardService) gin.HandlerFunc {
@@ -64,7 +64,7 @@ func parseCardList(query url.Values) (string, string, string, error) {
 }
 
 func printingID(value string) (string, error) {
-	if !cards.ValidUUID(value) {
+	if !model.ValidUUID(value) {
 		return "", apperror.New(apperror.CodeCardNotFound, "card not found")
 	}
 	return strings.ToLower(value), nil
@@ -102,7 +102,7 @@ func mutationKey(values []string) (string, error) {
 		return "", apperror.New(apperror.CodeIdempotencyRequired, "one canonical UUID Idempotency-Key is required")
 	}
 	key := strings.ToLower(values[0])
-	if !cards.ValidUUID(key) || key[14] < '1' || key[14] > '5' || !strings.ContainsRune("89ab", rune(key[19])) {
+	if !model.ValidUUID(key) || key[14] < '1' || key[14] > '5' || !strings.ContainsRune("89ab", rune(key[19])) {
 		return "", apperror.New(apperror.CodeIdempotencyRequired, "Idempotency-Key must be an RFC 4122 UUID")
 	}
 	return key, nil

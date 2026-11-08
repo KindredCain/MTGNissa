@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"mtgnissa/internal/cards"
+	"mtgnissa/internal/model"
 )
 
 type cardSetResponse struct {
@@ -172,30 +172,30 @@ func cardDate(value *time.Time) *string {
 	return &date
 }
 
-func newCardSet(s cards.Set) cardSetResponse {
+func newCardSet(s model.SetRef) cardSetResponse {
 	return cardSetResponse{Code: s.Code, Name: s.Name, DisplayName: s.DisplayName, ReleasedAt: cardDate(s.ReleasedAt)}
 }
 
-func newCardLanguage(l cards.Language) cardLanguageResponse {
+func newCardLanguage(l model.Language) cardLanguageResponse {
 	return cardLanguageResponse{Code: l.Code, DisplayName: l.DisplayName, SortOrder: l.SortOrder}
 }
 
-func newQuantity(q cards.Quantity) quantityResponse {
+func newQuantity(q model.Quantity) quantityResponse {
 	return quantityResponse{Normal: q.Normal, Foil: q.Foil}
 }
 
-func newTotalQuantity(q cards.Quantity) totalQuantityResponse {
+func newTotalQuantity(q model.Quantity) totalQuantityResponse {
 	return totalQuantityResponse{quantityResponse: newQuantity(q), Total: q.Normal + q.Foil}
 }
 
-func newCardSummary(c cards.Summary) cardSummaryResponse {
+func newCardSummary(c model.CardSummary) cardSummaryResponse {
 	return cardSummaryResponse{PrintingUUID: c.PrintingUUID, OracleID: c.OracleID, Name: c.Name, DisplayName: c.DisplayName,
 		Set: newCardSet(c.Set), CollectorNumber: c.CollectorNumber, Language: newCardLanguage(c.Language), ReleasedAt: cardDate(c.ReleasedAt),
 		CMC: c.CMC, ManaCost: c.ManaCost, Colors: append([]string{}, c.Colors...), Rarity: c.Rarity, Layout: c.Layout,
 		Images: cardImagesResponse{FrontURL: c.Images.FrontURL, BackURL: c.Images.BackURL, HasDistinctBack: c.Images.BackURL != nil}}
 }
 
-func newCardList(list cards.List) cardListResponse {
+func newCardList(list model.CardList) cardListResponse {
 	r := cardListResponse{Set: newCardSet(list.Set), Language: newCardLanguage(list.Language), Items: make([]cardSummaryResponse, 0, len(list.Items)), Total: len(list.Items)}
 	for _, item := range list.Items {
 		r.Items = append(r.Items, newCardSummary(item))
@@ -203,7 +203,7 @@ func newCardList(list cards.List) cardListResponse {
 	return r
 }
 
-func newCardLanguages(options []cards.LanguageOption) []cardLanguageOptionResponse {
+func newCardLanguages(options []model.CardLanguageOption) []cardLanguageOptionResponse {
 	r := make([]cardLanguageOptionResponse, 0, len(options))
 	for _, option := range options {
 		r = append(r, cardLanguageOptionResponse{PrintingUUID: option.PrintingUUID, OracleID: option.OracleID, Language: newCardLanguage(option.Language), quantityResponse: newQuantity(option.Quantity)})
@@ -211,7 +211,7 @@ func newCardLanguages(options []cards.LanguageOption) []cardLanguageOptionRespon
 	return r
 }
 
-func newCardDetail(d cards.Detail) cardDetailResponse {
+func newCardDetail(d model.CardDetail) cardDetailResponse {
 	r := cardDetailResponse{Card: newCardSummary(d.Card), Collection: newQuantity(d.Collection), LogicalCollection: newTotalQuantity(d.LogicalCollection),
 		Wishlist: wishlistStateResponse{Included: d.Included}, Faces: []cardFaceResponse{}, Rulings: []rulingResponse{}, Tags: []oracleTagResponse{},
 		Languages: newCardLanguages(d.Languages), OtherVersions: []cardVersionResponse{}, DeckUsage: cardDeckUsageResponse{Total: len(d.Decks), Decks: []cardDeckResponse{}}}
@@ -235,7 +235,7 @@ func newCardDetail(d cards.Detail) cardDetailResponse {
 	return r
 }
 
-func newAdjustment(state cards.CollectionState) adjustmentResponse {
+func newAdjustment(state model.CollectionState) adjustmentResponse {
 	r := adjustmentResponse{PrintingUUID: state.Card.PrintingUUID, OracleID: state.Card.OracleID, Group: newTotalQuantity(state.Group),
 		Collection: ownershipTotalsResponse{Total: state.Collection.TotalQuantity, Distinct: state.Collection.DistinctCards}}
 	if state.Card.Set.Code != "" {

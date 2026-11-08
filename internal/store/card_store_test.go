@@ -1,12 +1,10 @@
-package cards
+package store
 
 import (
-	"errors"
-	"math"
 	"reflect"
 	"testing"
 
-	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/model"
 )
 
 func TestPrintingIdentityIsIndependentOfImageFallback(t *testing.T) {
@@ -38,7 +36,7 @@ func TestGroupingKeepsLanguagesAndPrintingsSeparate(t *testing.T) {
 	if len(groupFaces(rows)) != 3 {
 		t.Fatal("different languages or printings merged")
 	}
-	items := []Summary{{PrintingUUID: "z", CollectorNumber: "10"}, {PrintingUUID: "b", CollectorNumber: "2"}, {PrintingUUID: "a", CollectorNumber: "2"}, {PrintingUUID: "c", CollectorNumber: "2a"}}
+	items := []model.CardSummary{{PrintingUUID: "z", CollectorNumber: "10"}, {PrintingUUID: "b", CollectorNumber: "2"}, {PrintingUUID: "a", CollectorNumber: "2"}, {PrintingUUID: "c", CollectorNumber: "2a"}}
 	sortSummaries(items)
 	var ids []string
 	for _, item := range items {
@@ -46,27 +44,5 @@ func TestGroupingKeepsLanguagesAndPrintingsSeparate(t *testing.T) {
 	}
 	if !reflect.DeepEqual(ids, []string{"a", "b", "c", "z"}) {
 		t.Fatalf("order=%v", ids)
-	}
-}
-
-func TestAdjustmentDoesNotBorrowOtherFinishAndChecksBounds(t *testing.T) {
-	_, err := adjustQuantity(Quantity{Foil: 3}, "normal", -1)
-	var appErr *apperror.Error
-	if !errors.As(err, &appErr) || appErr.Code != apperror.CodeCollectionUnderflow {
-		t.Fatalf("underflow error=%v", err)
-	}
-	q, err := adjustQuantity(Quantity{Normal: 1, Foil: 3}, "normal", -1)
-	if err != nil || q.Normal != 0 || q.Foil != 3 {
-		t.Fatalf("quantity=%#v error=%v", q, err)
-	}
-	q, err = adjustQuantity(Quantity{Normal: 1}, "normal", -1)
-	if err != nil || q.Normal+q.Foil != 0 {
-		t.Fatalf("zero state=%#v error=%v", q, err)
-	}
-	if _, err := adjustQuantity(Quantity{Foil: math.MaxUint32}, "foil", 1); err == nil {
-		t.Fatal("quantity overflow accepted")
-	}
-	if _, err := adjustQuantity(Quantity{}, "etched", 1); err == nil {
-		t.Fatal("unsupported finish accepted")
 	}
 }

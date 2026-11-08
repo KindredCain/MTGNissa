@@ -11,30 +11,30 @@ import (
 	"testing"
 	"time"
 
-	"mtgnissa/internal/sets"
+	"mtgnissa/internal/model"
 )
 
 type setListerStub struct {
-	page   sets.Page
-	params sets.Params
+	page   model.SetPage
+	params model.SetParams
 	err    error
 }
 
 type capturingSetLister struct {
-	page   sets.Page
-	params sets.Params
+	page   model.SetPage
+	params model.SetParams
 	err    error
 }
 
-func (s setListerStub) Options(_ context.Context) (sets.Options, error) {
-	return sets.Options{}, s.err
+func (s setListerStub) Options(_ context.Context) (model.SetOptions, error) {
+	return model.SetOptions{}, s.err
 }
 
-func (s *capturingSetLister) Options(_ context.Context) (sets.Options, error) {
-	return sets.Options{}, s.err
+func (s *capturingSetLister) Options(_ context.Context) (model.SetOptions, error) {
+	return model.SetOptions{}, s.err
 }
 
-func (s setListerStub) List(_ context.Context, params sets.Params) (sets.Page, error) {
+func (s setListerStub) List(_ context.Context, params model.SetParams) (model.SetPage, error) {
 	s.params = params
 	return s.page, s.err
 }
@@ -44,15 +44,15 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 	releasedAt := time.Date(2021, time.February, 5, 0, 0, 0, 0, time.UTC)
 	parentCode := "KHM"
 	nextCursor := "next-page"
-	service := &capturingSetLister{page: sets.Page{
-		Items: []sets.Set{{
+	service := &capturingSetLister{page: model.SetPage{
+		Items: []model.SetListItem{{
 			Code:            "KHM",
 			Name:            "Kaldheim",
 			DisplayName:     "凯德海姆",
 			SetType:         "expansion",
 			CardCount:       405,
 			ReleasedAt:      &releasedAt,
-			Languages:       []sets.Language{{Code: "en", DisplayName: "英文", SortOrder: 1, Available: true}, {Code: "ja", DisplayName: "日文", SortOrder: 2, Available: false}},
+			Languages:       []model.SetLanguage{{Code: "en", DisplayName: "英文", SortOrder: 1, Available: true}, {Code: "ja", DisplayName: "日文", SortOrder: 2, Available: false}},
 			DefaultLanguage: &defaultLanguage,
 		}, {Code: "TKHM", Name: "Kaldheim Tokens", SetType: "token", ParentCode: &parentCode, Depth: 1}},
 		Total:      1,
@@ -66,7 +66,7 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
 	}
-	if service.params.Query != "Kaldheim" || service.params.Sort != sets.SortNameAsc {
+	if service.params.Query != "Kaldheim" || service.params.Sort != model.SortNameAsc {
 		t.Fatalf("params = %#v", service.params)
 	}
 	if strings.Join(service.params.Languages, ",") != "en,ja" {
@@ -131,7 +131,7 @@ func TestGetSetsRejectsInvalidInputs(t *testing.T) {
 	}
 }
 
-func (s *capturingSetLister) List(_ context.Context, params sets.Params) (sets.Page, error) {
+func (s *capturingSetLister) List(_ context.Context, params model.SetParams) (model.SetPage, error) {
 	s.params = params
 	return s.page, s.err
 }

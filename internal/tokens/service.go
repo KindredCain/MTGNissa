@@ -8,10 +8,12 @@ import (
 	"strings"
 
 	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/model"
+	"mtgnissa/internal/store"
 )
 
 type tokenStore interface {
-	Read(context.Context, string) (Set, []Face, error)
+	Read(context.Context, string) (model.TokenSet, []model.TokenFace, error)
 }
 
 // Service organizes Token faces into naturally ordered printing summaries.
@@ -20,25 +22,25 @@ type Service struct {
 }
 
 // NewService creates a Token list service backed by the Card DB store.
-func NewService(store *Store) *Service {
+func NewService(store *store.TokenStore) *Service {
 	return &Service{store: store}
 }
 
 // List returns all printings in the requested Token Set without pagination.
-func (s *Service) List(ctx context.Context, code string) (List, error) {
+func (s *Service) List(ctx context.Context, code string) (model.TokenList, error) {
 	set, faces, err := s.store.Read(ctx, code)
 	if err != nil {
 		var appErr *apperror.Error
 		if errors.As(err, &appErr) {
-			return List{}, err
+			return model.TokenList{}, err
 		}
-		return List{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
+		return model.TokenList{}, apperror.Wrap(apperror.CodeDependencyUnavailable, "card data is temporarily unavailable", err)
 	}
-	return List{Set: set, Items: organize(faces)}, nil
+	return model.TokenList{Set: set, Items: organize(faces)}, nil
 }
 
-func organize(faces []Face) []Token {
-	groups := make(map[string][]Face)
+func organize(faces []model.TokenFace) []model.Token {
+	groups := make(map[string][]model.TokenFace)
 	for _, face := range faces {
 		key := "uuid:" + face.UUID
 		if face.ScryfallID != nil && strings.TrimSpace(*face.ScryfallID) != "" {
@@ -46,7 +48,7 @@ func organize(faces []Face) []Token {
 		}
 		groups[key] = append(groups[key], face)
 	}
-	items := make([]Token, 0, len(groups))
+	items := make([]model.Token, 0, len(groups))
 	for _, group := range groups {
 		sort.Slice(group, func(i, j int) bool {
 			if group[i].FaceIndex != group[j].FaceIndex {
@@ -55,7 +57,7 @@ func organize(faces []Face) []Token {
 			return group[i].UUID < group[j].UUID
 		})
 		front := group[0]
-		item := Token{UUID: front.UUID, Name: front.Name, CollectorNumber: front.CollectorNumber, Layout: front.Layout}
+		item := model.Token{UUID: front.UUID, Name: front.Name, CollectorNumber: front.CollectorNumber, Layout: front.Layout}
 		item.FrontURL = imageURL(front.ScryfallID, "front")
 		// The public image source exposes a separate back for double-faced Tokens.
 		if front.Layout == "double_faced_token" || len(group) > 1 && group[len(group)-1].FaceIndex > front.FaceIndex {
@@ -64,7 +66,7 @@ func organize(faces []Face) []Token {
 		items = append(items, item)
 	}
 	sort.Slice(items, func(i, j int) bool {
-		if order := naturalCompare(items[i].CollectorNumber, items[j].CollectorNumber); order != 0 {
+		if order := model.CompareCollectorNumbers(items[i].CollectorNumber, items[j].CollectorNumber); order != 0 {
 			return order < 0
 		}
 		return items[i].UUID < items[j].UUID
@@ -85,39 +87,4 @@ func imageURL(id *string, side string) *string {
 	}
 	url := "https://cards.scryfall.io/normal/" + side + "/" + value[:1] + "/" + value[1:2] + "/" + value + ".jpg"
 	return &url
-}
-
-// naturalCompare compares digit runs by magnitude without integer overflow.
-func naturalCompare(a, b string) int {
-	for len(a) > 0 && len(b) > 0 {
-		if a[0] >= '0' && a[0] <= '9' && b[0] >= '0' && b[0] <= '9' {
-			i, j := 0, 0
-			for i < len(a) && a[i] >= '0' && a[i] <= '9' {
-				i++
-			}
-			for j < len(b) && b[j] >= '0' && b[j] <= '9' {
-				j++
-			}
-			x, y := strings.TrimLeft(a[:i], "0"), strings.TrimLeft(b[:j], "0")
-			if len(x) < len(y) {
-				return -1
-			}
-			if len(x) > len(y) {
-				return 1
-			}
-			if order := strings.Compare(x, y); order != 0 {
-				return order
-			}
-			a, b = a[i:], b[j:]
-			continue
-		}
-		if a[0] < b[0] {
-			return -1
-		}
-		if a[0] > b[0] {
-			return 1
-		}
-		a, b = a[1:], b[1:]
-	}
-	return strings.Compare(a, b)
 }

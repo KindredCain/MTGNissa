@@ -1,10 +1,11 @@
-// Package tokens provides read-only Token Set browsing.
-package tokens
+package model
 
-import "time"
+import (
+	"time"
+)
 
-// Set identifies the Token Set whose printings are being browsed.
-type Set struct {
+// TokenSet identifies the Token Set whose printings are being browsed.
+type TokenSet struct {
 	Code        string     `db:"code"`
 	Name        string     `db:"name"`
 	DisplayName string     `db:"display_name"`
@@ -12,8 +13,8 @@ type Set struct {
 	SetType     string     `db:"set_type"`
 }
 
-// Face contains the source identity and display fields of one Token face.
-type Face struct {
+// TokenFace contains the source identity and display fields of one Token face.
+type TokenFace struct {
 	UUID            string  `db:"uuid"`
 	ScryfallID      *string `db:"scryfall_id"`
 	FaceIndex       int     `db:"face_index"`
@@ -32,8 +33,8 @@ type Token struct {
 	BackURL         *string
 }
 
-// List contains the complete lightweight printings of a Token Set.
-type List struct {
-	Set   Set
+// TokenList contains the complete lightweight printings of a Token Set.
+type TokenList struct {
+	Set   TokenSet
 	Items []Token
 }

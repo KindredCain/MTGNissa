@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"mtgnissa/internal/collection"
+	"mtgnissa/internal/model"
 )
 
 func TestCollectionQueryDefaultsAndRepeatedFilters(t *testing.T) {
@@ -36,7 +36,7 @@ func TestCollectionQueryRejectsInvalidEnumsCombinationsAndRepeatedScalars(t *tes
 }
 
 func TestCollectionDTOEmptyArraysAndNullableHeaders(t *testing.T) {
-	encoded, err := json.Marshal(newCollectionPage(collection.Page{Items: []collection.Item{{}}}))
+	encoded, err := json.Marshal(newCollectionPage(model.CollectionPage{Items: []model.CollectionItem{{}}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,11 +45,11 @@ func TestCollectionDTOEmptyArraysAndNullableHeaders(t *testing.T) {
 			t.Errorf("missing %s in %s", expected, encoded)
 		}
 	}
-	encoded, err = json.Marshal(newCollectionOptions(collection.Options{}))
+	encoded, err = json.Marshal(newCollectionOptions(model.CollectionOptions{}))
 	if err != nil || string(encoded) != `{"sets":[],"languages":[],"colors":[],"mana_values":[],"rarities":[]}` {
 		t.Fatalf("options=%s error=%v", encoded, err)
 	}
-	encoded, err = json.Marshal(newCollectionPage(collection.Page{}))
+	encoded, err = json.Marshal(newCollectionPage(model.CollectionPage{}))
 	if err != nil || !strings.Contains(string(encoded), `"items":[]`) {
 		t.Fatalf("page=%s error=%v", encoded, err)
 	}

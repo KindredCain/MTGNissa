@@ -1,6 +1,8 @@
 package httpapi
 
-import "mtgnissa/internal/collection"
+import (
+	"mtgnissa/internal/model"
+)
 
 type collectionSetOptionResponse struct {
 	Code        string `json:"code"`
@@ -32,7 +34,7 @@ type collectionPageResponse struct {
 	NextCursor *string                  `json:"next_cursor"`
 }
 
-func newCollectionOptions(options collection.Options) collectionOptionsResponse {
+func newCollectionOptions(options model.CollectionOptions) collectionOptionsResponse {
 	result := collectionOptionsResponse{Sets: []collectionSetOptionResponse{}, Languages: []cardLanguageResponse{},
 		Colors: append([]string{}, options.Colors...), ManaValues: append([]string{}, options.ManaValues...), Rarities: append([]string{}, options.Rarities...)}
 	for _, set := range options.Sets {
@@ -44,7 +46,7 @@ func newCollectionOptions(options collection.Options) collectionOptionsResponse 
 	return result
 }
 
-func newCollectionPage(page collection.Page) collectionPageResponse {
+func newCollectionPage(page model.CollectionPage) collectionPageResponse {
 	result := collectionPageResponse{Items: make([]collectionItemResponse, 0, len(page.Items)),
 		Summary: ownershipTotalsResponse{Total: page.Summary.TotalQuantity, Distinct: page.Summary.DistinctCards}, Total: page.Total, NextCursor: page.NextCursor}
 	for _, item := range page.Items {

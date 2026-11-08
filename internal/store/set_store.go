@@ -1,4 +1,4 @@
-package sets
+package store
 
 import (
 	"context"
@@ -11,20 +11,22 @@ import (
 	_ "github.com/doug-martin/goqu/v9/dialect/mysql"
 	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jmoiron/sqlx"
+
+	"mtgnissa/internal/model"
 )
 
-// Store reads Set list data from the Card DB.
-type Store struct {
+// SetStore reads Set list data from the Card DB.
+type SetStore struct {
 	db *sqlx.DB
 }
 
-type languageRow struct {
+type setLanguageRow struct {
 	Code        string `db:"code"`
 	DisplayName string `db:"display_name"`
 	SortOrder   int    `db:"sort_order"`
 }
 
-type setRow struct {
+type setListRow struct {
 	Code        string     `db:"code"`
 	Name        string     `db:"name"`
 	DisplayName string     `db:"display_name"`
@@ -37,59 +39,66 @@ type setRow struct {
 
 var mysqlDialect = goqu.Dialect("mysql")
 
-// NewStore creates a Card DB Set list store.
-func NewStore(db *sqlx.DB) *Store {
-	return &Store{db: db}
+// SetPosition is a decoded query boundary for a Set list database page.
+type SetPosition struct {
+	Value  string
+	Code   string
+	IsNull bool
+}
+
+// NewSetStore creates a Card DB Set list store.
+func NewSetStore(db *sqlx.DB) *SetStore {
+	return &SetStore{db: db}
 }
 
 // List reads a consistent page of complete root groups and their language matrix.
-func (s *Store) List(ctx context.Context, params Params, position *cursorPosition, pageSize int) (Page, bool, error) {
+func (s *SetStore) List(ctx context.Context, params model.SetParams, position *SetPosition, pageSize int) (model.SetPage, bool, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	defer tx.Rollback()
 
 	languages, err := queryLanguages(ctx, tx)
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	var links []hierarchyRow
 	if err := tx.SelectContext(ctx, &links, "SELECT code, parent_code FROM mtgnissa_set"); err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	hierarchy, err := newSetHierarchy(links)
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	base := buildSetDataset(params)
 	var total int64
 	countQuery, countArgs, err := base.Select(goqu.COUNT("*")).ToSQL()
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	if err := tx.GetContext(ctx, &total, countQuery, countArgs...); err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	roots, hasMore, err := queryRootSets(ctx, tx, base, languages, params.Sort, position, pageSize)
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	descendants, err := queryDescendantSets(ctx, tx, hierarchy.descendantCodes(roots), languages)
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	items, err := hierarchy.expand(roots, descendants)
 	if err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
 	if err := tx.Commit(); err != nil {
-		return Page{}, false, err
+		return model.SetPage{}, false, err
 	}
-	return Page{Items: items, Total: total}, hasMore, nil
+	return model.SetPage{Items: items, Total: total}, hasMore, nil
 }
 
-func queryLanguages(ctx context.Context, tx *sqlx.Tx) ([]Language, error) {
+func queryLanguages(ctx context.Context, tx *sqlx.Tx) ([]model.SetLanguage, error) {
 	const query = `
 		SELECT code, display_name, sort_order
 		FROM scryfall_language
@@ -97,18 +106,18 @@ func queryLanguages(ctx context.Context, tx *sqlx.Tx) ([]Language, error) {
 		LIMIT 11
 	`
 
-	var rows []languageRow
+	var rows []setLanguageRow
 	if err := tx.SelectContext(ctx, &rows, query); err != nil {
 		return nil, err
 	}
-	languages := make([]Language, 0, len(rows))
+	languages := make([]model.SetLanguage, 0, len(rows))
 	for _, row := range rows {
-		languages = append(languages, Language{Code: row.Code, DisplayName: row.DisplayName, SortOrder: row.SortOrder})
+		languages = append(languages, model.SetLanguage{Code: row.Code, DisplayName: row.DisplayName, SortOrder: row.SortOrder})
 	}
 	return languages, nil
 }
 
-func queryRootSets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, languages []Language, sort Sort, position *cursorPosition, pageSize int) ([]Set, bool, error) {
+func queryRootSets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, languages []model.SetLanguage, sort model.SetSort, position *SetPosition, pageSize int) ([]model.SetListItem, bool, error) {
 	dataset := base
 	if position != nil {
 		clause, err := cursorExpression(sort, *position)
@@ -128,14 +137,14 @@ func queryRootSets(ctx context.Context, tx *sqlx.Tx, base *goqu.SelectDataset, l
 	return items, hasMore, nil
 }
 
-func queryDescendantSets(ctx context.Context, tx *sqlx.Tx, codes []string, languages []Language) ([]Set, error) {
+func queryDescendantSets(ctx context.Context, tx *sqlx.Tx, codes []string, languages []model.SetLanguage) ([]model.SetListItem, error) {
 	if len(codes) == 0 {
-		return []Set{}, nil
+		return []model.SetListItem{}, nil
 	}
 	return readSets(ctx, tx, setDataset().Where(goqu.I("s.code").In(stringsToInterfaces(codes)...)), languages)
 }
 
-func readSets(ctx context.Context, tx *sqlx.Tx, dataset *goqu.SelectDataset, languages []Language) ([]Set, error) {
+func readSets(ctx context.Context, tx *sqlx.Tx, dataset *goqu.SelectDataset, languages []model.SetLanguage) ([]model.SetListItem, error) {
 	query, args, err := dataset.Select(
 		goqu.I("s.code"),
 		goqu.I("s.name"),
@@ -149,13 +158,13 @@ func readSets(ctx context.Context, tx *sqlx.Tx, dataset *goqu.SelectDataset, lan
 	if err != nil {
 		return nil, err
 	}
-	var rows []setRow
+	var rows []setListRow
 	if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
 		return nil, err
 	}
-	items := make([]Set, 0, len(rows))
+	items := make([]model.SetListItem, 0, len(rows))
 	for _, row := range rows {
-		item := Set{
+		item := model.SetListItem{
 			Code:        row.Code,
 			Name:        row.Name,
 			DisplayName: row.DisplayName,
@@ -163,7 +172,7 @@ func readSets(ctx context.Context, tx *sqlx.Tx, dataset *goqu.SelectDataset, lan
 			CardCount:   row.CardCount,
 			ReleasedAt:  row.ReleasedAt,
 			ParentCode:  row.ParentCode,
-			Languages:   make([]Language, 0),
+			Languages:   make([]model.SetLanguage, 0),
 		}
 		if row.SetType != "token" {
 			available := make(map[string]bool)
@@ -200,7 +209,7 @@ func setDataset() *goqu.SelectDataset {
 		Prepared(true)
 }
 
-func buildSetDataset(params Params) *goqu.SelectDataset {
+func buildSetDataset(params model.SetParams) *goqu.SelectDataset {
 	filters := []exp.Expression{goqu.I("s.parent_code").IsNull()}
 	if params.Query != "" {
 		pattern := "%" + escapeLike(params.Query) + "%"
@@ -223,14 +232,14 @@ func buildSetDataset(params Params) *goqu.SelectDataset {
 	return setDataset().Where(filters...)
 }
 
-func cursorExpression(sort Sort, position cursorPosition) (exp.Expression, error) {
+func cursorExpression(sort model.SetSort, position SetPosition) (exp.Expression, error) {
 	column, descending := sortColumn(sort)
-	if isDateSort(sort) && position.isNull {
-		return goqu.And(goqu.I(column).IsNull(), goqu.I("s.code").Gt(position.code)), nil
+	if isDateSort(sort) && position.IsNull {
+		return goqu.And(goqu.I(column).IsNull(), goqu.I("s.code").Gt(position.Code)), nil
 	}
-	value := any(position.value)
-	if sort == SortCardCountAsc || sort == SortCardCountDesc {
-		parsed, err := strconv.ParseUint(position.value, 10, 64)
+	value := any(position.Value)
+	if sort == model.SortCardCountAsc || sort == model.SortCardCountDesc {
+		parsed, err := strconv.ParseUint(position.Value, 10, 64)
 		if err != nil {
 			return nil, err
 		}
@@ -240,50 +249,50 @@ func cursorExpression(sort Sort, position cursorPosition) (exp.Expression, error
 	if descending {
 		primary = goqu.I(column).Lt(value)
 	}
-	if sort == SortCodeAsc || sort == SortCodeDesc {
+	if sort == model.SortCodeAsc || sort == model.SortCodeDesc {
 		return primary, nil
 	}
-	clause := goqu.Or(primary, goqu.And(goqu.I(column).Eq(value), goqu.I("s.code").Gt(position.code)))
+	clause := goqu.Or(primary, goqu.And(goqu.I(column).Eq(value), goqu.I("s.code").Gt(position.Code)))
 	if isDateSort(sort) {
 		return goqu.Or(clause, goqu.I(column).IsNull()), nil
 	}
 	return clause, nil
 }
 
-func sortColumn(sort Sort) (string, bool) {
+func sortColumn(sort model.SetSort) (string, bool) {
 	switch sort {
-	case SortReleasedDesc:
+	case model.SortReleasedDesc:
 		return "s.released_at", true
-	case SortReleasedAsc:
+	case model.SortReleasedAsc:
 		return "s.released_at", false
-	case SortNameAsc:
+	case model.SortNameAsc:
 		return "s.name", false
-	case SortNameDesc:
+	case model.SortNameDesc:
 		return "s.name", true
-	case SortCodeAsc:
+	case model.SortCodeAsc:
 		return "s.code", false
-	case SortCodeDesc:
+	case model.SortCodeDesc:
 		return "s.code", true
-	case SortCardCountDesc:
+	case model.SortCardCountDesc:
 		return "s.card_count", true
-	case SortCardCountAsc:
+	case model.SortCardCountAsc:
 		return "s.card_count", false
 	default:
 		return "s.released_at", true
 	}
 }
 
-func isDateSort(sort Sort) bool {
-	return sort == SortReleasedAsc || sort == SortReleasedDesc
+func isDateSort(sort model.SetSort) bool {
+	return sort == model.SortReleasedAsc || sort == model.SortReleasedDesc
 }
 
-func orderExpressions(sort Sort) []exp.OrderedExpression {
+func orderExpressions(sort model.SetSort) []exp.OrderedExpression {
 	column, descending := sortColumn(sort)
 	primary := goqu.I(column).Asc()
 	if descending {
 		primary = goqu.I(column).Desc()
 	}
-	if sort == SortCodeAsc || sort == SortCodeDesc {
+	if sort == model.SortCodeAsc || sort == model.SortCodeDesc {
 		return []exp.OrderedExpression{primary}
 	}
 	order := make([]exp.OrderedExpression, 0, 3)
@@ -305,4 +314,32 @@ func stringsToInterfaces(values []string) []any {
 		result[i] = value
 	}
 	return result
+}
+
+func (s *SetStore) Options(ctx context.Context) (model.SetOptions, error) {
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return model.SetOptions{}, err
+	}
+	defer tx.Rollback()
+
+	languages, err := queryLanguages(ctx, tx)
+	if err != nil {
+		return model.SetOptions{}, err
+	}
+	const query = `
+		SELECT set_type
+		FROM mtgnissa_set
+		WHERE parent_code IS NULL AND set_type <> '' AND set_type <> 'token'
+		GROUP BY set_type
+		ORDER BY MIN(code) ASC, set_type ASC
+	`
+	setTypes := make([]string, 0)
+	if err := tx.SelectContext(ctx, &setTypes, query); err != nil {
+		return model.SetOptions{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return model.SetOptions{}, err
+	}
+	return model.SetOptions{Languages: languages, SetTypes: setTypes}, nil
 }

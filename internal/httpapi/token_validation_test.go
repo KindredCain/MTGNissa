@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"mtgnissa/internal/apperror"
-	"mtgnissa/internal/tokens"
+	"mtgnissa/internal/model"
 )
 
 func TestParseTokenSetCode(t *testing.T) {
@@ -39,11 +39,11 @@ func TestParseTokenSetCode(t *testing.T) {
 }
 
 func TestTokenDTOHasEmptyItemsAndNullableImages(t *testing.T) {
-	response := newTokenListResponse(tokens.List{Set: tokens.Set{Code: "TKLD"}})
+	response := newTokenListResponse(model.TokenList{Set: model.TokenSet{Code: "TKLD"}})
 	if response.Items == nil || response.Total != 0 || response.Set.ReleasedAt != nil {
 		t.Fatalf("empty response = %#v", response)
 	}
-	response = newTokenListResponse(tokens.List{Items: []tokens.Token{{UUID: "token"}}})
+	response = newTokenListResponse(model.TokenList{Items: []model.Token{{UUID: "token"}}})
 	encoded, err := json.Marshal(response)
 	if err != nil {
 		t.Fatal(err)

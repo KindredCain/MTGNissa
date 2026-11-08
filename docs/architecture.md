@@ -81,9 +81,20 @@ MTGNissa Docker 容器
 以下技术选项仍待确定：
 
 - OpenAPI 契约的发布、校验和后端同步流程
-- 业务模块划分
 
 业务数据访问统一使用 `sqlx` 的结构体映射、事务和查询辅助能力。动态 SQL 组装固定使用 `goqu`，范围只包括 `GET /api/v1/sets`、`GET /api/v1/search`、`GET /api/v1/collection` 和 `GET /api/v1/wishlist`；这四个接口的筛选、搜索表达式、分组、排序和游标条件由 Builder 组合，再交给 `sqlx` 执行。具体 Set 卡牌列表、选项、详情、卡组、日志和所有业务写入继续使用手写 SQL；迁移与卡牌数据导入也不使用 `goqu`。不得为了形式统一把结构固定的 SQL 改写为 Builder。
+
+## 后端分层与事务边界
+
+业务 SQL 统一放在 `internal/store` 包内，按业务分文件和 Store 类型；不再以 HTTP 路径或数据库名称将不同业务的全部 SQL 集中到一个 `AppStore`。卡牌、系列、Token、收藏、愿望单、卡组和日志查询或写入分别归入对应存储实现。`store` 不引用 `cards`、`sets`、`tokens`、`collection` 等 Service 包。
+
+`internal/model` 保存跨层使用的业务模型、查询参数、分页及汇总结果，供 Service、Store 和 HTTP 映射共同使用。HTTP 请求与响应 DTO 继续留在 `internal/httpapi`，通用信封留在 `internal/httpresponse`；`internal/appdata` 的数据库实体和迁移，以及 `internal/carddata` 的导入、解析、转换模型均保留原位。仅在实现内部使用的 SQL 扫描行、分组键和游标编码结构不进入共用业务模型。
+
+依赖方向为 `httpapi -> 业务 Service -> store`，Service 和 Store 都可引用 `model`；`model` 不反向引用 Service 或 Store。Service 按现有 API 模块组织流程，`/cards/{printing_uuid}/collection_adjustments` 和 `/cards/{printing_uuid}/wishlist_state` 继续由 `cards.Service` 编排，分别调用收藏和愿望单存储能力。
+
+Service 决定事务包含哪些业务步骤，`store.AppTransactions` 封装开启、提交与回滚。写入通过 `WithAppTx` 回调取得绑定到同一个 `sqlx.Tx` 的 `TxStores`，各业务存储不自行提交，也不在事务中改用普通 DB 连接。收藏调整与日志写入、愿望单实际变化与日志写入由 Service 在同一回调中组合；任何一步失败均回滚。事务成功提交后，才允许将进程内幂等记录标记为完成；提交后的响应查询失败不得导致重试重复写入。
+
+`WithAppRead` 提供只读、可重复读快照，用于组合详情中的收藏、愿望单及卡组占用，或查询调整后的权威汇总。Card DB 身份查询在开启 App DB 写事务前完成；两个数据源保持独立连接，不提供跨库原子事务或全局一致快照。数据导入、数据库迁移和健康检查保持原有基础设施边界。
 
 ## 前端架构
 
@@ -234,7 +245,12 @@ mtgnissa/
 │   │   ├── migrations.go
 │   │   └── models.go
 │   ├── carddata/
+│   ├── model/
+│   ├── store/
+│   ├── cards/
+│   ├── collection/
 │   ├── sets/
+│   ├── tokens/
 │   ├── apperror/
 │   ├── bootstrap/
 │   ├── config/
@@ -394,7 +410,6 @@ HTTP 层应保留未来接入统一认证中间件的能力。
 
 ## 延期事项
 
-- 业务模块边界
 - OpenAPI 契约的发布、校验和后端同步流程
 - 卡组分区移动的按钮、菜单或键盘等非拖拽操作路径
 - 平板和手机页面的具体原型、断点验收值及正式交付范围

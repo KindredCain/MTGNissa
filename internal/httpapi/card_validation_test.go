@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"mtgnissa/internal/apperror"
-	"mtgnissa/internal/cards"
+	"mtgnissa/internal/model"
 )
 
 func TestCardListParameters(t *testing.T) {
@@ -72,7 +72,7 @@ func TestMutationKeyAndPrintingUUIDAreValidated(t *testing.T) {
 }
 
 func TestCardDTOsKeepArraysAndQuantitiesStable(t *testing.T) {
-	detail := newCardDetail(cards.Detail{Collection: cards.Quantity{Normal: 2, Foil: 1}, LogicalCollection: cards.Quantity{Normal: 4, Foil: 3}})
+	detail := newCardDetail(model.CardDetail{Collection: model.Quantity{Normal: 2, Foil: 1}, LogicalCollection: model.Quantity{Normal: 4, Foil: 3}})
 	encoded, err := json.Marshal(detail)
 	if err != nil {
 		t.Fatal(err)
@@ -89,11 +89,11 @@ func TestCardDTOsKeepArraysAndQuantitiesStable(t *testing.T) {
 	if detail.LogicalCollection.Total != 7 || detail.Collection.Normal != 2 || detail.Collection.Foil != 1 {
 		t.Fatal("concrete and logical quantities mixed")
 	}
-	adjustment := newAdjustment(cards.CollectionState{Card: cards.Summary{PrintingUUID: "print", Set: cards.Set{Code: "KLD"}}, Group: cards.Quantity{Normal: 2, Foil: 3}, Collection: cards.Totals{TotalQuantity: 42, DistinctCards: 30}})
+	adjustment := newAdjustment(model.CollectionState{Card: model.CardSummary{PrintingUUID: "print", Set: model.SetRef{Code: "KLD"}}, Group: model.Quantity{Normal: 2, Foil: 3}, Collection: model.OwnershipTotals{TotalQuantity: 42, DistinctCards: 30}})
 	if adjustment.Group.Total != 5 || adjustment.Collection.Total != 42 || adjustment.SetSummary == nil {
 		t.Fatalf("adjustment=%#v", adjustment)
 	}
-	if newCardList(cards.List{}).Items == nil {
+	if newCardList(model.CardList{}).Items == nil {
 		t.Fatal("empty card list must not be null")
 	}
 }

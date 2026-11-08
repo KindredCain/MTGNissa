@@ -1,16 +1,18 @@
-package cards
+package store
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/model"
 )
 
 // CardStore reads printing identities, card text, and Oracle metadata from Card DB.
@@ -123,10 +125,11 @@ func NewCardStore(db *sqlx.DB) *CardStore {
 	return &CardStore{db: db}
 }
 
-func (s *CardStore) list(ctx context.Context, code, language, query string) (List, error) {
+// List reads the complete lightweight list for one ordinary series and language.
+func (s *CardStore) List(ctx context.Context, code, language, query string) (model.CardList, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
-		return List{}, err
+		return model.CardList{}, err
 	}
 	defer tx.Rollback()
 	var set setRow
@@ -134,24 +137,24 @@ func (s *CardStore) list(ctx context.Context, code, language, query string) (Lis
  COALESCE((SELECT MIN(NULLIF(TRIM(st.name),'')) FROM set_translation st WHERE st.code=s.code),s.name) AS display_name
  FROM mtgnissa_set s WHERE s.code=?`, code)
 	if errors.Is(err, sql.ErrNoRows) {
-		return List{}, apperror.New(apperror.CodeSetNotFound, "set not found")
+		return model.CardList{}, apperror.New(apperror.CodeSetNotFound, "set not found")
 	}
 	if err != nil {
-		return List{}, err
+		return model.CardList{}, err
 	}
 	if set.Kind == "token" {
-		return List{}, apperror.New(apperror.CodeInvalidRequest, "use the tokens endpoint for token sets")
+		return model.CardList{}, apperror.New(apperror.CodeInvalidRequest, "use the tokens endpoint for token sets")
 	}
 	var lang languageRow
 	if err := tx.GetContext(ctx, &lang, "SELECT code, display_name, sort_order FROM scryfall_language WHERE code=?", language); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return List{}, apperror.WithDetails(apperror.CodeValidationFailed, "unknown language", []apperror.Detail{{Field: "language", Reason: "unknown_language"}})
+			return model.CardList{}, apperror.WithDetails(apperror.CodeValidationFailed, "unknown language", []apperror.Detail{{Field: "language", Reason: "unknown_language"}})
 		}
-		return List{}, err
+		return model.CardList{}, err
 	}
 	var rows []faceRow
 	if err := tx.SelectContext(ctx, &rows, summaryQuery+` WHERE s.code=? AND l.code=?`, set.Code, lang.Code); err != nil {
-		return List{}, err
+		return model.CardList{}, err
 	}
 	// Filter the complete printing group so a matching secondary face retains its main-face identity.
 	matched := make(map[string]bool)
@@ -160,13 +163,13 @@ func (s *CardStore) list(ctx context.Context, code, language, query string) (Lis
 		pattern := strings.NewReplacer("=", "==", "%", "=%", "_", "=_").Replace(query)
 		if err := tx.SelectContext(ctx, &ids, `SELECT p.uuid FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
  WHERE c.set_code=? AND p.language_code=? AND p.printed_name LIKE ? ESCAPE '='`, set.Code, lang.Code, "%"+pattern+"%"); err != nil {
-			return List{}, err
+			return model.CardList{}, err
 		}
 		for _, id := range ids {
 			matched[id] = true
 		}
 	}
-	items := make([]Summary, 0)
+	items := make([]model.CardSummary, 0)
 	for _, group := range groupFaces(rows) {
 		include := query == ""
 		for _, row := range group {
@@ -179,9 +182,9 @@ func (s *CardStore) list(ctx context.Context, code, language, query string) (Lis
 	}
 	sortSummaries(items)
 	if err := tx.Commit(); err != nil {
-		return List{}, err
+		return model.CardList{}, err
 	}
-	return List{Set: Set{Code: set.Code, Name: set.Name, DisplayName: set.DisplayName, ReleasedAt: set.ReleasedAt}, Language: Language{Code: lang.Code, DisplayName: lang.DisplayName, SortOrder: lang.SortOrder}, Items: items}, nil
+	return model.CardList{Set: model.SetRef{Code: set.Code, Name: set.Name, DisplayName: set.DisplayName, ReleasedAt: set.ReleasedAt}, Language: model.Language{Code: lang.Code, DisplayName: lang.DisplayName, SortOrder: lang.SortOrder}, Items: items}, nil
 }
 
 func readPrinting(ctx context.Context, tx *sqlx.Tx, id string) ([]faceRow, error) {
@@ -200,26 +203,27 @@ func readPrinting(ctx context.Context, tx *sqlx.Tx, id string) ([]faceRow, error
 	return rows, nil
 }
 
-func (s *CardStore) printing(ctx context.Context, id string) (Summary, []Face, error) {
+// Printing resolves a canonical language printing and its complete face data.
+func (s *CardStore) Printing(ctx context.Context, id string) (model.CardSummary, []model.CardFace, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
-		return Summary{}, nil, err
+		return model.CardSummary{}, nil, err
 	}
 	defer tx.Rollback()
 	rows, err := readPrinting(ctx, tx, id)
 	if err != nil {
-		return Summary{}, nil, err
+		return model.CardSummary{}, nil, err
 	}
 	card, faces := summarize(rows)
 	if err := tx.Commit(); err != nil {
-		return Summary{}, nil, err
+		return model.CardSummary{}, nil, err
 	}
 	return card, faces, nil
 }
 
 // Summaries resolves canonical printing summaries and all their faces in batches.
-func (s *CardStore) Summaries(ctx context.Context, ids []string) (map[string]Summary, error) {
-	result := make(map[string]Summary, len(ids))
+func (s *CardStore) Summaries(ctx context.Context, ids []string) (map[string]model.CardSummary, error) {
+	result := make(map[string]model.CardSummary, len(ids))
 	if len(ids) == 0 {
 		return result, nil
 	}
@@ -254,4 +258,85 @@ func (s *CardStore) Summaries(ctx context.Context, ids []string) (map[string]Sum
 		return nil, err
 	}
 	return result, nil
+}
+
+func groupFaces(rows []faceRow) [][]faceRow {
+	groups := make(map[[2]string][]faceRow)
+	for _, row := range rows {
+		key := [2]string{row.SourceID, row.LanguageCode}
+		groups[key] = append(groups[key], row)
+	}
+	result := make([][]faceRow, 0, len(groups))
+	for _, group := range groups {
+		result = append(result, group)
+	}
+	return result
+}
+
+func summarize(rows []faceRow) (model.CardSummary, []model.CardFace) {
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Index != rows[j].Index {
+			return rows[i].Index < rows[j].Index
+		}
+		return rows[i].UUID < rows[j].UUID
+	})
+	r := rows[0]
+	displayName := r.DisplayName
+	if len(rows) > 1 {
+		names := make([]string, 0, len(rows))
+		for _, row := range rows {
+			names = append(names, row.DisplayName)
+		}
+		displayName = strings.Join(names, " // ")
+	}
+	faces := make([]model.CardFace, 0, len(rows))
+	images := model.CardImages{FrontURL: picture(r.ImageID, "front")}
+	if distinctBack(r) {
+		images.BackURL = picture(r.ImageID, "back")
+	}
+	for _, row := range rows {
+		image := picture(row.ImageID, "front")
+		if row.Index > 0 {
+			image = nil
+			if distinctBack(row) {
+				image = picture(row.ImageID, "back")
+			}
+		}
+		faces = append(faces, model.CardFace{FaceIndex: row.Index, Name: row.FaceName, DisplayName: row.DisplayName,
+			ManaCost: row.ManaCost, TypeLine: row.TypeLine, DisplayTypeLine: row.DisplayTypeLine,
+			OracleText: row.Text, DisplayOracleText: row.DisplayText, FlavorText: row.Flavor,
+			DisplayFlavorText: row.DisplayFlavor, Power: row.Power, Toughness: row.Toughness, Loyalty: row.Loyalty, ImageURL: image})
+	}
+	colors := make([]string, 0)
+	for i, code := range []string{"W", "U", "B", "R", "G"} {
+		if r.Colors&(1<<i) != 0 {
+			colors = append(colors, code)
+		}
+	}
+	return model.CardSummary{PrintingUUID: r.UUID, OracleID: r.OracleID, Name: r.Name, DisplayName: displayName,
+		Set:             model.SetRef{Code: r.SetCode, Name: r.SetName, DisplayName: r.SetDisplayName, ReleasedAt: r.SetReleasedAt},
+		CollectorNumber: r.Number, Language: model.Language{Code: r.LanguageCode, DisplayName: r.LanguageName, SortOrder: r.LanguageOrder},
+		ReleasedAt: r.ReleasedAt, CMC: r.CMC, ManaCost: r.ManaCost, Colors: colors, Rarity: r.Rarity, Layout: r.Layout, Images: images}, faces
+}
+
+func distinctBack(row faceRow) bool {
+	return row.FaceCategory == "double_sided" || row.FaceCategory == "reversible" || row.Layout == "battle"
+}
+
+func picture(id, side string) *string {
+	id = strings.ToLower(id)
+	if !model.ValidUUID(id) {
+		return nil
+	}
+	url := "https://cards.scryfall.io/normal/" + side + "/" + id[:1] + "/" + id[1:2] + "/" + id + ".jpg"
+	return &url
+}
+
+func sortSummaries(items []model.CardSummary) {
+	sort.Slice(items, func(i, j int) bool {
+		if order := model.CompareCollectorNumbers(items[i].CollectorNumber, items[j].CollectorNumber); order != 0 {
+			return order < 0
+		}
+		return items[i].PrintingUUID < items[j].PrintingUUID
+	})
 }

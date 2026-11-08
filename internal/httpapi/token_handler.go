@@ -11,11 +11,11 @@ import (
 
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/httpresponse"
-	"mtgnissa/internal/tokens"
+	"mtgnissa/internal/model"
 )
 
 type tokenLister interface {
-	List(context.Context, string) (tokens.List, error)
+	List(context.Context, string) (model.TokenList, error)
 }
 
 func getTokens(service tokenLister) gin.HandlerFunc {

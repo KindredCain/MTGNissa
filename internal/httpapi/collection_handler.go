@@ -10,13 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mtgnissa/internal/apperror"
-	"mtgnissa/internal/collection"
 	"mtgnissa/internal/httpresponse"
+	"mtgnissa/internal/model"
 )
 
 type collectionLister interface {
-	Options(context.Context) (collection.Options, error)
-	List(context.Context, collection.Params) (collection.Page, error)
+	Options(context.Context) (model.CollectionOptions, error)
+	List(context.Context, model.CollectionParams) (model.CollectionPage, error)
 }
 
 func getCollectionOptions(service collectionLister) gin.HandlerFunc {
@@ -46,36 +46,36 @@ func getCollection(service collectionLister) gin.HandlerFunc {
 	}
 }
 
-func parseCollectionParams(query url.Values) (collection.Params, error) {
-	params := collection.Params{Query: strings.TrimSpace(query.Get("q")), Sort: "set", MergeLanguages: true, Cursor: query.Get("cursor")}
+func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
+	params := model.CollectionParams{Query: strings.TrimSpace(query.Get("q")), Sort: "set", MergeLanguages: true, Cursor: query.Get("cursor")}
 	for _, field := range []string{"q", "sort", "merge_sets", "merge_languages", "cursor"} {
 		if len(query[field]) > 1 {
-			return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
+			return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
 		}
 	}
 	if containsNUL(params.Query) || utf8.RuneCountInString(params.Query) > 512 {
-		return collection.Params{}, validationError("q", "must_not_contain_nul_and_must_be_at_most_512_characters")
+		return model.CollectionParams{}, validationError("q", "must_not_contain_nul_and_must_be_at_most_512_characters")
 	}
 	if containsNUL(params.Cursor) {
-		return collection.Params{}, validationError("cursor", "must_not_contain_nul")
+		return model.CollectionParams{}, validationError("cursor", "must_not_contain_nul")
 	}
 	if value := query.Get("sort"); value != "" {
 		params.Sort = value
 	}
 	if !oneOf(params.Sort, "set", "color", "mana_value", "name") {
-		return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
+		return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
 	}
 	for field, target := range map[string]*bool{"merge_sets": &params.MergeSets, "merge_languages": &params.MergeLanguages} {
 		if _, present := query[field]; present {
 			value := query.Get(field)
 			if value != "true" && value != "false" {
-				return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, field+" must be true or false")
+				return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, field+" must be true or false")
 			}
 			*target = value == "true"
 		}
 	}
 	if params.Sort == "set" && params.MergeSets {
-		return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, "merge_sets must be false when sort is set")
+		return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "merge_sets must be false when sort is set")
 	}
 	for _, filter := range []struct {
 		field  string
@@ -86,25 +86,25 @@ func parseCollectionParams(query url.Values) (collection.Params, error) {
 	} {
 		values, err := normalizedMultiValue(query[filter.field], filter.field)
 		if err != nil {
-			return collection.Params{}, err
+			return model.CollectionParams{}, err
 		}
 		for _, value := range values {
 			switch filter.field {
 			case "set_code", "language":
 				if strings.TrimSpace(value) == "" || strings.Contains(value, ",") || utf8.RuneCountInString(value) > 16 {
-					return collection.Params{}, validationError(filter.field, "must_be_one_nonblank_code_at_most_16_characters")
+					return model.CollectionParams{}, validationError(filter.field, "must_be_one_nonblank_code_at_most_16_characters")
 				}
 			case "color":
 				if !oneOf(value, "W", "U", "B", "R", "G", "multicolor", "colorless") {
-					return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, "color is invalid")
+					return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "color is invalid")
 				}
 			case "mana_value":
 				if !oneOf(value, "0", "1", "2", "3", "4", "5", "6", "7", "8_plus") {
-					return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, "mana_value is invalid")
+					return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "mana_value is invalid")
 				}
 			case "rarity":
 				if !oneOf(value, "common", "uncommon", "rare", "mythic", "special", "bonus") {
-					return collection.Params{}, apperror.New(apperror.CodeInvalidRequest, "rarity is invalid")
+					return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "rarity is invalid")
 				}
 			}
 		}

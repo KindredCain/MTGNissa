@@ -1,9 +1,11 @@
-package sets
+package store
 
 import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"mtgnissa/internal/model"
 )
 
 type hierarchyRow struct {
@@ -67,7 +69,7 @@ func newSetHierarchy(rows []hierarchyRow) (*setHierarchy, error) {
 	return hierarchy, nil
 }
 
-func (h *setHierarchy) descendantCodes(roots []Set) []string {
+func (h *setHierarchy) descendantCodes(roots []model.SetListItem) []string {
 	codes := make([]string, 0)
 	var visit func(string)
 	visit = func(key string) {
@@ -83,9 +85,9 @@ func (h *setHierarchy) descendantCodes(roots []Set) []string {
 	return codes
 }
 
-func (h *setHierarchy) expand(roots, descendants []Set) ([]Set, error) {
-	items := make(map[string]Set, len(roots)+len(descendants))
-	for _, group := range [][]Set{roots, descendants} {
+func (h *setHierarchy) expand(roots, descendants []model.SetListItem) ([]model.SetListItem, error) {
+	items := make(map[string]model.SetListItem, len(roots)+len(descendants))
+	for _, group := range [][]model.SetListItem{roots, descendants} {
 		for _, item := range group {
 			key := strings.ToLower(item.Code)
 			if _, exists := items[key]; exists {
@@ -94,12 +96,12 @@ func (h *setHierarchy) expand(roots, descendants []Set) ([]Set, error) {
 			items[key] = item
 		}
 	}
-	result := make([]Set, 0, len(items))
-	var visit func(Set, int) error
-	visit = func(item Set, depth int) error {
+	result := make([]model.SetListItem, 0, len(items))
+	var visit func(model.SetListItem, int) error
+	visit = func(item model.SetListItem, depth int) error {
 		item.Depth = depth
 		result = append(result, item)
-		children := make([]Set, 0, len(h.children[strings.ToLower(item.Code)]))
+		children := make([]model.SetListItem, 0, len(h.children[strings.ToLower(item.Code)]))
 		for _, key := range h.children[strings.ToLower(item.Code)] {
 			child, ok := items[key]
 			if !ok {
@@ -128,7 +130,7 @@ func (h *setHierarchy) expand(roots, descendants []Set) ([]Set, error) {
 	return result, nil
 }
 
-func childSetLess(left, right Set) bool {
+func childSetLess(left, right model.SetListItem) bool {
 	leftToken := left.SetType == "token"
 	rightToken := right.SetType == "token"
 	if leftToken != rightToken {

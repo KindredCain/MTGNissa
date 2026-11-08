@@ -11,12 +11,12 @@ import (
 
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/httpresponse"
-	"mtgnissa/internal/sets"
+	"mtgnissa/internal/model"
 )
 
 type setLister interface {
-	List(context.Context, sets.Params) (sets.Page, error)
-	Options(context.Context) (sets.Options, error)
+	List(context.Context, model.SetParams) (model.SetPage, error)
+	Options(context.Context) (model.SetOptions, error)
 }
 
 func getSetOptions(service setLister) gin.HandlerFunc {
@@ -46,38 +46,38 @@ func getSets(service setLister) gin.HandlerFunc {
 	}
 }
 
-func parseSetListParams(c *gin.Context) (sets.Params, error) {
+func parseSetListParams(c *gin.Context) (model.SetParams, error) {
 	query := c.Request.URL.Query()
 	for _, field := range []string{"q", "sort", "cursor"} {
 		if len(query[field]) > 1 {
-			return sets.Params{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
+			return model.SetParams{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
 		}
 	}
-	params := sets.Params{
+	params := model.SetParams{
 		Query:  strings.TrimSpace(query.Get("q")),
-		Sort:   sets.SortReleasedDesc,
+		Sort:   model.SortReleasedDesc,
 		Cursor: query.Get("cursor"),
 	}
 	if containsNUL(params.Query) || utf8.RuneCountInString(params.Query) > 512 {
-		return sets.Params{}, validationError("q", "must_not_contain_nul_and_must_be_at_most_512_characters")
+		return model.SetParams{}, validationError("q", "must_not_contain_nul_and_must_be_at_most_512_characters")
 	}
 	if value := query.Get("sort"); value != "" {
-		params.Sort = sets.Sort(value)
+		params.Sort = model.SetSort(value)
 	}
 	if !validSetSort(params.Sort) {
-		return sets.Params{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
+		return model.SetParams{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
 	}
 	if containsNUL(params.Cursor) {
-		return sets.Params{}, validationError("cursor", "must_not_contain_nul")
+		return model.SetParams{}, validationError("cursor", "must_not_contain_nul")
 	}
 	var err error
 	params.Languages, err = normalizedMultiValue(query["language"], "language")
 	if err != nil {
-		return sets.Params{}, err
+		return model.SetParams{}, err
 	}
 	params.SetTypes, err = normalizedMultiValue(query["set_type"], "set_type")
 	if err != nil {
-		return sets.Params{}, err
+		return model.SetParams{}, err
 	}
 	return params, nil
 }
@@ -105,16 +105,9 @@ func normalizedMultiValue(values []string, field string) ([]string, error) {
 	return result, nil
 }
 
-func validSetSort(value sets.Sort) bool {
+func validSetSort(value model.SetSort) bool {
 	switch value {
-	case sets.SortReleasedDesc,
-		sets.SortReleasedAsc,
-		sets.SortNameAsc,
-		sets.SortNameDesc,
-		sets.SortCodeAsc,
-		sets.SortCodeDesc,
-		sets.SortCardCountDesc,
-		sets.SortCardCountAsc:
+	case model.SortReleasedDesc, model.SortReleasedAsc, model.SortNameAsc, model.SortNameDesc, model.SortCodeAsc, model.SortCodeDesc, model.SortCardCountDesc, model.SortCardCountAsc:
 		return true
 	default:
 		return false

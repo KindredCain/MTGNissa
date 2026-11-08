@@ -15,12 +15,13 @@ import (
 	"time"
 
 	"mtgnissa/internal/apperror"
-	"mtgnissa/internal/cards"
+	"mtgnissa/internal/model"
+	"mtgnissa/internal/store"
 )
 
 type collectionStore interface {
-	Load(context.Context) ([]record, error)
-	Summaries(context.Context, []string) (map[string]cards.Summary, error)
+	Load(context.Context) ([]model.OwnedPrinting, error)
+	Summaries(context.Context, []string) (map[string]model.CardSummary, error)
 }
 
 // Service coordinates ownership filters, totals, grouping, and stable cursor pages.
@@ -46,18 +47,26 @@ type cursorPayload struct {
 	Position    sortPosition `json:"p"`
 }
 
+type groupKey struct {
+	Kind     string
+	Identity string
+	Set      string
+	Number   string
+	Language string
+}
+
 // NewService creates a collection service with the configured cursor batch size.
-func NewService(store *Store, pageSize int) *Service {
+func NewService(store *store.CollectionStore, pageSize int) *Service {
 	return &Service{store: store, pageSize: pageSize}
 }
 
 // Options returns series and languages present in positive ownership records.
-func (s *Service) Options(ctx context.Context) (Options, error) {
+func (s *Service) Options(ctx context.Context) (model.CollectionOptions, error) {
 	rows, err := s.store.Load(ctx)
 	if err != nil {
-		return Options{}, dependencyError(err)
+		return model.CollectionOptions{}, dependencyError(err)
 	}
-	result := Options{Sets: []cards.Set{}, Languages: []cards.Language{},
+	result := model.CollectionOptions{Sets: []model.SetRef{}, Languages: []model.Language{},
 		Colors:     []string{"W", "U", "B", "R", "G", "multicolor", "colorless"},
 		ManaValues: []string{"0", "1", "2", "3", "4", "5", "6", "7", "8_plus"},
 		Rarities:   []string{"common", "uncommon", "rare", "mythic", "special", "bonus"}}
@@ -91,20 +100,20 @@ func (s *Service) Options(ctx context.Context) (Options, error) {
 }
 
 // List filters individual holdings before merging and keeps ownership totals unfiltered.
-func (s *Service) List(ctx context.Context, params Params) (Page, error) {
+func (s *Service) List(ctx context.Context, params model.CollectionParams) (model.CollectionPage, error) {
 	params = normalizeParams(params)
 	fingerprint := queryFingerprint(params)
 	var position *sortPosition
 	if params.Cursor != "" {
 		decoded, err := decodeCursor(params.Cursor, params.Sort, fingerprint)
 		if err != nil {
-			return Page{}, apperror.Wrap(apperror.CodeInvalidCursor, "cursor is invalid or does not match this query", err)
+			return model.CollectionPage{}, apperror.Wrap(apperror.CodeInvalidCursor, "cursor is invalid or does not match this query", err)
 		}
 		position = &decoded
 	}
 	rows, err := s.store.Load(ctx)
 	if err != nil {
-		return Page{}, dependencyError(err)
+		return model.CollectionPage{}, dependencyError(err)
 	}
 	page, items := groupRecords(rows, params)
 	sort.Slice(items, func(i, j int) bool {
@@ -122,7 +131,7 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 		payload := cursorPayload{Version: 1, Fingerprint: fingerprint, Sort: params.Sort, Position: itemPosition(items[end-1])}
 		encoded, err := json.Marshal(payload)
 		if err != nil {
-			return Page{}, apperror.Wrap(apperror.CodeInternalError, "could not create pagination cursor", err)
+			return model.CollectionPage{}, apperror.Wrap(apperror.CodeInternalError, "could not create pagination cursor", err)
 		}
 		cursor := base64.RawURLEncoding.EncodeToString(encoded)
 		page.NextCursor = &cursor
@@ -134,12 +143,12 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 	if len(ids) > 0 {
 		summaries, err := s.store.Summaries(ctx, ids)
 		if err != nil {
-			return Page{}, dependencyError(err)
+			return model.CollectionPage{}, dependencyError(err)
 		}
 		for i := range page.Items {
 			card, ok := summaries[page.Items[i].Card.PrintingUUID]
 			if !ok {
-				return Page{}, apperror.New(apperror.CodeDependencyUnavailable, "collection printing is unavailable")
+				return model.CollectionPage{}, apperror.New(apperror.CodeDependencyUnavailable, "collection printing is unavailable")
 			}
 			page.Items[i].Card = card
 		}
@@ -147,12 +156,12 @@ func (s *Service) List(ctx context.Context, params Params) (Page, error) {
 	return page, nil
 }
 
-func groupRecords(rows []record, params Params) (Page, []Item) {
-	page := Page{Items: []Item{}}
-	setTotals := make(map[string]cards.Totals)
+func groupRecords(rows []model.OwnedPrinting, params model.CollectionParams) (model.CollectionPage, []model.CollectionItem) {
+	page := model.CollectionPage{Items: []model.CollectionItem{}}
+	setTotals := make(map[string]model.OwnershipTotals)
 	distinct := make(map[groupKey]bool)
 	setDistinct := make(map[groupKey]bool)
-	groups := make(map[groupKey]*Item)
+	groups := make(map[groupKey]*model.CollectionItem)
 	for _, row := range rows {
 		quantity := row.Quantity.Normal + row.Quantity.Foil
 		if quantity == 0 {
@@ -178,7 +187,7 @@ func groupRecords(rows []record, params Params) (Page, []Item) {
 		key := ownershipKey(row.Card, params.MergeSets, params.MergeLanguages)
 		item := groups[key]
 		if item == nil {
-			item = &Item{Card: row.Card, MergedSets: params.MergeSets, MergedLanguages: params.MergeLanguages}
+			item = &model.CollectionItem{Card: row.Card, MergedSets: params.MergeSets, MergedLanguages: params.MergeLanguages}
 			groups[key] = item
 		} else if order := compareDates(row.Card.ReleasedAt, item.Card.ReleasedAt); order < 0 || order == 0 && row.Card.PrintingUUID < item.Card.PrintingUUID {
 			item.Card = row.Card
@@ -186,7 +195,7 @@ func groupRecords(rows []record, params Params) (Page, []Item) {
 		item.Quantity.Normal += row.Quantity.Normal
 		item.Quantity.Foil += row.Quantity.Foil
 	}
-	items := make([]Item, 0, len(groups))
+	items := make([]model.CollectionItem, 0, len(groups))
 	for _, group := range groups {
 		if params.Sort == "set" {
 			set := group.Card.Set
@@ -199,7 +208,7 @@ func groupRecords(rows []record, params Params) (Page, []Item) {
 	return page, items
 }
 
-func ownershipKey(card cards.Summary, mergeSets, mergeLanguages bool) groupKey {
+func ownershipKey(card model.CardSummary, mergeSets, mergeLanguages bool) groupKey {
 	if card.OracleID == nil || *card.OracleID == "" || !mergeSets && !mergeLanguages {
 		return groupKey{Kind: "print", Identity: card.PrintingUUID}
 	}
@@ -213,7 +222,7 @@ func ownershipKey(card cards.Summary, mergeSets, mergeLanguages bool) groupKey {
 	return key
 }
 
-func matches(card cards.Summary, params Params) bool {
+func matches(card model.CardSummary, params model.CollectionParams) bool {
 	if !strings.Contains(strings.ToLower(card.Name), params.Query) ||
 		!selected(params.Sets, strings.ToLower(card.Set.Code)) ||
 		!selected(params.Languages, strings.ToLower(card.Language.Code)) ||
@@ -256,7 +265,7 @@ func colorGroup(colors []string) string {
 	return colors[0]
 }
 
-func itemPosition(item Item) sortPosition {
+func itemPosition(item model.CollectionItem) sortPosition {
 	card := item.Card
 	date := ""
 	if card.Set.ReleasedAt != nil {
@@ -282,7 +291,7 @@ func comparePositions(a, b sortPosition, order string) int {
 		if value := strings.Compare(a.SetCode, b.SetCode); value != 0 {
 			return value
 		}
-		if value := cards.CompareCollectorNumbers(a.Number, b.Number); value != 0 {
+		if value := model.CompareCollectorNumbers(a.Number, b.Number); value != 0 {
 			return value
 		}
 	case "color":
@@ -318,7 +327,7 @@ func compareDates(a, b *time.Time) int {
 	return b.Compare(*a)
 }
 
-func normalizeParams(params Params) Params {
+func normalizeParams(params model.CollectionParams) model.CollectionParams {
 	params.Query = strings.ToLower(strings.TrimSpace(params.Query))
 	if params.Sort == "" {
 		params.Sort = "set"
@@ -347,7 +356,7 @@ func canonicalValues(values []string, fold bool) []string {
 	return result
 }
 
-func queryFingerprint(params Params) string {
+func queryFingerprint(params model.CollectionParams) string {
 	params.Cursor = ""
 	raw, _ := json.Marshal(params)
 	sum := sha256.Sum256(raw)
@@ -373,7 +382,7 @@ func decodeCursor(value, order, fingerprint string) (sortPosition, error) {
 		return sortPosition{}, errors.New("cursor contains trailing data")
 	}
 	p := payload.Position
-	if payload.Version != 1 || payload.Fingerprint != fingerprint || payload.Sort != order || !cards.ValidUUID(p.UUID) ||
+	if payload.Version != 1 || payload.Fingerprint != fingerprint || payload.Sort != order || !model.ValidUUID(p.UUID) ||
 		p.Color < 0 || p.Color > 6 || math.IsNaN(p.Mana) || math.IsInf(p.Mana, 0) || p.Mana < 0 || p.SetCode == "" {
 		return sortPosition{}, errors.New("cursor metadata mismatch")
 	}
