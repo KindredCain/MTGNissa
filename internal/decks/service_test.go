@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +14,58 @@ import (
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/model"
 )
+
+func TestStandardCodeFollowsColorWheelOrder(t *testing.T) {
+	order := []string{
+		"W", "U", "B", "R", "G",
+		"WU", "UB", "BR", "RG", "GW", "WB", "UR", "BG", "RW", "GU",
+		"WUB", "UBR", "BRG", "RGW", "GWU", "WBG", "URW", "BGU", "RWB", "GUR",
+		"WUBR", "UBRG", "BRGW", "RGWU", "GWUB", "WUBRG", "C",
+	}
+	deck := model.SavedDeck{Name: "Color wheel"}
+	data := make(map[string]model.DeckCardData)
+	typeLine := "Creature"
+	for i := len(order) - 1; i >= 0; i-- {
+		name := order[i]
+		colors := []string{}
+		if name != "C" {
+			for j := len(name) - 1; j >= 0; j-- {
+				colors = append(colors, name[j:j+1])
+			}
+		}
+		card := model.DeckCardData{Card: model.CardSummary{PrintingUUID: name, Name: name, CMC: 2, Colors: colors}, Faces: []model.CardFace{{TypeLine: &typeLine}}}
+		data[name] = card
+		deck.Cards = append(deck.Cards, model.SavedDeckCard{Section: "mainboard", OracleID: name, Name: name, Quantity: 1})
+	}
+	want := "About\nName Color wheel\n\nDeck\n1 " + strings.Join(order, "\n1 ")
+	if actual := standardCode(deck, data); actual != want {
+		t.Fatalf("standard code order:\n%s\nwant:\n%s", actual, want)
+	}
+	// Color order must remain below type and mana value, and above name/UUID ties.
+	blue := data["U"]
+	white := data["W"]
+	blue.Card.CMC = 1
+	if !codeCardLess(blue, white) {
+		t.Fatal("color order overrode mana value")
+	}
+	artifact := "Artifact"
+	blue.Card.CMC = 99
+	blue.Faces[0].TypeLine = &artifact
+	if !codeCardLess(blue, white) {
+		t.Fatal("color order overrode type order")
+	}
+	tied := []model.DeckCardData{
+		{Card: model.CardSummary{Name: "beta", PrintingUUID: "a"}},
+		{Card: model.CardSummary{Name: "Alpha", PrintingUUID: "b"}},
+		{Card: model.CardSummary{Name: "alpha", PrintingUUID: "a"}},
+	}
+	sort.Slice(tied, func(i, j int) bool {
+		return codeCardLess(tied[i], tied[j])
+	})
+	if tied[0].Card.Name != "alpha" || tied[1].Card.Name != "Alpha" || tied[2].Card.Name != "beta" {
+		t.Fatal("name or UUID tie order changed")
+	}
+}
 
 func TestDeckNamesRejectInternalLineBreaksBeforeMutation(t *testing.T) {
 	s := &Service{}

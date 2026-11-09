@@ -25,6 +25,17 @@ var cardLinePattern = regexp.MustCompile(`^([0-9]+)\s+(.+)$`)
 var printingSuffixPattern = regexp.MustCompile(`\s+\([A-Za-z0-9]{1,16}\)(?:\s+\S+)?$`)
 var collectorSuffixPattern = regexp.MustCompile(`\s+[0-9]+[A-Za-z★†]*$`)
 
+// Keys use WUBRG order; ranks follow the required color-wheel combinations.
+var codeColorOrder = map[string]int{
+	"W": 0, "U": 1, "B": 2, "R": 3, "G": 4,
+	"WU": 5, "UB": 6, "BR": 7, "RG": 8, "WG": 9,
+	"WB": 10, "UR": 11, "BG": 12, "WR": 13, "UG": 14,
+	"WUB": 15, "UBR": 16, "BRG": 17, "WRG": 18, "WUG": 19,
+	"WBG": 20, "WUR": 21, "UBG": 22, "WBR": 23, "URG": 24,
+	"WUBR": 25, "UBRG": 26, "WBRG": 27, "WURG": 28, "WUBG": 29,
+	"WUBRG": 30, "": 31,
+}
+
 // ParseCode resolves every card line before returning a complete, unsaved parsed deck.
 func (s *Service) ParseCode(ctx context.Context, id uint64, source string) (model.ParsedDeck, error) {
 	if _, err := s.identity(ctx, id); err != nil {
@@ -249,17 +260,15 @@ func codeCardLess(a, b model.DeckCardData) bool {
 	return a.Card.PrintingUUID < b.Card.PrintingUUID
 }
 
-func codeColor(colors []string) string {
-	if len(colors) == 0 {
-		return "6"
-	}
-	key := strconv.Itoa(len(colors))
+func codeColor(colors []string) int {
+	var key strings.Builder
 	for _, color := range []string{"W", "U", "B", "R", "G"} {
 		for _, actual := range colors {
 			if color == actual {
-				key += strconv.Itoa(strings.Index("WUBRG", color))
+				key.WriteString(color)
+				break
 			}
 		}
 	}
-	return key
+	return codeColorOrder[key.String()]
 }
