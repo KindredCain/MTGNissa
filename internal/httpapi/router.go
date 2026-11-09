@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -32,7 +33,7 @@ func New(deps Dependencies) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
-	router.Use(requestID(), accessLog(deps.Logger), recovery(), bodyLimit(1<<20))
+	router.Use(requestID(), accessLog(deps.Logger), recovery(), requestTimeout(30*time.Second), bodyLimit(1<<20))
 
 	router.GET("/health/live", deps.Health.Live)
 	router.GET("/health/ready", deps.Health.Ready)

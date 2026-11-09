@@ -156,7 +156,10 @@ func (s *Service) Copy(ctx context.Context, id uint64, key string) (model.DeckId
 			if err != nil {
 				return err
 			}
-			name := copyName(source.Name)
+			name, err := normalizeName(copyName(source.Name))
+			if err != nil {
+				return err
+			}
 			source.SourceText = strings.Replace(source.SourceText, "Name "+source.Name, "Name "+name, 1)
 			source.Name = name
 			if err := validateCode(source.SourceText); err != nil {
@@ -479,6 +482,9 @@ func resolveReference(refs map[string]model.DeckCardData, id, field string) (str
 
 func normalizeName(name string) (string, error) {
 	name = strings.TrimSpace(name)
+	if strings.ContainsAny(name, "\r\n\v\f\u0085\u2028\u2029") {
+		return "", fieldError("name", "must_not_contain_line_breaks")
+	}
 	if name == "" || !utf8.ValidString(name) || utf8.RuneCountInString(name) > 255 || strings.ContainsRune(name, 0) {
 		return "", fieldError("name", "must_be_1_to_255_characters_without_nul")
 	}

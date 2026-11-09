@@ -20,6 +20,7 @@ const (
 	CodeIdempotencyConflict   Code = "idempotency_conflict"
 	CodeMethodNotAllowed      Code = "method_not_allowed"
 	CodeRequestTooLarge       Code = "request_too_large"
+	CodeRequestTimeout        Code = "request_timeout"
 	CodeUnsupportedMediaType  Code = "unsupported_media_type"
 	CodeValidationFailed      Code = "validation_failed"
 	CodeCardReferenceInvalid  Code = "card_reference_invalid"

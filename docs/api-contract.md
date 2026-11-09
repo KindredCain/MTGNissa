@@ -218,7 +218,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | 响应中的 `oracle_id` | 规范 UUID 字符串或 `null`；只读，不能作为请求参数 |
 | `deck_id` | 十进制正整数字符串，最长 20 位 |
 | 列表和搜索 `q` | 去除首尾空白后最长 512 个 Unicode 字符；全空白按未提供处理，全局搜索的非空 `q` 必填 |
-| 卡组名称 | 去除首尾空白后 1–255 个 Unicode 字符；保存规范化后的值 |
+| 卡组名称 | 去除首尾空白后 1–255 个 Unicode 字符；内部禁止换行（包括 CR、LF 及 Unicode 换行／分隔符），保存规范化后的单行值；违反时返回 `422 validation_failed`，定位 `name` |
 | 卡组代码 | UTF-8 文本，最长 768 KiB、最多 1,000 行 |
 | JSON 请求体 | 全局最大 1 MiB；超过限制返回 `413 request_too_large` |
 | 单条卡组数量 | 1–4,294,967,295 的整数；同分区合并后仍不得超过上限 |
@@ -1243,6 +1243,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日�
 | 422 | `deck_card_not_supported` | 请求的 `printing_uuid` 没有逻辑卡牌身份，不能加入卡组 |
 | 500 | `internal_error` | 未预期服务端错误 |
 | 503 | `dependency_unavailable` | Card DB 或 App DB 暂不可用 |
+| 504 | `request_timeout` | 同步请求超过服务端固定的 30 秒执行期限 |
 
 全局卡牌搜索无法完整识别语法时不是错误，必须回退名称查询并返回 `200`。合法查询零结果、空收藏、空愿望单、空卡组和空日志同样返回 `200`。
 

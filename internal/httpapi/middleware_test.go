@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -8,7 +9,33 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
+
+func TestRequestTimeoutContextWithoutRequests(t *testing.T) {
+	parent := context.Background()
+	c := &gin.Context{Request: (&http.Request{}).WithContext(parent)}
+	before := time.Now()
+	requestTimeout(10 * time.Second)(c)
+	deadline, ok := c.Request.Context().Deadline()
+	if !ok || deadline.Before(before.Add(10*time.Second)) || deadline.After(time.Now().Add(10*time.Second)) {
+		t.Fatalf("request deadline=%v exists=%v", deadline, ok)
+	}
+	if c.Request.Context().Err() != context.Canceled || parent.Err() != nil {
+		t.Fatal("request cleanup failed or canceled the parent context")
+	}
+	parent, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+	defer cancel()
+	c = &gin.Context{Request: (&http.Request{}).WithContext(parent)}
+	requestTimeout(10 * time.Second)(c)
+	actual, _ := c.Request.Context().Deadline()
+	expected, _ := parent.Deadline()
+	if !actual.Equal(expected) || parent.Err() != nil {
+		t.Fatal("middleware extended or canceled the caller's earlier deadline")
+	}
+}
 
 func TestRequestBodyLogValuePreservesJSONStructure(t *testing.T) {
 	body := []byte(`{"queue":[{"action":"add","card_id":"a"},{"action":"remove","card_id":"b"}]}`)

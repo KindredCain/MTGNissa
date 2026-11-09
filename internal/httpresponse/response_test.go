@@ -1,17 +1,59 @@
 package httpresponse
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"mtgnissa/internal/apperror"
 )
+
+func TestRequestDeadlineResponseEnvelopeWithoutRequests(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	for _, test := range []struct {
+		name  string
+		write func(*gin.Context)
+	}{
+		{"success after deadline", func(c *gin.Context) {
+			WriteJSON(c, http.StatusOK, "late result")
+		}},
+		{"dependency failure after deadline", func(c *gin.Context) {
+			WriteAppError(c, apperror.Wrap(apperror.CodeDependencyUnavailable, "unavailable", context.DeadlineExceeded))
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(recorder)
+			// Exercise response helpers directly; no router or HTTP request is executed.
+			c.Request = (&http.Request{}).WithContext(ctx)
+			c.Set("request_id", "timeout-test")
+			test.write(c)
+			var body envelope
+			if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+				t.Fatal(err)
+			}
+			if recorder.Code != http.StatusGatewayTimeout || body.Status != http.StatusGatewayTimeout || body.Data != nil || body.Error == nil || body.Error.Code != "request_timeout" || body.RequestID != "timeout-test" || len(c.Errors) != 1 {
+				t.Fatalf("response=%+v errors=%v", body, c.Errors)
+			}
+		})
+	}
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = (&http.Request{}).WithContext(context.Background())
+	WriteAppError(c, apperror.Wrap(apperror.CodeDependencyUnavailable, "readiness check timed out", context.DeadlineExceeded))
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatal("a dependency's shorter deadline was misclassified as a request timeout")
+	}
+}
 
 func TestWriteAppErrorMapsValidationDetails(t *testing.T) {
 	gin.SetMode(gin.TestMode)

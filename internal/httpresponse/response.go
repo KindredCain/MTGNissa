@@ -1,6 +1,7 @@
 package httpresponse
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -31,6 +32,10 @@ type errorDetailDTO struct {
 
 // WriteJSON writes a successful response using the common API envelope.
 func WriteJSON(c *gin.Context, status int, data any) {
+	if c.Request != nil && errors.Is(c.Request.Context().Err(), context.DeadlineExceeded) {
+		WriteAppError(c, context.DeadlineExceeded)
+		return
+	}
 	c.JSON(status, envelope{
 		Status:    status,
 		Data:      data,
@@ -41,6 +46,12 @@ func WriteJSON(c *gin.Context, status int, data any) {
 
 // WriteAppError maps an application error to a client-safe common API envelope.
 func WriteAppError(c *gin.Context, err error) {
+	if c.Request != nil && errors.Is(c.Request.Context().Err(), context.DeadlineExceeded) {
+		if err == nil {
+			err = context.DeadlineExceeded
+		}
+		err = apperror.Wrap(apperror.CodeRequestTimeout, "request execution timed out", err)
+	}
 	if err == nil {
 		err = apperror.New(apperror.CodeInternalError, "internal server error")
 	}
@@ -114,6 +125,8 @@ func statusForCode(code apperror.Code) int {
 		return http.StatusUnprocessableEntity
 	case apperror.CodeDependencyUnavailable:
 		return http.StatusServiceUnavailable
+	case apperror.CodeRequestTimeout:
+		return http.StatusGatewayTimeout
 	default:
 		return http.StatusInternalServerError
 	}

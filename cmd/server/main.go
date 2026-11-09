@@ -24,7 +24,13 @@ func main() {
 		slog.Error("application startup failed", "error", err)
 		os.Exit(1)
 	}
-	server := &http.Server{Addr: app.Config.HTTPAddr, Handler: app.Router, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}
+	server := &http.Server{
+		Addr: app.Config.HTTPAddr, Handler: app.Router,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      35 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 	errCh := make(chan error, 1)
 	go func() {
 		app.Logger.Info("http server started", "addr", app.Config.HTTPAddr)

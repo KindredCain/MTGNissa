@@ -1,6 +1,7 @@
 package decks
 
 import (
+	"context"
 	"errors"
 	"math"
 	"reflect"
@@ -12,6 +13,29 @@ import (
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/model"
 )
+
+func TestDeckNamesRejectInternalLineBreaksBeforeMutation(t *testing.T) {
+	s := &Service{}
+	for _, name := range []string{"A\nDeck\n1 Sol Ring", "A\rB", "A\r\nB", "A\vB", "A\fB", "A\u0085B", "A\u2028B", "A\u2029B"} {
+		_, _, createErr := s.Create(context.Background(), name, "unused")
+		_, saveErr := s.Save(context.Background(), 1, model.DeckSave{Name: name})
+		for _, err := range []error{createErr, saveErr} {
+			var appErr *apperror.Error
+			if !errors.As(err, &appErr) || appErr.Code != apperror.CodeValidationFailed || len(appErr.Details) != 1 || appErr.Details[0].Field != "name" || appErr.Details[0].Reason != "must_not_contain_line_breaks" {
+				t.Fatalf("name=%q error=%v", name, err)
+			}
+		}
+		if _, err := normalizeName(copyName(name)); err == nil {
+			t.Fatalf("copy accepted invalid historical name %q", name)
+		}
+	}
+	for _, name := range []string{"  Normal Deck  ", "\r\nNormal Deck\r\n", `Literal\nName`} {
+		actual, err := normalizeName(name)
+		if err != nil || actual != strings.TrimSpace(name) {
+			t.Fatalf("valid name=%q actual=%q error=%v", name, actual, err)
+		}
+	}
+}
 
 func TestSaveMergesLogicalCardsAndValidatesCoverAndCommander(t *testing.T) {
 	oracle, other := "oracle", "other"

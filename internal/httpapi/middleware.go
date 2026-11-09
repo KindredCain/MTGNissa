@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,6 +22,19 @@ import (
 type capturingReadCloser struct {
 	io.Reader
 	io.Closer
+}
+
+func requestTimeout(timeout time.Duration) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if timeout <= 0 {
+			c.Next()
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		defer cancel()
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
 }
 
 func recovery() gin.HandlerFunc {
