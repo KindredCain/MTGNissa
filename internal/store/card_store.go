@@ -11,6 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"mtgnissa/internal/appdata"
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/model"
 )
@@ -67,24 +68,6 @@ type languageRow struct {
 	Code        string `db:"code"`
 	DisplayName string `db:"display_name"`
 	SortOrder   int    `db:"sort_order"`
-}
-
-type metadataRow struct {
-	UUID         string     `db:"printing_uuid"`
-	Oracle       *string    `db:"oracle_id"`
-	Name         string     `db:"name"`
-	Number       string     `db:"collector_number"`
-	Released     *time.Time `db:"released_at"`
-	CMC          float64    `db:"cmc"`
-	Colors       uint64     `db:"colors_mask"`
-	Rarity       string     `db:"rarity"`
-	SetCode      string     `db:"set_code"`
-	SetName      string     `db:"set_name"`
-	SetDisplay   string     `db:"set_display_name"`
-	SetReleased  *time.Time `db:"set_released_at"`
-	LanguageCode string     `db:"language_code"`
-	LanguageName string     `db:"language_name"`
-	LanguageSort int        `db:"language_order"`
 }
 
 // Translation lookups are correlated by indexed card UUID. Do not join global
@@ -150,6 +133,29 @@ const versionQuery = `SELECT p.uuid AS printing_uuid, NULLIF(c.oracle_id,'') AS 
 // NewCardStore creates a printing store backed by Card DB.
 func NewCardStore(db *sqlx.DB) *CardStore {
 	return &CardStore{db: db}
+}
+
+func (s *CardStore) printingRefs(ctx context.Context, ids []string) (map[string]appdata.CardPrintRef, error) {
+	refs := make(map[string]appdata.CardPrintRef, len(ids))
+	if len(ids) == 0 {
+		return refs, nil
+	}
+	query, args, err := sqlx.In(`SELECT p.uuid AS printing_uuid,NULLIF(c.oracle_id,'') AS oracle_id,
+ c.set_code,c.collector_number,p.language_code AS lang,c.name,c.colors_mask,c.cmc,c.rarity,c.released_at,
+ s.released_at AS set_released_at FROM mtgnissa_card_printing p
+ JOIN mtgnissa_card c ON c.uuid=p.card_uuid AND c.face_index IN (-1,0)
+ JOIN mtgnissa_set s ON s.code=c.set_code WHERE p.uuid IN (?)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	var rows []appdata.CardPrintRef
+	if err := s.db.SelectContext(ctx, &rows, query, args...); err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		refs[strings.ToLower(row.PrintingUUID)] = row
+	}
+	return refs, nil
 }
 
 // List reads the complete lightweight list for one ordinary series and language.
@@ -356,62 +362,73 @@ func sortSummaries(items []model.CardSummary) {
 	})
 }
 
-// metadata reads only fields needed to filter and order personal card lists.
-func (s *CardStore) metadata(ctx context.Context, ids []string) (map[string]metadataRow, error) {
-	if len(ids) == 0 {
-		return map[string]metadataRow{}, nil
+// personalOptions resolves authoritative display metadata for distinct personal filter codes.
+func (s *CardStore) personalOptions(ctx context.Context, codes, languageCodes []string) ([]model.SetRef, []model.Language, error) {
+	sets := []model.SetRef{}
+	languages := []model.Language{}
+	if len(codes) == 0 && len(languageCodes) == 0 {
+		return sets, languages, nil
 	}
-	cardTx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	defer cardTx.Rollback()
-	metadata := make(map[string]metadataRow, len(ids))
-	for start := 0; start < len(ids); start += 500 {
-		end := min(start+500, len(ids))
-		query, args, err := sqlx.In(`SELECT p.uuid AS printing_uuid,NULLIF(c.oracle_id,'') AS oracle_id,c.name,
- c.collector_number,c.released_at,c.cmc,c.colors_mask,c.rarity,
- s.code AS set_code,s.name AS set_name,s.released_at AS set_released_at,
- COALESCE((SELECT MIN(NULLIF(TRIM(st.name),'')) FROM set_translation st WHERE st.code=s.code),s.name) AS set_display_name,
- l.code AS language_code,l.display_name AS language_name,l.sort_order AS language_order
- FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
- JOIN mtgnissa_set s ON s.code=c.set_code JOIN scryfall_language l ON l.code=p.language_code
- WHERE p.uuid IN (?) AND c.face_index IN (-1,0)`, ids[start:end])
+	defer tx.Rollback()
+	for start := 0; start < len(codes); start += 500 {
+		batch := codes[start:min(start+500, len(codes))]
+		query, args, err := sqlx.In(`SELECT s.code,s.name,s.released_at,
+ COALESCE((SELECT MIN(NULLIF(TRIM(st.name),'')) FROM set_translation st WHERE st.code=s.code),s.name) AS display_name
+ FROM mtgnissa_set s WHERE s.code IN (?)`, batch)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		var rows []metadataRow
-		if err := cardTx.SelectContext(ctx, &rows, query, args...); err != nil {
-			return nil, err
+		var rows []setRow
+		if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
+			return nil, nil, err
+		}
+		if len(rows) != len(batch) {
+			return nil, nil, fmt.Errorf("personal series metadata is unavailable")
 		}
 		for _, row := range rows {
-			metadata[row.UUID] = row
+			sets = append(sets, model.SetRef{Code: row.Code, Name: row.Name, DisplayName: row.DisplayName, ReleasedAt: row.ReleasedAt})
 		}
 	}
-	if err := cardTx.Commit(); err != nil {
-		return nil, err
-	}
-	return metadata, nil
-}
-
-func (meta metadataRow) summary() model.CardSummary {
-	colors := make([]string, 0, 5)
-	for i, color := range []string{"W", "U", "B", "R", "G"} {
-		if meta.Colors&(1<<i) != 0 {
-			colors = append(colors, color)
+	for start := 0; start < len(languageCodes); start += 500 {
+		batch := languageCodes[start:min(start+500, len(languageCodes))]
+		query, args, err := sqlx.In("SELECT code,display_name,sort_order FROM scryfall_language WHERE code IN (?)", batch)
+		if err != nil {
+			return nil, nil, err
+		}
+		var rows []languageRow
+		if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
+			return nil, nil, err
+		}
+		if len(rows) != len(batch) {
+			return nil, nil, fmt.Errorf("personal language metadata is unavailable")
+		}
+		for _, row := range rows {
+			languages = append(languages, model.Language{Code: row.Code, DisplayName: row.DisplayName, SortOrder: row.SortOrder})
 		}
 	}
-	return model.CardSummary{
-		PrintingUUID: meta.UUID, OracleID: meta.Oracle, Name: meta.Name, CollectorNumber: meta.Number,
-		ReleasedAt: meta.Released, CMC: meta.CMC, Colors: colors, Rarity: meta.Rarity,
-		Set:      model.SetRef{Code: meta.SetCode, Name: meta.SetName, DisplayName: meta.SetDisplay, ReleasedAt: meta.SetReleased},
-		Language: model.Language{Code: meta.LanguageCode, DisplayName: meta.LanguageName, SortOrder: meta.LanguageSort},
+	sort.Slice(sets, func(i, j int) bool {
+		a, b := sets[i], sets[j]
+		if a.ReleasedAt == nil || b.ReleasedAt == nil {
+			if (a.ReleasedAt == nil) != (b.ReleasedAt == nil) {
+				return a.ReleasedAt != nil
+			}
+		} else if !a.ReleasedAt.Equal(*b.ReleasedAt) {
+			return a.ReleasedAt.After(*b.ReleasedAt)
+		}
+		return a.Code < b.Code
+	})
+	sort.Slice(languages, func(i, j int) bool {
+		if languages[i].SortOrder != languages[j].SortOrder {
+			return languages[i].SortOrder < languages[j].SortOrder
+		}
+		return languages[i].Code < languages[j].Code
+	})
+	if err := tx.Commit(); err != nil {
+		return nil, nil, err
 	}
-}
-
-func sameOracle(a, b *string) bool {
-	if a == nil || *a == "" {
-		return b == nil || *b == ""
-	}
-	return b != nil && strings.EqualFold(*a, *b)
+	return sets, languages, nil
 }

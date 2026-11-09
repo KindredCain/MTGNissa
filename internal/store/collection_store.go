@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"math"
 	"time"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/apperror"
@@ -20,13 +20,9 @@ type CollectionStore struct {
 	faces *CardStore
 }
 
-type ownedRow struct {
-	UUID   string  `db:"printing_uuid"`
-	Oracle *string `db:"oracle_id"`
-	Set    string  `db:"set_code"`
-	Number string  `db:"collector_number"`
-	Lang   string  `db:"lang"`
-	model.Quantity
+type collectionSetTotal struct {
+	Code string `db:"set_code"`
+	model.OwnershipTotals
 }
 
 // CollectionTx reads and changes collection quantities in the caller's transaction.
@@ -44,46 +40,90 @@ func NewCollectionStore(app, card *sqlx.DB) *CollectionStore {
 	return &CollectionStore{app: app, faces: NewCardStore(card)}
 }
 
-// Load reads only owned printings, without scanning the entire card catalogue.
-func (s *CollectionStore) Load(ctx context.Context) ([]model.OwnedPrinting, error) {
+// Options resolves only the owned series and language codes through Card DB.
+func (s *CollectionStore) Options(ctx context.Context) ([]model.SetRef, []model.Language, error) {
+	return personalOptions(ctx, s.app, s.faces, "collection_item")
+}
+
+// List groups and pages query metadata in one App DB snapshot without hydrating other pages.
+func (s *CollectionStore) List(ctx context.Context, params model.CollectionParams, position *PersonalPosition, pageSize int) (model.CollectionPage, *PersonalPosition, error) {
+	page := model.CollectionPage{Items: []model.CollectionItem{}}
 	tx, err := s.app.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
-		return nil, err
+		return page, nil, err
 	}
 	defer tx.Rollback()
-	var owned []ownedRow
-	if err := tx.SelectContext(ctx, &owned, `SELECT c.printing_uuid,c.normal_quantity,c.foil_quantity,
- r.oracle_id,r.set_code,r.collector_number,r.lang
- FROM collection_item c LEFT JOIN card_print_ref r ON r.printing_uuid=c.printing_uuid
- WHERE c.normal_quantity>0 OR c.foil_quantity>0 ORDER BY c.printing_uuid`); err != nil {
-		return nil, err
+	base := personalBase("collection_item")
+	statement, args, err := collectionTotals(base).ToSQL()
+	if err != nil {
+		return page, nil, err
+	}
+	if err := tx.GetContext(ctx, &page.Summary, statement, args...); err != nil {
+		return page, nil, err
+	}
+	groups := collectionGroups(personalFilters(base, params), params.MergeSets, params.MergeLanguages)
+	page.Total, err = personalCount(ctx, tx, mysqlDialect.From(groups.As("groups")).Prepared(true))
+	if err != nil {
+		return page, nil, err
+	}
+	dataset := mysqlDialect.From(groups.As("g")).Join(goqu.T("card_print_ref").As("r"), goqu.On(goqu.I("r.printing_uuid").Eq(goqu.I("g.printing_uuid")))).Prepared(true)
+	dataset = personalColumns(dataset).SelectAppend(goqu.I("g.normal_quantity"), goqu.I("g.foil_quantity"))
+	rows, next, err := readPersonalPage(ctx, tx, personalPage(dataset, params.Sort, position, pageSize), pageSize)
+	if err != nil {
+		return page, nil, err
+	}
+	totals := map[string]model.OwnershipTotals{}
+	if params.Sort == "set" && len(rows) > 0 {
+		codes := make([]string, 0, len(rows))
+		for _, row := range rows {
+			codes = append(codes, row.SetCode)
+		}
+		statement, args, err := collectionTotals(base.Where(goqu.I("r.set_code").In(codes))).SelectAppend(goqu.I("r.set_code")).GroupBy(goqu.I("r.set_code")).ToSQL()
+		if err != nil {
+			return page, nil, err
+		}
+		var setTotals []collectionSetTotal
+		if err := tx.SelectContext(ctx, &setTotals, statement, args...); err != nil {
+			return page, nil, err
+		}
+		for _, row := range setTotals {
+			totals[row.Code] = row.OwnershipTotals
+		}
+	}
+	for _, row := range rows {
+		item := model.CollectionItem{Card: model.CardSummary{PrintingUUID: row.UUID}, Quantity: row.Quantity, MergedSets: params.MergeSets, MergedLanguages: params.MergeLanguages}
+		if params.Sort == "set" {
+			total := totals[row.SetCode]
+			item.GroupSummary = &total
+		}
+		page.Items = append(page.Items, item)
 	}
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return page, nil, err
 	}
-	if len(owned) == 0 {
-		return []model.OwnedPrinting{}, nil
+	return page, next, nil
+}
+
+func collectionGroups(base *goqu.SelectDataset, mergeSets, mergeLanguages bool) *goqu.SelectDataset {
+	identity := goqu.L("CAST(CONCAT('print:',r.printing_uuid) AS BINARY)")
+	if mergeSets || mergeLanguages {
+		identity = goqu.L("CAST(CASE WHEN NULLIF(r.oracle_id,'') IS NULL THEN CONCAT('print:',r.printing_uuid) ELSE CONCAT('oracle:',r.oracle_id) END AS BINARY)")
 	}
-	ids := make([]string, 0, len(owned))
-	for _, row := range owned {
-		ids = append(ids, row.UUID)
+	keys := []any{identity}
+	if !mergeSets && mergeLanguages {
+		keys = append(keys, goqu.L("CAST(r.set_code AS BINARY)"), goqu.L("CAST(r.collector_number AS BINARY)"))
 	}
-	metadata, err := s.faces.metadata(ctx, ids)
-	if err != nil {
-		return nil, err
+	if mergeSets && !mergeLanguages {
+		keys = append(keys, goqu.L("CAST(r.lang AS BINARY)"))
 	}
-	result := make([]model.OwnedPrinting, 0, len(owned))
-	for _, row := range owned {
-		meta, ok := metadata[row.UUID]
-		if !ok {
-			return nil, fmt.Errorf("owned printing %s is unavailable in card data", row.UUID)
-		}
-		if !sameOracle(row.Oracle, meta.Oracle) || row.Set != meta.SetCode || row.Number != meta.Number || row.Lang != meta.LanguageCode {
-			return nil, fmt.Errorf("owned printing %s identity does not match card data", row.UUID)
-		}
-		result = append(result, model.OwnedPrinting{Quantity: row.Quantity, Card: meta.summary()})
-	}
-	return result, nil
+	// An inverse YYYYMMDD prefix selects the newest non-NULL date, then the smallest UUID.
+	representative := goqu.L("SUBSTRING(MIN(CONCAT(LPAD(99999999-COALESCE(CAST(DATE_FORMAT(r.released_at, '%Y%m%d') AS UNSIGNED),0),8,'0'),r.printing_uuid)),9)").As("printing_uuid")
+	return base.Select(representative, goqu.SUM(goqu.I("c.normal_quantity")).As("normal_quantity"), goqu.SUM(goqu.I("c.foil_quantity")).As("foil_quantity")).GroupBy(keys...)
+}
+
+func collectionTotals(base *goqu.SelectDataset) *goqu.SelectDataset {
+	return base.Select(goqu.L("COALESCE(SUM(c.normal_quantity+c.foil_quantity),0)").As("total_quantity"),
+		goqu.L("COUNT(DISTINCT CAST(CASE WHEN NULLIF(r.oracle_id,'') IS NULL THEN CONCAT('print:',r.printing_uuid) ELSE CONCAT('oracle:',r.oracle_id) END AS BINARY))").As("distinct_cards"))
 }
 
 // Summaries resolves complete card summaries only for the current page.

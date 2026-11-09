@@ -3,6 +3,7 @@
 /bin/
 /dist/
 /coverage/
+/logs/
 *.exe
 *.out
 *.test

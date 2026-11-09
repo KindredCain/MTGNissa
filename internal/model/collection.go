@@ -40,9 +40,3 @@ type CollectionPage struct {
 	Total      int64
 	NextCursor *string
 }
-
-// OwnedPrinting combines one owned printing with its finish quantities.
-type OwnedPrinting struct {
-	Card     CardSummary
-	Quantity Quantity
-}

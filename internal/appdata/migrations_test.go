@@ -109,7 +109,11 @@ func matchesSQLColumnType(fieldType reflect.Type, definition string) bool {
 	switch sqlType {
 	case "CHAR", "VARCHAR", "TEXT", "LONGTEXT":
 		return fieldType.Kind() == reflect.String
-	case "DATETIME":
+	case "VARBINARY":
+		return fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Uint8
+	case "DECIMAL":
+		return fieldType.Kind() == reflect.Float64
+	case "DATE", "DATETIME":
 		return fieldType == reflect.TypeOf(time.Time{})
 	case "BOOLEAN":
 		return fieldType.Kind() == reflect.Bool

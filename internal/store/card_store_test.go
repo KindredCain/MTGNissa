@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"reflect"
 	"strings"
 	"testing"
@@ -10,6 +11,56 @@ import (
 
 	"mtgnissa/internal/model"
 )
+
+func TestPrintingReferenceCapturesQueryMetadata(t *testing.T) {
+	now := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
+	released := now.AddDate(-10, 0, 0)
+	setReleased := released.AddDate(0, 0, -1)
+	oracle := "00000000-0000-0000-0000-000000000001"
+	card := model.CardSummary{PrintingUUID: "00000000-0000-0000-0000-000000000002", OracleID: &oracle,
+		Name: "Query Name", DisplayName: "Display Name", CollectorNumber: "107a", CMC: 2.5, Colors: []string{"U", "G"}, Rarity: "rare",
+		Set: model.SetRef{Code: "TEST", ReleasedAt: &setReleased}, Language: model.Language{Code: "en"}, ReleasedAt: &released}
+	ref := newPrintingRef(card, now)
+	if ref.PrintingUUID != card.PrintingUUID || ref.OracleID == nil || *ref.OracleID != oracle || ref.SetCode != "TEST" || ref.Lang != "en" || ref.Name != "Query Name" || ref.CollectorNumber != "107a" || len(ref.CollectorSortKey) == 0 || ref.ColorsMask != 18 || ref.CMC != 2.5 || ref.Rarity != "rare" || !ref.ReleasedAt.Equal(released) || !ref.SetReleasedAt.Equal(setReleased) || !ref.IsReal || !ref.CreatedAt.Equal(now) || !ref.LastVerifiedAt.Equal(now) {
+		t.Fatalf("query metadata=%+v", ref)
+	}
+	ref = newPrintingRef(model.CardSummary{}, now)
+	if ref.OracleID != nil || ref.ReleasedAt != nil || ref.SetReleasedAt != nil || ref.ColorsMask != 0 || ref.CollectorSortKey == nil || !ref.IsReal {
+		t.Fatalf("nullable metadata=%+v", ref)
+	}
+}
+
+func TestPrintingReferenceRefreshIsAtomicAndPreservesCreationTime(t *testing.T) {
+	for _, field := range []string{"oracle_id", "set_code", "collector_number", "collector_sort_key", "lang", "name", "colors_mask", "cmc", "rarity", "released_at", "set_released_at", "last_verified_at"} {
+		if !strings.Contains(refreshPrintingRefSQL, field+"=:"+field) {
+			t.Fatalf("refresh does not update %s", field)
+		}
+	}
+	if !strings.Contains(refreshPrintingRefSQL, "is_real=TRUE") || !strings.Contains(refreshPrintingRefSQL, "WHERE printing_uuid=:printing_uuid AND is_real=FALSE") || strings.Contains(refreshPrintingRefSQL, "created_at=") {
+		t.Fatalf("invalid refresh scope: %s", refreshPrintingRefSQL)
+	}
+}
+
+func TestCollectorSortKeyMatchesNaturalComparison(t *testing.T) {
+	numbers := []string{"", "0", "00", "000a", "0a", "1", "01", "001", "1a", "1A", "1.2", "1.10", "2", "10", "107", "107a", "107b", "107A", "107†", "107★", "108", "A1", "A01", "A2", "A10", "A-2", "A-10", "(1)", "/1", ":1", "中1", "中2", "中10", "107a2", "107a10", strings.Repeat("9", 64)}
+	for value := byte(0); value < 127; value++ {
+		numbers = append(numbers, string([]byte{value}), "1"+string([]byte{value})+"02")
+	}
+	for _, a := range numbers {
+		for _, b := range numbers {
+			actual := bytes.Compare(collectorSortKey(a), collectorSortKey(b))
+			expected := model.CompareCollectorNumbers(a, b)
+			if actual != expected {
+				t.Fatalf("%q vs %q: binary=%d natural=%d", a, b, actual, expected)
+			}
+		}
+	}
+	for _, number := range []string{strings.Repeat("1a", 32), strings.Repeat("1中", 32), strings.Repeat("1𐀀", 32)} {
+		if len(collectorSortKey(number)) > 512 {
+			t.Fatalf("64-character number exceeds key column: %q", number)
+		}
+	}
+}
 
 func TestPrintingIdentityIsIndependentOfImageFallback(t *testing.T) {
 	id := "01234567-1234-1234-1234-123456789abc"

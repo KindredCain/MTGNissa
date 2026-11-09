@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -17,14 +16,6 @@ type WishlistStore struct {
 	cards *CardStore
 }
 
-type wishlistRefRow struct {
-	UUID   string  `db:"printing_uuid"`
-	Oracle *string `db:"oracle_id"`
-	Set    string  `db:"set_code"`
-	Number string  `db:"collector_number"`
-	Lang   string  `db:"lang"`
-}
-
 // WishlistTx reads and changes wishlist state within the caller's transaction.
 type WishlistTx struct {
 	tx *sqlx.Tx
@@ -35,42 +26,36 @@ func NewWishlistStore(app, card *sqlx.DB) *WishlistStore {
 	return &WishlistStore{app: app, cards: NewCardStore(card)}
 }
 
-// Load reads only current wishlist printings and verifies their recorded identities.
-func (s *WishlistStore) Load(ctx context.Context) ([]model.CardSummary, error) {
+// Options resolves only current wishlist series and language codes through Card DB.
+func (s *WishlistStore) Options(ctx context.Context) ([]model.SetRef, []model.Language, error) {
+	return personalOptions(ctx, s.app, s.cards, "wishlist_item")
+}
+
+// List filters and pages saved query metadata in one application snapshot.
+func (s *WishlistStore) List(ctx context.Context, params model.WishlistParams, position *PersonalPosition, pageSize int) (model.WishlistPage, *PersonalPosition, error) {
+	page := model.WishlistPage{Items: []model.WishlistItem{}}
 	tx, err := s.app.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
-		return nil, err
+		return page, nil, err
 	}
 	defer tx.Rollback()
-	var refs []wishlistRefRow
-	if err := tx.SelectContext(ctx, &refs, `SELECT w.printing_uuid,r.oracle_id,r.set_code,r.collector_number,r.lang
- FROM wishlist_item w LEFT JOIN card_print_ref r ON r.printing_uuid=w.printing_uuid
- ORDER BY w.printing_uuid`); err != nil {
-		return nil, err
+	filters := model.CollectionParams{Query: params.Query, Sets: params.Sets, Languages: params.Languages, Colors: params.Colors, ManaValues: params.ManaValues, Rarities: params.Rarities}
+	base := personalFilters(personalBase("wishlist_item"), filters)
+	page.Total, err = personalCount(ctx, tx, base)
+	if err != nil {
+		return page, nil, err
+	}
+	rows, next, err := readPersonalPage(ctx, tx, personalPage(personalColumns(base), params.Sort, position, pageSize), pageSize)
+	if err != nil {
+		return page, nil, err
+	}
+	for _, row := range rows {
+		page.Items = append(page.Items, model.WishlistItem{Card: model.CardSummary{PrintingUUID: row.UUID}, Included: true})
 	}
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return page, nil, err
 	}
-	ids := make([]string, 0, len(refs))
-	for _, ref := range refs {
-		ids = append(ids, ref.UUID)
-	}
-	metadata, err := s.cards.metadata(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]model.CardSummary, 0, len(refs))
-	for _, ref := range refs {
-		meta, ok := metadata[ref.UUID]
-		if !ok {
-			return nil, fmt.Errorf("wishlist printing %s is unavailable in card data", ref.UUID)
-		}
-		if !sameOracle(ref.Oracle, meta.Oracle) || ref.Set != meta.SetCode || ref.Number != meta.Number || ref.Lang != meta.LanguageCode {
-			return nil, fmt.Errorf("wishlist printing %s identity does not match card data", ref.UUID)
-		}
-		result = append(result, meta.summary())
-	}
-	return result, nil
+	return page, next, nil
 }
 
 // Summaries resolves complete summaries only for the current wishlist page.

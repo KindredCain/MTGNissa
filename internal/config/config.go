@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -24,6 +25,7 @@ type Config struct {
 	HTTPAddr        string
 	CursorPageSize  int
 	LogLevel        string
+	LogDir          string
 	ShutdownTimeout time.Duration
 	CardDB          DB
 	AppDB           DB
@@ -43,6 +45,7 @@ type fileConfig struct {
 	} `yaml:"http"`
 	Log struct {
 		Level string `yaml:"level"`
+		Dir   string `yaml:"dir"`
 	} `yaml:"log"`
 	CardData struct {
 		Dir         string `yaml:"dir"`
@@ -73,7 +76,7 @@ func Load() (Config, error) {
 // LoadFile applies defaults, an optional YAML file, then environment overrides.
 func LoadFile(path string) (Config, error) {
 	db := DB{Host: "127.0.0.1", Port: 3306, MaxOpen: 5, MaxIdle: 1, MaxIdleTime: 5 * time.Minute, MaxLifetime: 30 * time.Minute}
-	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", CursorPageSize: 50, LogLevel: "info", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
+	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", CursorPageSize: 50, LogLevel: "info", LogDir: "logs", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
 	if path != "" {
 		if err := applyFile(&c, path); err != nil {
 			return Config{}, err
@@ -107,6 +110,9 @@ func LoadFile(path string) (Config, error) {
 	case "debug", "info", "warn", "error":
 	default:
 		return Config{}, fmt.Errorf("log.level must be debug, info, warn, or error")
+	}
+	if strings.TrimSpace(c.LogDir) == "" {
+		return Config{}, fmt.Errorf("log.dir must not be blank")
 	}
 	return c, nil
 }
@@ -146,6 +152,9 @@ func applyFile(c *Config, path string) error {
 	}
 	if raw.Log.Level != "" {
 		c.LogLevel = raw.Log.Level
+	}
+	if raw.Log.Dir != "" {
+		c.LogDir = raw.Log.Dir
 	}
 	if raw.CardData.Dir != "" {
 		c.CardDataDir = raw.CardData.Dir
@@ -214,6 +223,7 @@ func applyEnvironment(c *Config) error {
 		return err
 	}
 	setString("LOG_LEVEL", &c.LogLevel)
+	setString("LOG_DIR", &c.LogDir)
 	setString("CARD_DATA_DIR", &c.CardDataDir)
 	if err := setDuration("SHUTDOWN_TIMEOUT", &c.ShutdownTimeout); err != nil {
 		return err

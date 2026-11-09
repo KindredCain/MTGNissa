@@ -641,6 +641,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 `mana_value=0` 至 `mana_value=7` 分别匹配 `mtgnissa_card.cmc` 等于对应数值，`mana_value=8_plus` 匹配 `cmc >= 8`。稀有度请求值保持 `common`、`uncommon`、`rare`、`mythic`、`special`、`bonus`；前端依次显示为“铁、银、金、秘稀、特殊、额外”。
 
+收藏和愿望单的筛选、排序及代表版本选择基于已保存的卡牌查询副本，返回的卡牌及选项元数据来自当前 Card DB。
+
 收藏分组键固定如下。表中的括号表示带首项类型标记的概念元组，不是把字段直接拼接成一个字符串：
 
 | `merge_sets` | `merge_languages` | `oracle_id` 非空时的分组键 | 分组语义 |

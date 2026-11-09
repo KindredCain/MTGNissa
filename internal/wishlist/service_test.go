@@ -2,127 +2,113 @@ package wishlist
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
-	"reflect"
-	"testing"
-	"time"
-
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/model"
+	"mtgnissa/internal/store"
+	"reflect"
+	"testing"
 )
 
 type storeStub struct {
-	cards      []model.CardSummary
-	summaryIDs []string
-	err        error
+	page      model.WishlistPage
+	next      *store.PersonalPosition
+	cards     map[string]model.CardSummary
+	sets      []model.SetRef
+	languages []model.Language
+	params    model.WishlistParams
+	position  *store.PersonalPosition
+	pageSize  int
+	calls     int
+	resolved  []string
+	err       error
 }
 
-func (s *storeStub) Load(context.Context) ([]model.CardSummary, error) {
+func (s *storeStub) Options(context.Context) ([]model.SetRef, []model.Language, error) {
+	return s.sets, s.languages, s.err
+}
+func (s *storeStub) List(_ context.Context, params model.WishlistParams, position *store.PersonalPosition, pageSize int) (model.WishlistPage, *store.PersonalPosition, error) {
+	s.calls++
+	s.params, s.position, s.pageSize = params, position, pageSize
+	return s.page, s.next, s.err
+}
+func (s *storeStub) Summaries(_ context.Context, ids []string) (map[string]model.CardSummary, error) {
+	s.resolved = append(s.resolved, ids...)
 	return s.cards, s.err
 }
-
-func (s *storeStub) Summaries(_ context.Context, ids []string) (map[string]model.CardSummary, error) {
-	s.summaryIDs = append(s.summaryIDs, ids...)
-	result := make(map[string]model.CardSummary)
-	for _, card := range s.cards {
-		result[card.PrintingUUID] = card
-	}
-	return result, s.err
-}
-
-func TestWishlistKeepsPrintingsSeparateAndPagesEverySort(t *testing.T) {
-	oracle := "same-oracle"
-	date := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	cards := []model.CardSummary{
-		{PrintingUUID: "00000000-0000-4000-8000-000000000003", OracleID: &oracle, Name: "Zulu", CollectorNumber: "1", CMC: 1, Colors: []string{"U"}, Set: model.SetRef{Code: "SET", ReleasedAt: &date}, Language: model.Language{Code: "en"}},
-		{PrintingUUID: "00000000-0000-4000-8000-000000000002", OracleID: &oracle, Name: "Alpha", CollectorNumber: "10", CMC: 9, Colors: []string{"G"}, Set: model.SetRef{Code: "SET", ReleasedAt: &date}, Language: model.Language{Code: "ja"}},
-		{PrintingUUID: "00000000-0000-4000-8000-000000000001", Name: "Alpha", CollectorNumber: "2", CMC: 2, Colors: []string{"W"}, Set: model.SetRef{Code: "SET", ReleasedAt: &date}, Language: model.Language{Code: "en"}},
-	}
-	for _, order := range []string{"set", "color", "mana_value", "name"} {
-		t.Run(order, func(t *testing.T) {
-			stub := &storeStub{cards: cards}
-			service := &Service{store: stub, pageSize: 1}
-			params := model.WishlistParams{Sort: order}
-			var ids []string
-			for {
-				page, err := service.List(context.Background(), params)
-				if err != nil || page.Total != 3 || len(page.Items) != 1 {
-					t.Fatalf("page=%#v error=%v", page, err)
-				}
-				item := page.Items[0]
-				if !item.Included || (item.GroupSet != nil) != (order == "set") {
-					t.Fatalf("invalid wishlist item: %#v", item)
-				}
-				ids = append(ids, item.Card.PrintingUUID)
-				if page.NextCursor == nil {
-					break
-				}
-				params.Cursor = *page.NextCursor
-				if len(ids) > len(cards) {
-					t.Fatal("cursor did not advance")
-				}
-			}
-			want := []string{cards[2].PrintingUUID, cards[1].PrintingUUID, cards[0].PrintingUUID}
-			switch order {
-			case "set", "mana_value":
-				want = []string{cards[0].PrintingUUID, cards[2].PrintingUUID, cards[1].PrintingUUID}
-			case "color":
-				want = []string{cards[2].PrintingUUID, cards[0].PrintingUUID, cards[1].PrintingUUID}
-			}
-			if !reflect.DeepEqual(ids, want) || !reflect.DeepEqual(stub.summaryIDs, want) {
-				t.Fatalf("order=%v hydrated=%v", ids, stub.summaryIDs)
-			}
-			params.Query = "different"
-			if _, err := service.List(context.Background(), params); err == nil {
-				t.Fatal("cursor accepted changed filters")
-			}
-		})
+func TestPageKeepsSQLBoundaryAndUsesCardDBDisplayMetadata(t *testing.T) {
+	id := "00000000-0000-4000-8000-000000000001"
+	boundary := &store.PersonalPosition{UUID: id, Name: "saved name", SetCode: "OLD", SetDate: "2020-01-01", Number: "107a", Mana: 2.5, Color: 1}
+	card := model.CardSummary{PrintingUUID: id, Name: "Current Card DB Name", DisplayName: "Current Translation", CMC: 7, Set: model.SetRef{Code: "OLD", DisplayName: "Current Set"}, Language: model.Language{Code: "en", DisplayName: "Current Language"}}
+	for _, order := range []string{"set", "name", "color", "mana_value"} {
+		stub := &storeStub{page: model.WishlistPage{Total: 12, Items: []model.WishlistItem{{Card: model.CardSummary{PrintingUUID: id, Name: "must not display"}}}}, next: boundary, cards: map[string]model.CardSummary{id: card}}
+		service := Service{store: stub, pageSize: 2}
+		stub.page.Items[0].Included = true
+		params := model.WishlistParams{Sort: order, Query: " NAME ", Languages: []string{"JA", "en", "en"}}
+		page, err := service.List(context.Background(), params)
+		if err != nil || page.Total != 12 || len(page.Items) != 1 || !reflect.DeepEqual(page.Items[0].Card, card) || !reflect.DeepEqual(stub.resolved, []string{id}) || stub.pageSize != 2 || stub.params.Query != "name" || !reflect.DeepEqual(stub.params.Languages, []string{"en", "ja"}) {
+			t.Fatalf("sort=%s page=%+v params=%+v error=%v", order, page, stub.params, err)
+		}
+		if order == "set" && (page.Items[0].GroupSet == nil || *page.Items[0].GroupSet != card.Set) {
+			t.Fatalf("header used saved metadata: %+v", page.Items[0])
+		}
+		if !page.Items[0].Included {
+			t.Fatal("Card DB hydration changed wishlist state")
+		}
+		if page.NextCursor == nil {
+			t.Fatal("lost SQL continuation")
+		}
+		decoded, err := decodeCursor(*page.NextCursor, order, queryFingerprint(normalizeParams(params)))
+		if err != nil || !reflect.DeepEqual(store.PersonalPosition(decoded), *boundary) {
+			t.Fatalf("cursor used display metadata: %+v %v", decoded, err)
+		}
+		params.Cursor = *page.NextCursor
+		params.Languages = []string{"en", "ja"}
+		stub.next = nil
+		stub.page = model.WishlistPage{Total: 12}
+		empty, err := service.List(context.Background(), params)
+		if err != nil || empty.Items == nil || len(empty.Items) != 0 || empty.Total != 12 || !reflect.DeepEqual(stub.position, boundary) || empty.NextCursor != nil || len(stub.resolved) != 1 {
+			t.Fatalf("continuation=%+v boundary=%+v error=%v", empty, stub.position, err)
+		}
+		before := stub.calls
+		params.Query = "changed"
+		_, err = service.List(context.Background(), params)
+		var appErr *apperror.Error
+		if !errors.As(err, &appErr) || appErr.Code != apperror.CodeInvalidCursor || stub.calls != before {
+			t.Fatalf("changed query reached store: %v", err)
+		}
 	}
 }
-
-func TestWishlistFiltersAreLiteralAndDoNotMerge(t *testing.T) {
-	stub := &storeStub{cards: []model.CardSummary{
-		{PrintingUUID: "one", Name: "Nissa%_", Set: model.SetRef{Code: "KLD"}, Language: model.Language{Code: "en"}, Colors: []string{"G"}, CMC: 5, Rarity: "mythic"},
-		{PrintingUUID: "two", Name: "Nissa%_", Set: model.SetRef{Code: "KLD"}, Language: model.Language{Code: "ja"}, Colors: []string{"G"}, CMC: 5, Rarity: "mythic"},
-		{PrintingUUID: "three", Name: "Nissa Other", Set: model.SetRef{Code: "KLD"}, Language: model.Language{Code: "en"}, Colors: []string{"G"}, CMC: 5, Rarity: "mythic"},
-	}}
-	service := &Service{store: stub, pageSize: 10}
-	params := model.WishlistParams{Query: " NISSA%_ ", Sets: []string{"kld"}, Languages: []string{"EN", "ja"}, Colors: []string{"G"}, ManaValues: []string{"5", "8_plus"}, Rarities: []string{"mythic"}}
-	page, err := service.List(context.Background(), params)
-	if err != nil || page.Total != 2 || len(page.Items) != 2 || page.NextCursor != nil {
-		t.Fatalf("filtered page=%#v error=%v", page, err)
-	}
-	params.ManaValues = []string{"8_plus"}
-	page, err = service.List(context.Background(), params)
-	if err != nil || page.Items == nil || len(page.Items) != 0 || page.Total != 0 {
-		t.Fatalf("empty page=%#v error=%v", page, err)
-	}
-	if _, err := service.List(context.Background(), model.WishlistParams{Cursor: "bad cursor"}); err == nil {
-		t.Fatal("malformed cursor accepted")
-	}
-}
-
-func TestWishlistOptionsUseOnlyCurrentItemsAndStableOrder(t *testing.T) {
-	date := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	stub := &storeStub{cards: []model.CardSummary{
-		{Set: model.SetRef{Code: "Z"}, Language: model.Language{Code: "ja", SortOrder: 7}},
-		{Set: model.SetRef{Code: "B", ReleasedAt: &date}, Language: model.Language{Code: "en", SortOrder: 1}},
-		{Set: model.SetRef{Code: "A", ReleasedAt: &date}, Language: model.Language{Code: "en", SortOrder: 1}},
-	}}
-	service := &Service{store: stub, pageSize: 10}
+func TestOptionsKeepCardDBMetadataAndFixedDomains(t *testing.T) {
+	stub := &storeStub{sets: []model.SetRef{{Code: "SET", DisplayName: "Current Set"}}, languages: []model.Language{{Code: "ja", DisplayName: "Current Language", SortOrder: 7}}}
+	service := Service{store: stub}
 	options, err := service.Options(context.Background())
-	if err != nil || len(options.Sets) != 3 || options.Sets[0].Code != "A" || options.Sets[1].Code != "B" || options.Sets[2].Code != "Z" || len(options.Languages) != 2 || options.Languages[0].Code != "en" {
-		t.Fatalf("options=%#v error=%v", options, err)
+	if err != nil || !reflect.DeepEqual(options.Sets, stub.sets) || !reflect.DeepEqual(options.Languages, stub.languages) || len(options.Colors) != 7 || len(options.ManaValues) != 9 || len(options.Rarities) != 6 || stub.calls != 0 {
+		t.Fatalf("options=%+v error=%v", options, err)
 	}
-	stub.cards = nil
+	stub.sets, stub.languages = nil, nil
 	options, err = service.Options(context.Background())
-	if err != nil || options.Sets == nil || options.Languages == nil || len(options.Colors) != 7 || len(options.ManaValues) != 9 || len(options.Rarities) != 6 {
-		t.Fatalf("empty options=%#v error=%v", options, err)
+	if err != nil || options.Sets == nil || options.Languages == nil {
+		t.Fatalf("empty options=%+v error=%v", options, err)
 	}
-	stub.err = errors.New("private database failure")
-	_, err = service.List(context.Background(), model.WishlistParams{})
+}
+func TestMalformedCursorMissingCardAndDependency(t *testing.T) {
+	stub := &storeStub{}
+	service := Service{store: stub, pageSize: 2}
+	for _, cursor := range []string{"!", base64.RawURLEncoding.EncodeToString([]byte(`{"v":1,"unknown":true}`))} {
+		if _, err := service.List(context.Background(), model.WishlistParams{Cursor: cursor}); err == nil || stub.calls != 0 {
+			t.Fatalf("malformed cursor reached store: %v", err)
+		}
+	}
+	stub.page = model.WishlistPage{Items: []model.WishlistItem{{Card: model.CardSummary{PrintingUUID: "missing"}}}}
+	if _, err := service.List(context.Background(), model.WishlistParams{}); err == nil {
+		t.Fatal("missing Card DB printing was silently returned")
+	}
+	stub.err = errors.New("private database error")
+	_, err := service.Options(context.Background())
 	var appErr *apperror.Error
 	if !errors.As(err, &appErr) || appErr.Code != apperror.CodeDependencyUnavailable {
-		t.Fatalf("dependency failure=%v", err)
+		t.Fatalf("dependency error=%v", err)
 	}
 }

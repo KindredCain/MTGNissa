@@ -10,6 +10,7 @@ http:
 
 log:
   level: info
+  dir: /data/logs
 
 card_data:
   dir: /data/card-data

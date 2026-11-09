@@ -19,6 +19,7 @@ import (
 	"mtgnissa/internal/health"
 	"mtgnissa/internal/httpapi"
 	"mtgnissa/internal/idempotency"
+	"mtgnissa/internal/initialization"
 	"mtgnissa/internal/operationlogs"
 	"mtgnissa/internal/search"
 	"mtgnissa/internal/sets"
@@ -69,9 +70,15 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 		dbs.Close()
 		return nil, err
 	}
+	cardStore := store.NewCardStore(dbs.Card)
+	if err := initialization.Run(ctx, log,
+		initialization.PrintingRefs(store.NewPrintingRefStore(dbs.App, cardStore), cfg.LogDir, log),
+	); err != nil {
+		dbs.Close()
+		return nil, err
+	}
 	manager := carddata.NewManager(ctx, dbs.Card.DB, cfg.CardDB.Name, cfg.CardDataDir, log)
 	setService := sets.NewService(store.NewSetStore(dbs.Card), cfg.CursorPageSize)
-	cardStore := store.NewCardStore(dbs.Card)
 	appTransactions := store.NewAppTransactions(dbs.App)
 	intents := idempotency.New(4096)
 	location, err := time.LoadLocation(cfg.TimeZone)

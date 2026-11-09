@@ -34,15 +34,23 @@ const (
 	FinishFoil
 )
 
-// CardPrintRef stores the main-face language-print identity referenced by application data.
+// CardPrintRef stores a main-face language-print identity and its personal-list query metadata.
 type CardPrintRef struct {
-	PrintingUUID    string    `db:"printing_uuid"`
-	OracleID        *string   `db:"oracle_id"`
-	SetCode         string    `db:"set_code"`
-	CollectorNumber string    `db:"collector_number"`
-	Lang            string    `db:"lang"`
-	CreatedAt       time.Time `db:"created_at"`
-	LastVerifiedAt  time.Time `db:"last_verified_at"`
+	PrintingUUID     string     `db:"printing_uuid"`
+	OracleID         *string    `db:"oracle_id"`
+	SetCode          string     `db:"set_code"`
+	CollectorNumber  string     `db:"collector_number"`
+	CollectorSortKey []byte     `db:"collector_sort_key"`
+	Lang             string     `db:"lang"`
+	Name             string     `db:"name"`
+	ColorsMask       uint64     `db:"colors_mask"`
+	CMC              float64    `db:"cmc"`
+	Rarity           string     `db:"rarity"`
+	ReleasedAt       *time.Time `db:"released_at"`
+	SetReleasedAt    *time.Time `db:"set_released_at"`
+	IsReal           bool       `db:"is_real"`
+	CreatedAt        time.Time  `db:"created_at"`
+	LastVerifiedAt   time.Time  `db:"last_verified_at"`
 }
 
 // CollectionItem stores owned normal and foil quantities for one card print.

@@ -14,10 +14,13 @@ MTGNissa 是一个面向个人部署的万智牌管理 Web 服务。
 docker run \
   -v /srv/mtgnissa/config.yaml:/config/mtgnissa.yaml:ro \
   -v /srv/mtgnissa/card-data:/data/card-data:ro \
+  -v /srv/mtgnissa/logs:/data/logs \
   your-image -config /config/mtgnissa.yaml
 ```
 
 也可以设置 `CONFIG_FILE=/config/mtgnissa.yaml`，此时不需要传 `-config`。命令行参数优先于 `CONFIG_FILE`。
+
+`log.dir` 指定统一日志目录，默认 `logs`，可由 `LOG_DIR` 覆盖。初始化失败文件是该目录下的一类日志；普通运行日志当前输出到标准输出。启动时在 App DB 迁移之后执行统一初始化阶段，完成后才监听 HTTP。映射更新的单条失败保留待同步状态，写入带 UTC 时间戳的 `card_print_ref_init_failures_*.log` 文件；全部成功时不生成失败文件。
 
 加载顺序为：内置默认值 → YAML 文件 → 环境变量。可选的 `app.display_name` 用于页面标识当前是谁的卡牌库，默认是空字符串，也可由 `APP_DISPLAY_NAME` 覆盖。`app.timezone` 是页面时间展示、操作日志自然日查询及每日汇总的权威时区，使用 IANA 时区名称，默认是 `UTC`，也可由 `APP_TIMEZONE` 覆盖；它不修改数据库会话时区。数据库密码等敏感值可以不写入文件，而通过 `CARD_DB_PASSWORD`、`APP_DB_PASSWORD` 或 Docker Secret 注入。原有的 `HTTP_ADDR`、`CARD_DB_*`、`APP_DB_*`、`CARD_DATA_*` 环境变量仍然可用。
 
