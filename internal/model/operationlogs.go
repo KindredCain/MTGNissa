@@ -22,12 +22,6 @@ type OperationRange struct {
 	End   *time.Time
 }
 
-// OperationEvent is the minimal event metadata needed for local-date grouping.
-type OperationEvent struct {
-	Action     uint8     `db:"action_type"`
-	OccurredAt time.Time `db:"occurred_at"`
-}
-
 // OperationSummary groups actual events by application date and action type.
 type OperationSummary struct {
 	Date   string

@@ -119,10 +119,7 @@ func preferredDeckPrinting(a, b deckPrintingRow, preferred map[string]int) bool 
 func deckCardsByPrinting(ctx context.Context, tx *sqlx.Tx, ids []string) (map[string]model.DeckCardData, error) {
 	result := make(map[string]model.DeckCardData)
 	for start := 0; start < len(ids); start += 500 {
-		query, args, err := sqlx.In(strings.Replace(printingQuery, "SELECT ", "SELECT c.produced_mana,", 1)+`
- JOIN mtgnissa_card_printing requested ON requested.uuid IN (?)
- JOIN mtgnissa_card seed ON seed.uuid=requested.card_uuid AND seed.face_index IN (-1,0)
- WHERE c.scryfall_id=seed.scryfall_id AND p.language_code=requested.language_code`, ids[start:min(start+500, len(ids))])
+		query, args, err := sqlx.In(strings.Replace(printingQuery, "SELECT ", "SELECT c.produced_mana,", 1)+" WHERE p.uuid IN (?)", ids[start:min(start+500, len(ids))])
 		if err != nil {
 			return nil, err
 		}
@@ -184,7 +181,7 @@ func (s *CardStore) DeckNames(ctx context.Context, names []string) ([]model.Deck
 	result := []model.DeckName{}
 	for start := 0; start < len(names); start += 500 {
 		query, args, err := sqlx.In(`SELECT name,NULLIF(oracle_id,'') AS oracle_id FROM mtgnissa_card
- WHERE LOWER(name) IN (?) AND face_index IN (-1,0) GROUP BY name,oracle_id ORDER BY name,oracle_id`, names[start:min(start+500, len(names))])
+ WHERE name IN (?) AND face_index IN (-1,0) GROUP BY name,oracle_id ORDER BY name,oracle_id`, names[start:min(start+500, len(names))])
 		if err != nil {
 			return nil, err
 		}

@@ -234,14 +234,9 @@ func TestNoopDefinitionStandardCodeAndUnicodeCopyName(t *testing.T) {
 	}
 }
 
-func TestDeckCursorsBindScopeAndUseAscendingIDTies(t *testing.T) {
+func TestDeckCursorsBindScope(t *testing.T) {
 	date := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	a, b := model.SavedDeck{ID: 2, Name: "Same", CreatedAt: date, UpdatedAt: date}, model.SavedDeck{ID: 3, Name: "SAME", CreatedAt: date, UpdatedAt: date}
-	for _, order := range []string{"updated_desc", "created_desc", "name_asc", "card_count_desc"} {
-		if compareDeckPositions(deckPosition(a, order), deckPosition(b, order), order) >= 0 {
-			t.Fatalf("deck ID tie order changed for %s", order)
-		}
-	}
+	a := model.SavedDeck{ID: 2, Name: "Same", CreatedAt: date, UpdatedAt: date}
 	fingerprint := cursorFingerprint("decks", 0, "name", "updated_desc")
 	cursor, err := encodeCursor("decks", fingerprint, deckPosition(a, "updated_desc"))
 	if err != nil {

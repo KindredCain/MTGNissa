@@ -32,17 +32,52 @@ type operationDeckRow struct {
 	appdata.OperationDeckDetail
 }
 
+type operationSummaryRow struct {
+	Date   string `db:"operation_date"`
+	Action uint8  `db:"action_type"`
+	Count  int64  `db:"operation_count"`
+}
+
 // NewOperationLogStore creates an application log reader without Card DB dependencies.
 func NewOperationLogStore(db *sqlx.DB) *OperationLogStore {
 	return &OperationLogStore{db: db}
 }
 
-// Events reads only timestamps and action codes for local-calendar summary grouping.
-func (s *OperationLogStore) Events(ctx context.Context, bounds model.OperationRange) ([]model.OperationEvent, error) {
+// Summary aggregates and pages daily action groups using one fixed UTC offset.
+func (s *OperationLogStore) Summary(ctx context.Context, bounds model.OperationRange, offsetSeconds, page int) ([]model.OperationSummary, int64, error) {
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, 0, err
+	}
+	defer tx.Rollback()
+	grouped, args := operationSummarySQL(bounds, offsetSeconds)
+	var total int64
+	if err := tx.GetContext(ctx, &total, "SELECT COUNT(*) FROM ("+grouped+") AS grouped", args...); err != nil {
+		return nil, 0, err
+	}
+	items := []model.OperationSummary{}
+	if int64(page-1)*10 < total {
+		statement := grouped + " ORDER BY operation_date DESC,l.action_type ASC LIMIT ? OFFSET ?"
+		args = append(args, 10, int64(page-1)*10)
+		var rows []operationSummaryRow
+		if err := tx.SelectContext(ctx, &rows, statement, args...); err != nil {
+			return nil, 0, err
+		}
+		for _, row := range rows {
+			items = append(items, model.OperationSummary{Date: row.Date, Action: model.OperationActionName(row.Action), Count: row.Count})
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
+}
+
+func operationSummarySQL(bounds model.OperationRange, offsetSeconds int) (string, []any) {
 	where, args := operationRangeSQL(bounds)
-	var rows []model.OperationEvent
-	err := s.db.SelectContext(ctx, &rows, "SELECT l.action_type,l.occurred_at FROM operation_log l WHERE "+where, args...)
-	return rows, err
+	statement := `SELECT DATE_FORMAT(DATE_ADD(l.occurred_at, INTERVAL ? SECOND), '%Y-%m-%d') AS operation_date,
+ l.action_type,COUNT(*) AS operation_count FROM operation_log l WHERE ` + where + " GROUP BY operation_date,l.action_type"
+	return statement, append([]any{offsetSeconds}, args...)
 }
 
 // List reads the count and one snapshot page from the same repeatable-read snapshot.

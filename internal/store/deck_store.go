@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/appdata"
@@ -16,6 +17,14 @@ import (
 // DeckTx queries saved decks within the caller's application snapshot.
 type DeckTx struct {
 	tx *sqlx.Tx
+}
+
+// DeckPosition identifies the compound boundary of a saved deck page.
+type DeckPosition struct {
+	ID    uint64
+	Name  string
+	Time  time.Time
+	Count uint64
 }
 
 type deckUsageRow struct {
@@ -56,15 +65,43 @@ func (s *DeckTx) Get(ctx context.Context, id uint64, lock bool) (model.SavedDeck
 	return savedDeck(row, cards), nil
 }
 
-// List reads the saved definitions and section quantities from the caller's snapshot.
-func (s *DeckTx) List(ctx context.Context) ([]model.SavedDeck, error) {
+// List filters and pages saved definitions before reading their section quantities.
+func (s *DeckTx) List(ctx context.Context, params model.DeckListParams, position *DeckPosition, pageSize int) ([]model.SavedDeck, int64, bool, error) {
+	base := deckListBase(params.Query)
+	statement, args, err := base.Select(goqu.COUNT("*")).ToSQL()
+	if err != nil {
+		return nil, 0, false, err
+	}
+	var total int64
+	if err := s.tx.GetContext(ctx, &total, statement, args...); err != nil {
+		return nil, 0, false, err
+	}
+	statement, args, err = deckListPage(base, params.Sort, position, pageSize).ToSQL()
+	if err != nil {
+		return nil, 0, false, err
+	}
 	var rows []appdata.Deck
-	if err := s.tx.SelectContext(ctx, &rows, "SELECT id,name,'' AS source_text,cover_oracle_id,created_at,updated_at FROM deck ORDER BY id"); err != nil {
-		return nil, err
+	if err := s.tx.SelectContext(ctx, &rows, statement, args...); err != nil {
+		return nil, 0, false, err
+	}
+	more := len(rows) > pageSize
+	if more {
+		rows = rows[:pageSize]
+	}
+	if len(rows) == 0 {
+		return []model.SavedDeck{}, total, false, nil
+	}
+	ids := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, row.ID)
+	}
+	statement, args, err = sqlx.In("SELECT deck_id,section_type,oracle_id,quantity,name_snapshot FROM deck_card WHERE deck_id IN (?) ORDER BY deck_id,section_type,oracle_id", ids)
+	if err != nil {
+		return nil, 0, false, err
 	}
 	var cards []appdata.DeckCard
-	if err := s.tx.SelectContext(ctx, &cards, "SELECT deck_id,section_type,oracle_id,quantity,name_snapshot FROM deck_card ORDER BY deck_id,section_type,oracle_id"); err != nil {
-		return nil, err
+	if err := s.tx.SelectContext(ctx, &cards, statement, args...); err != nil {
+		return nil, 0, false, err
 	}
 	groups := make(map[uint64][]appdata.DeckCard)
 	for _, card := range cards {
@@ -74,7 +111,52 @@ func (s *DeckTx) List(ctx context.Context) ([]model.SavedDeck, error) {
 	for _, row := range rows {
 		result = append(result, savedDeck(row, groups[row.ID]))
 	}
-	return result, nil
+	return result, total, more, nil
+}
+
+func deckListBase(query string) *goqu.SelectDataset {
+	dataset := mysqlDialect.From(goqu.T("deck").As("d")).Prepared(true)
+	if query != "" {
+		dataset = dataset.Where(goqu.L("LOWER(d.name) COLLATE utf8mb4_bin LIKE ? ESCAPE '='", "%"+escapeLike(query)+"%"))
+	}
+	return dataset
+}
+
+func deckListPage(base *goqu.SelectDataset, order string, position *DeckPosition, pageSize int) *goqu.SelectDataset {
+	dataset := base.Select(goqu.I("d.id"), goqu.I("d.name"), goqu.L("'' AS source_text"), goqu.I("d.cover_oracle_id"), goqu.I("d.created_at"), goqu.I("d.updated_at"))
+	key := goqu.L("d.updated_at")
+	var boundary any
+	if position != nil {
+		boundary = position.Time
+	}
+	switch order {
+	case "created_desc":
+		key = goqu.L("d.created_at")
+	case "name_asc":
+		key = goqu.L("LOWER(d.name) COLLATE utf8mb4_bin")
+		if position != nil {
+			boundary = position.Name
+		}
+	case "card_count_desc":
+		counts := mysqlDialect.From("deck_card").Select("deck_id", goqu.SUM("quantity").As("quantity")).
+			Where(goqu.C("section_type").In("commander", "mainboard", "sideboard")).GroupBy("deck_id")
+		dataset = dataset.LeftJoin(counts.As("counts"), goqu.On(goqu.I("counts.deck_id").Eq(goqu.I("d.id"))))
+		key = goqu.L("COALESCE(counts.quantity,0)")
+		if position != nil {
+			boundary = position.Count
+		}
+	}
+	if position != nil {
+		next := key.Lt(boundary)
+		if order == "name_asc" {
+			next = key.Gt(boundary)
+		}
+		dataset = dataset.Where(goqu.Or(next, goqu.And(key.Eq(boundary), goqu.I("d.id").Gt(position.ID))))
+	}
+	if order == "name_asc" {
+		return dataset.Order(key.Asc(), goqu.I("d.id").Asc()).Limit(uint(pageSize + 1))
+	}
+	return dataset.Order(key.Desc(), goqu.I("d.id").Asc()).Limit(uint(pageSize + 1))
 }
 
 func savedDeck(row appdata.Deck, cards []appdata.DeckCard) model.SavedDeck {

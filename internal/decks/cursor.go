@@ -74,33 +74,3 @@ func deckPosition(deck model.SavedDeck, order string) cursorPosition {
 	}
 	return position
 }
-
-func compareDeckPositions(a, b cursorPosition, order string) int {
-	switch order {
-	case "name_asc":
-		if c := strings.Compare(a.Name, b.Name); c != 0 {
-			return c
-		}
-	case "card_count_desc":
-		if a.Count > b.Count {
-			return -1
-		}
-		if a.Count < b.Count {
-			return 1
-		}
-	default:
-		if a.Time.After(b.Time) {
-			return -1
-		}
-		if a.Time.Before(b.Time) {
-			return 1
-		}
-	}
-	if a.ID < b.ID {
-		return -1
-	}
-	if a.ID > b.ID {
-		return 1
-	}
-	return 0
-}

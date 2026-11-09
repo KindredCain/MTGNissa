@@ -170,6 +170,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 `printing_uuid` 是 `mtgnissa_card_printing.uuid`，用于定位普通卡牌的具体印刷及语言版本，也是详情、收藏、愿望单、卡组候选上下文、编辑提交和日志使用的业务标识。单面牌使用自身语言印刷行的 UUID；双面或多牌面牌的各卡面行各有 UUID，对外版本入口统一使用同一印刷、同一语言主牌面（`face_index = 0`）的语言印刷 UUID，其余牌面随同返回，不拆分收藏或愿望单。客户端只回传后端返回的规范 `printing_uuid`，不得改用基础卡面的 `mtgnissa_card.uuid` 或图片 ID。
 
+普通列表、详情、收藏和愿望单摘要、卡组展示及编辑上下文均从主卡面语言入口展开完整基础卡面；副卡面缺少该语言的印刷行时仍保留该卡面，使用对应基础属性、既有中文翻译回退和基础图片回退。只有副卡面语言行而没有主卡面入口的版本不返回独立列表项，也不以副卡面 UUID 替代入口。普通列表的名称筛选仍匹配当前语言任一卡面的实际 `printed_name`，命中后返回主卡面入口。
+
 `scryfall_id` 是可空的外部图片来源标识，不作为普通卡牌请求参数或业务键。后端通过语言印刷行的 `card_uuid` 读取基础卡面；图片优先使用语言印刷行的 `scryfall_id`，缺失时仅图片来源回退到 `mtgnissa_card.scryfall_id`，并返回已经解析完成的 `CardImageDTO`。该回退不改写 `printing_uuid`、语言、收藏、愿望单、跳转目标或日志身份。前端只消费图片 URL，不自行拼接地址。Token 另用 `TokenSummaryDTO`，不复用普通卡牌业务入口。
 
 `oracle_id` 是只读逻辑卡牌标识，数据源缺失时为 `null`。前端可用它在本地去重、合并和判断同卡，但不得放入路径、查询参数或 mutation 请求；请求仍提交 `printing_uuid`，后端解析其 `oracle_id` 后执行逻辑卡查询、统计和卡组持久化。无 Oracle 身份的卡不允许加入卡组。`deck_card` 的数据库身份为 `(deck_id, section_type, oracle_id)`，API 不定义 `deck_card_id`。Set 业务标识为 `mtgnissa_set.code`；查询参数称 `set_code`，`SetRefDTO` 及 Set 列表项中直接用 `code` 表示，不再提供独立 Set UUID。
@@ -1112,9 +1114,9 @@ counted_total
 
 ## 9. 操作日志
 
-App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。操作日志接口中的 `operation_date` 是后端把 `occurred_at` 转换到 `/app` 返回的 `timezone` 后派生的自然日；每日汇总也按该派生日期和 `action_type` 分组。前端不得根据浏览器本地时区重新划分日期。
+App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日志请求从 `/app` 返回的 `timezone` 获取当前时间对应的 UTC 偏移，并将该偏移固定应用于本次查询的全部历史记录，不采用每条历史记录发生时的夏令时偏移。`operation_date` 由 UTC 时间加该偏移派生，汇总按该日期和 `action_type` 分组。前端不得根据浏览器本地时区重新划分日期。
 
-所有日期参数都按该应用时区解释。后端必须分别取得本地自然日零点和下一自然日零点，再转换成 UTC，以 `occurred_at >= utc_start AND occurred_at < utc_end` 的左闭右开区间查询。开始日期只提供下界；结束日期使用其下一自然日零点作为排他上界；两端都提供时仍表现为自然日闭区间。不得用固定加减小时数或固定 24 小时推算边界，以保证应用时区存在夏令时变化时仍按真实自然日查询。例如 `Asia/Shanghai` 的 `2026-10-09` 对应 `[2026-10-08T16:00:00Z, 2026-10-09T16:00:00Z)`。
+所有日期参数按本次请求获取的固定 UTC 偏移解释。日期零点和次日零点按同一偏移转换为 UTC，以 `occurred_at >= utc_start AND occurred_at < utc_end` 的左闭右开区间查询，每日固定 24 小时。开始日期只提供下界；结束日期使用次日零点作为排他上界；两端都提供时表现为日期闭区间。例如当前偏移为 `+08:00` 时，`2026-10-09` 对应 `[2026-10-08T16:00:00Z, 2026-10-09T16:00:00Z)`。汇总由 SQL 聚合、排序和分页，总数统计日期与操作类型的分组数；SQL 仅接收偏移秒数，不依赖 MySQL 时区表。当前偏移变化后，午夜附近历史记录的日期归属、汇总数量及分页位置可能变化，原始 UTC 时间和记录不变；汇总与明细请求跨过偏移切换时刻时可能短暂不一致。
 
 明细响应中的 `occurred_at` 始终保持 UTC RFC 3339，不转换为本地时间字符串；`operation_date` 只用于自然日查询、汇总和页面日期标题。
 

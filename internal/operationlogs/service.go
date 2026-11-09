@@ -2,7 +2,6 @@ package operationlogs
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"mtgnissa/internal/apperror"
@@ -11,11 +10,11 @@ import (
 )
 
 type logStore interface {
-	Events(context.Context, model.OperationRange) ([]model.OperationEvent, error)
+	Summary(context.Context, model.OperationRange, int, int) ([]model.OperationSummary, int64, error)
 	List(context.Context, model.OperationRange, uint8, int) ([]model.OperationItem, int64, error)
 }
 
-// Service groups and pages historical operations using the configured application timezone.
+// Service queries historical operations using the application timezone's current UTC offset.
 type Service struct {
 	store    logStore
 	location *time.Location
@@ -28,9 +27,11 @@ func NewService(logs *store.OperationLogStore, location *time.Location) *Service
 
 // Summary counts events by local date and action without loading historical snapshots.
 func (s *Service) Summary(ctx context.Context, params model.OperationSummaryParams) (model.OperationSummaryPage, error) {
+	_, offset := time.Now().In(s.location).Zone()
+	location := time.FixedZone("", offset)
 	bounds := model.OperationRange{}
 	if params.StartDate != "" {
-		start, err := time.ParseInLocation("2006-01-02", params.StartDate, s.location)
+		start, err := time.ParseInLocation("2006-01-02", params.StartDate, location)
 		if err != nil {
 			return model.OperationSummaryPage{}, err
 		}
@@ -38,45 +39,24 @@ func (s *Service) Summary(ctx context.Context, params model.OperationSummaryPara
 		bounds.Start = &utc
 	}
 	if params.EndDate != "" {
-		end, err := time.ParseInLocation("2006-01-02", params.EndDate, s.location)
+		end, err := time.ParseInLocation("2006-01-02", params.EndDate, location)
 		if err != nil {
 			return model.OperationSummaryPage{}, err
 		}
 		utc := end.AddDate(0, 0, 1).UTC()
 		bounds.End = &utc
 	}
-	events, err := s.store.Events(ctx, bounds)
+	items, total, err := s.store.Summary(ctx, bounds, offset, params.Page)
 	if err != nil {
 		return model.OperationSummaryPage{}, dependencyError(err)
 	}
-	groups := make(map[string]map[uint8]int64)
-	for _, event := range events {
-		date := event.OccurredAt.In(s.location).Format("2006-01-02")
-		if groups[date] == nil {
-			groups[date] = make(map[uint8]int64)
-		}
-		groups[date][event.Action]++
-	}
-	items := make([]model.OperationSummary, 0)
-	for date, actions := range groups {
-		for action, count := range actions {
-			items = append(items, model.OperationSummary{Date: date, Action: model.OperationActionName(action), Count: count})
-		}
-	}
-	sort.Slice(items, func(i, j int) bool {
-		if items[i].Date != items[j].Date {
-			return items[i].Date > items[j].Date
-		}
-		return model.OperationActionCode(items[i].Action) < model.OperationActionCode(items[j].Action)
-	})
-	start := min((params.Page-1)*10, len(items))
-	end := min(start+10, len(items))
-	return model.OperationSummaryPage{Items: items[start:end], Page: params.Page, Total: int64(len(items))}, nil
+	return model.OperationSummaryPage{Items: append([]model.OperationSummary{}, items...), Page: params.Page, Total: total}, nil
 }
 
-// List reads one action's snapshots for a local day, including days affected by DST.
+// List reads one action's snapshots for a day using the current fixed UTC offset.
 func (s *Service) List(ctx context.Context, params model.OperationLogParams) (model.OperationLogPage, error) {
-	date, err := time.ParseInLocation("2006-01-02", params.Date, s.location)
+	_, offset := time.Now().In(s.location).Zone()
+	date, err := time.ParseInLocation("2006-01-02", params.Date, time.FixedZone("", offset))
 	if err != nil {
 		return model.OperationLogPage{}, err
 	}

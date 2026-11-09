@@ -105,14 +105,18 @@ const cardSummaryColumns = `
 
 const printingSummaryColumns = `
  p.uuid AS printing_uuid,
- COALESCE(NULLIF(p.scryfall_id, ''), c.scryfall_id) AS image_id,
+ COALESCE(NULLIF(fp.scryfall_id, ''), c.scryfall_id) AS image_id,
 ` + cardSummaryColumns + `,
  l.code AS language_code, l.display_name AS language_name, l.sort_order AS language_order
 `
 
+// The main-face printing owns the identity and language. Secondary language rows
+// only supply optional face image sources and never determine face completeness.
 const printingFrom = `
  FROM mtgnissa_card_printing p
- JOIN mtgnissa_card c ON c.uuid = p.card_uuid
+ JOIN mtgnissa_card main ON main.uuid=p.card_uuid AND main.face_index IN (-1,0)
+ JOIN mtgnissa_card c ON c.scryfall_id=main.scryfall_id
+ LEFT JOIN mtgnissa_card_printing fp ON fp.card_uuid=c.uuid AND fp.language_code=p.language_code
  JOIN mtgnissa_set s ON s.code = c.set_code
  JOIN scryfall_language l ON l.code = p.language_code
  JOIN scryfall_layout ly ON ly.code = c.layout
@@ -179,12 +183,12 @@ func (s *CardStore) List(ctx context.Context, code, language, query string) (mod
 	if err := tx.SelectContext(ctx, &rows, summaryQuery+` WHERE s.code=? AND l.code=?`, set.Code, lang.Code); err != nil {
 		return model.CardList{}, err
 	}
-	// Filter the complete printing group so a matching secondary face retains its main-face identity.
+	// Match any translated face, but return only groups with a main-face language entry.
 	matched := make(map[string]bool)
 	if query != "" {
 		var ids []string
 		pattern := strings.NewReplacer("=", "==", "%", "=%", "_", "=_").Replace(query)
-		if err := tx.SelectContext(ctx, &ids, `SELECT p.uuid FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
+		if err := tx.SelectContext(ctx, &ids, `SELECT DISTINCT c.scryfall_id FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
  WHERE c.set_code=? AND p.language_code=? AND p.printed_name LIKE ? ESCAPE '='`, set.Code, lang.Code, "%"+pattern+"%"); err != nil {
 			return model.CardList{}, err
 		}
@@ -194,11 +198,7 @@ func (s *CardStore) List(ctx context.Context, code, language, query string) (mod
 	}
 	items := make([]model.CardSummary, 0)
 	for _, group := range groupFaces(rows) {
-		include := query == ""
-		for _, row := range group {
-			include = include || matched[row.UUID]
-		}
-		if include {
+		if query == "" || matched[group[0].SourceID] {
 			card, _ := summarize(group)
 			items = append(items, card)
 		}
@@ -212,12 +212,7 @@ func (s *CardStore) List(ctx context.Context, code, language, query string) (mod
 
 func readPrinting(ctx context.Context, tx *sqlx.Tx, id string) ([]faceRow, error) {
 	var rows []faceRow
-	const requestedPrinting = `
- JOIN mtgnissa_card_printing requested ON requested.uuid=?
- JOIN mtgnissa_card seed ON seed.uuid=requested.card_uuid AND seed.face_index IN (-1,0)
- WHERE c.scryfall_id=seed.scryfall_id AND p.language_code=requested.language_code
-`
-	if err := tx.SelectContext(ctx, &rows, printingQuery+requestedPrinting, id); err != nil {
+	if err := tx.SelectContext(ctx, &rows, printingQuery+" WHERE p.uuid=?", id); err != nil {
 		return nil, err
 	}
 	if len(rows) == 0 {
@@ -256,10 +251,7 @@ func (s *CardStore) Summaries(ctx context.Context, ids []string) (map[string]mod
 	}
 	defer tx.Rollback()
 	for start := 0; start < len(ids); start += 500 {
-		query, args, err := sqlx.In(summaryQuery+`
- JOIN mtgnissa_card_printing requested ON requested.uuid IN (?)
- JOIN mtgnissa_card seed ON seed.uuid=requested.card_uuid AND seed.face_index IN (-1,0)
- WHERE c.scryfall_id=seed.scryfall_id AND p.language_code=requested.language_code`, ids[start:min(start+500, len(ids))])
+		query, args, err := sqlx.In(summaryQuery+" WHERE p.uuid IN (?)", ids[start:min(start+500, len(ids))])
 		if err != nil {
 			return nil, err
 		}

@@ -35,6 +35,50 @@ func TestPrintingIdentityIsIndependentOfImageFallback(t *testing.T) {
 	}
 }
 
+func TestLanguagePrintingSQLRetainsFacesWithoutLanguageEntries(t *testing.T) {
+	for _, query := range []string{summaryQuery, printingQuery} {
+		query = strings.Join(strings.Fields(query), " ")
+		for _, required := range []string{
+			"p.uuid AS printing_uuid",
+			"JOIN mtgnissa_card main ON main.uuid=p.card_uuid AND main.face_index IN (-1,0)",
+			"JOIN mtgnissa_card c ON c.scryfall_id=main.scryfall_id",
+			"LEFT JOIN mtgnissa_card_printing fp ON fp.card_uuid=c.uuid AND fp.language_code=p.language_code",
+			"COALESCE(NULLIF(fp.scryfall_id, ''), c.scryfall_id) AS image_id",
+			"l.code = p.language_code",
+		} {
+			if !strings.Contains(query, required) {
+				t.Fatalf("missing identity/face expansion rule %q in %s", required, query)
+			}
+		}
+		from := query[strings.LastIndex(query, "FROM mtgnissa_card_printing p"):]
+		where := strings.Index(from, " WHERE ")
+		if strings.Contains(query, "fp.uuid AS printing_uuid") || where >= 0 && strings.Contains(from[where:], "fp.language_code=") {
+			t.Fatalf("optional face language became an identity or row filter: %s", query)
+		}
+	}
+}
+
+func TestMissingSecondaryLanguageKeepsCompleteFacesAndMainIdentity(t *testing.T) {
+	sourceID := "01234567-1234-1234-1234-123456789abc"
+	languageImageID := "abcdef01-1234-1234-1234-123456789abc"
+	frontType, backType := "Sorcery", "Land — Forest"
+	backText := "Base back-face text"
+	rows := []faceRow{
+		{UUID: "ja-main", SourceID: sourceID, ImageID: sourceID, Index: 1, Name: "Spell // Land", FaceName: "Land", DisplayName: "Land", Layout: "modal_dfc", FaceCategory: "double_sided", LanguageCode: "ja", TypeLine: &backType, Text: &backText},
+		{UUID: "ja-main", SourceID: sourceID, ImageID: languageImageID, Index: 0, Name: "Spell // Land", FaceName: "Spell", DisplayName: "Spell", Layout: "modal_dfc", FaceCategory: "double_sided", LanguageCode: "ja", TypeLine: &frontType, CMC: 3, Colors: 2},
+	}
+	card, faces := summarize(rows)
+	if card.PrintingUUID != "ja-main" || card.Language.Code != "ja" || len(faces) != 2 || card.DisplayName != "Spell // Land" || card.CMC != 3 || !reflect.DeepEqual(card.Colors, []string{"U"}) {
+		t.Fatalf("main identity or complete summary lost: card=%+v faces=%+v", card, faces)
+	}
+	if faces[1].FaceIndex != 1 || faces[1].TypeLine == nil || *faces[1].TypeLine != backType || faces[1].OracleText == nil || *faces[1].OracleText != backText {
+		t.Fatalf("base secondary-face attributes were dropped: %+v", faces[1])
+	}
+	if !reflect.DeepEqual(card.Images.FrontURL, picture(languageImageID, "front")) || !reflect.DeepEqual(faces[1].ImageURL, picture(sourceID, "back")) {
+		t.Fatalf("language/base image fallback changed: card=%+v back=%+v", card.Images, faces[1])
+	}
+}
+
 func TestGroupingKeepsLanguagesAndPrintingsSeparate(t *testing.T) {
 	rows := []faceRow{{SourceID: "one", LanguageCode: "en", Index: 0}, {SourceID: "one", LanguageCode: "en", Index: 1}, {SourceID: "one", LanguageCode: "ja"}, {SourceID: "two", LanguageCode: "en"}}
 	if len(groupFaces(rows)) != 3 {

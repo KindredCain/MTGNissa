@@ -18,7 +18,7 @@ type cardNameRow struct {
 	OracleID *string `db:"oracle_id"`
 }
 
-// SearchPosition is the decoded compound name and Oracle boundary of a global page.
+// SearchPosition is the decoded compound name and Oracle boundary of a card page.
 type SearchPosition struct {
 	Name     string
 	OracleID string
@@ -337,27 +337,64 @@ func preferredSearchEntry(candidate, current searchEntryRow) bool {
 	return candidate.PrintingUUID < current.PrintingUUID
 }
 
-// DeckSearch finds logical candidates using literal printed-name contains matching.
-func (s *CardStore) DeckSearch(ctx context.Context, query string) ([]model.DeckName, error) {
-	var rows []cardNameRow
-	statement := `SELECT MIN(main.name) AS name,main.oracle_id FROM mtgnissa_card_printing p
- JOIN mtgnissa_card c ON c.uuid=p.card_uuid
- JOIN mtgnissa_card main ON main.scryfall_id=c.scryfall_id AND main.face_index IN (-1,0)
- WHERE NULLIF(main.oracle_id,'') IS NOT NULL`
-	args := []any{}
-	if query != "" {
-		statement += " AND p.printed_name LIKE ? ESCAPE '='"
-		args = append(args, "%"+escapeLike(query)+"%")
+// DeckSearch pages logical candidates using literal printed-name contains matching.
+func (s *CardStore) DeckSearch(ctx context.Context, query string, position *SearchPosition, pageSize int) ([]model.DeckName, int64, bool, error) {
+	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
+	if err != nil {
+		return nil, 0, false, err
 	}
-	statement += " GROUP BY main.oracle_id ORDER BY LOWER(MIN(main.name)),main.oracle_id"
-	if err := s.db.SelectContext(ctx, &rows, statement, args...); err != nil {
-		return nil, err
+	defer tx.Rollback()
+	matches := deckSearchMatches(query)
+	statement, args, err := mysqlDialect.From(matches.As("matched")).Select(goqu.COUNT("*")).Prepared(true).ToSQL()
+	if err != nil {
+		return nil, 0, false, err
+	}
+	var total int64
+	if err := tx.GetContext(ctx, &total, statement, args...); err != nil {
+		return nil, 0, false, err
+	}
+	statement, args, err = deckSearchPage(matches, position, pageSize).ToSQL()
+	if err != nil {
+		return nil, 0, false, err
+	}
+	var rows []cardNameRow
+	if err := tx.SelectContext(ctx, &rows, statement, args...); err != nil {
+		return nil, 0, false, err
+	}
+	more := len(rows) > pageSize
+	if more {
+		rows = rows[:pageSize]
 	}
 	result := make([]model.DeckName, 0, len(rows))
 	for _, row := range rows {
 		result = append(result, model.DeckName{Name: row.Name, OracleID: row.OracleID})
 	}
-	return result, nil
+	if err := tx.Commit(); err != nil {
+		return nil, 0, false, err
+	}
+	return result, total, more, nil
+}
+
+func deckSearchMatches(query string) *goqu.SelectDataset {
+	dataset := mysqlDialect.From(goqu.T("mtgnissa_card_printing").As("p")).
+		Join(goqu.T("mtgnissa_card").As("c"), goqu.On(goqu.I("c.uuid").Eq(goqu.I("p.card_uuid")))).
+		Join(goqu.T("mtgnissa_card").As("main"), goqu.On(goqu.I("main.scryfall_id").Eq(goqu.I("c.scryfall_id")), goqu.I("main.face_index").In(-1, 0))).
+		Select(goqu.MIN(goqu.I("main.name")).As("name"), goqu.I("main.oracle_id")).
+		Where(goqu.I("main.oracle_id").IsNotNull(), goqu.I("main.oracle_id").Neq("")).GroupBy(goqu.I("main.oracle_id")).Prepared(true)
+	if query != "" {
+		dataset = dataset.Where(goqu.L("? LIKE ? ESCAPE '='", goqu.I("p.printed_name"), "%"+escapeLike(query)+"%"))
+	}
+	return dataset
+}
+
+func deckSearchPage(matches *goqu.SelectDataset, position *SearchPosition, pageSize int) *goqu.SelectDataset {
+	name := goqu.L("LOWER(matched.name) COLLATE utf8mb4_bin")
+	oracle := goqu.I("matched.oracle_id")
+	dataset := mysqlDialect.From(matches.As("matched")).Select(goqu.I("matched.name"), oracle).Prepared(true)
+	if position != nil {
+		dataset = dataset.Where(goqu.Or(name.Gt(position.Name), goqu.And(name.Eq(position.Name), oracle.Gt(position.OracleID))))
+	}
+	return dataset.Order(name.Asc(), oracle.Asc()).Limit(uint(pageSize + 1))
 }
 
 // DeckNameSuggestions returns at most five case-insensitively distinct printed names.

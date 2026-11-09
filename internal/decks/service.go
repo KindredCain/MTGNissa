@@ -62,42 +62,26 @@ func (s *Service) List(ctx context.Context, params model.DeckListParams) (model.
 		params.Sort = "updated_desc"
 	}
 	fingerprint := cursorFingerprint("decks", 0, params.Query, params.Sort)
-	var position *cursorPosition
+	var position *store.DeckPosition
 	if params.Cursor != "" {
 		decoded, err := decodeCursor(params.Cursor, fingerprint, "decks")
 		if err != nil {
 			return model.DeckPage{}, err
 		}
-		position = &decoded
+		position = &store.DeckPosition{ID: decoded.ID, Name: decoded.Name, Time: decoded.Time, Count: decoded.Count}
 	}
 	page := model.DeckPage{Items: []model.DeckListItem{}}
 	var selected []model.SavedDeck
 	var personal model.DeckPersonal
 	err := s.app.WithAppRead(ctx, func(tx *store.TxStores) error {
-		all, err := tx.Decks.List(ctx)
+		var more bool
+		var err error
+		selected, page.Total, more, err = tx.Decks.List(ctx, params, position, s.pageSize)
 		if err != nil {
 			return err
 		}
-		filtered := make([]model.SavedDeck, 0, len(all))
-		for _, deck := range all {
-			if strings.Contains(strings.ToLower(deck.Name), params.Query) {
-				filtered = append(filtered, deck)
-			}
-		}
-		sort.Slice(filtered, func(i, j int) bool {
-			return compareDeckPositions(deckPosition(filtered[i], params.Sort), deckPosition(filtered[j], params.Sort), params.Sort) < 0
-		})
-		page.Total = int64(len(filtered))
-		start := 0
-		if position != nil {
-			start = sort.Search(len(filtered), func(i int) bool {
-				return compareDeckPositions(deckPosition(filtered[i], params.Sort), *position, params.Sort) > 0
-			})
-		}
-		end := min(start+s.pageSize, len(filtered))
-		selected = filtered[start:end]
-		if end < len(filtered) {
-			cursor, err := encodeCursor("decks", fingerprint, deckPosition(filtered[end-1], params.Sort))
+		if more {
+			cursor, err := encodeCursor("decks", fingerprint, deckPosition(selected[len(selected)-1], params.Sort))
 			if err != nil {
 				return err
 			}
@@ -290,31 +274,21 @@ func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckS
 	}
 	params.Query = strings.TrimSpace(params.Query)
 	fingerprint := cursorFingerprint("deck_cards", id, strings.ToLower(params.Query), "")
-	var position *cursorPosition
+	var position *store.SearchPosition
 	if params.Cursor != "" {
 		decoded, err := decodeCursor(params.Cursor, fingerprint, "deck_cards")
 		if err != nil {
 			return model.DeckCandidatePage{}, err
 		}
-		position = &decoded
+		position = &store.SearchPosition{Name: decoded.Name, OracleID: decoded.OracleID}
 	}
-	names, err := s.cards.DeckSearch(ctx, params.Query)
+	names, total, more, err := s.cards.DeckSearch(ctx, params.Query, position, s.pageSize)
 	if err != nil {
 		return model.DeckCandidatePage{}, safeError(err)
 	}
-	sort.Slice(names, func(i, j int) bool {
-		return compareNames(names[i], names[j]) < 0
-	})
-	page := model.DeckCandidatePage{Items: []model.DeckCandidate{}, Total: int64(len(names))}
-	start := 0
-	if position != nil {
-		start = sort.Search(len(names), func(i int) bool {
-			return compareNames(names[i], model.DeckName{Name: position.Name, OracleID: &position.OracleID}) > 0
-		})
-	}
-	end := min(start+s.pageSize, len(names))
-	if end < len(names) {
-		last := names[end-1]
+	page := model.DeckCandidatePage{Items: []model.DeckCandidate{}, Total: total}
+	if more {
+		last := names[len(names)-1]
 		cursor, err := encodeCursor("deck_cards", fingerprint, cursorPosition{Name: strings.ToLower(last.Name), OracleID: *last.OracleID})
 		if err != nil {
 			return model.DeckCandidatePage{}, safeError(err)
@@ -322,7 +296,7 @@ func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckS
 		page.NextCursor = &cursor
 	}
 	oracles := []string{}
-	for _, name := range names[start:end] {
+	for _, name := range names {
 		oracles = append(oracles, *name.OracleID)
 	}
 	personal, _, err := s.personal(ctx, id, oracles)
@@ -534,13 +508,6 @@ func uniqueStrings(values []string) []string {
 	}
 	sort.Strings(result)
 	return result
-}
-
-func compareNames(a, b model.DeckName) int {
-	if c := strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)); c != 0 {
-		return c
-	}
-	return strings.Compare(*a.OracleID, *b.OracleID)
 }
 
 func fieldError(field, reason string) error {
