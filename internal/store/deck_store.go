@@ -40,9 +40,10 @@ type deckPersonalRow struct {
 	DeckID   uint64 `db:"deck_id"`
 }
 
-type deckPreferenceRow struct {
+type deckPrintingStateRow struct {
 	UUID     string `db:"printing_uuid"`
-	Priority int    `db:"priority"`
+	Owned    bool   `db:"owned"`
+	Included bool   `db:"included"`
 }
 
 // Get reads a saved definition and optionally locks its parent row for a mutation.
@@ -212,9 +213,9 @@ func (s *DeckTx) Delete(ctx context.Context, id uint64) error {
 	return err
 }
 
-// Personal reads logical ownership, total counted usage, and printing selection priorities.
+// Personal reads logical ownership, counted usage, and printing ownership and wishlist states.
 func (s *DeckTx) Personal(ctx context.Context, oracles []string) (model.DeckPersonal, error) {
-	result := model.DeckPersonal{Owned: map[string]uint64{}, AllQuantity: map[string]uint64{}, UsingDecks: map[string]uint64{}, Preferred: map[string]int{}}
+	result := model.DeckPersonal{Owned: map[string]uint64{}, AllQuantity: map[string]uint64{}, UsingDecks: map[string]uint64{}, PrintingStates: map[string]model.DeckPrintingState{}}
 	for start := 0; start < len(oracles); start += 500 {
 		ids := oracles[start:min(start+500, len(oracles))]
 		query, args, err := sqlx.In(`SELECT r.oracle_id,SUM(c.normal_quantity+c.foil_quantity) AS quantity
@@ -242,20 +243,21 @@ func (s *DeckTx) Personal(ctx context.Context, oracles []string) (model.DeckPers
 			result.AllQuantity[row.OracleID] += row.Quantity
 			result.UsingDecks[row.OracleID]++
 		}
-		query, args, err = sqlx.In(`SELECT r.printing_uuid,1 AS priority FROM card_print_ref r
+		query, args, err = sqlx.In(`SELECT r.printing_uuid,TRUE AS owned,FALSE AS included FROM card_print_ref r
  JOIN collection_item c ON c.printing_uuid=r.printing_uuid WHERE r.oracle_id IN (?) AND (c.normal_quantity>0 OR c.foil_quantity>0)
- UNION ALL SELECT r.printing_uuid,2 AS priority FROM card_print_ref r JOIN wishlist_item w ON w.printing_uuid=r.printing_uuid WHERE r.oracle_id IN (?)`, ids, ids)
+ UNION ALL SELECT r.printing_uuid,FALSE AS owned,TRUE AS included FROM card_print_ref r JOIN wishlist_item w ON w.printing_uuid=r.printing_uuid WHERE r.oracle_id IN (?)`, ids, ids)
 		if err != nil {
 			return result, err
 		}
-		var preferences []deckPreferenceRow
-		if err := s.tx.SelectContext(ctx, &preferences, query, args...); err != nil {
+		var states []deckPrintingStateRow
+		if err := s.tx.SelectContext(ctx, &states, query, args...); err != nil {
 			return result, err
 		}
-		for _, row := range preferences {
-			if old := result.Preferred[row.UUID]; old == 0 || row.Priority < old {
-				result.Preferred[row.UUID] = row.Priority
-			}
+		for _, row := range states {
+			state := result.PrintingStates[row.UUID]
+			state.Owned = state.Owned || row.Owned
+			state.Included = state.Included || row.Included
+			result.PrintingStates[row.UUID] = state
 		}
 	}
 	return result, nil

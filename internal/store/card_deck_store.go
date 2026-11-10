@@ -3,21 +3,13 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/model"
 )
-
-type deckPrintingRow struct {
-	UUID       string     `db:"printing_uuid"`
-	OracleID   string     `db:"oracle_id"`
-	ReleasedAt *time.Time `db:"released_at"`
-}
 
 type deckFaceRow struct {
 	faceRow
@@ -43,77 +35,27 @@ func (s *CardStore) DeckReferences(ctx context.Context, ids []string) (map[strin
 	return result, tx.Commit()
 }
 
-// DeckCards selects display printings by ownership, wishlist, release date, and UUID.
-func (s *CardStore) DeckCards(ctx context.Context, oracles []string, preferred map[string]int) (map[string]model.DeckCardData, error) {
-	result := make(map[string]model.DeckCardData)
+// DeckPrintings reads candidate identities and dates in the active Card DB snapshot.
+func (s *CardTx) DeckPrintings(ctx context.Context, oracles []string) ([]model.DeckPrinting, error) {
+	result := make([]model.DeckPrinting, 0)
 	if len(oracles) == 0 {
 		return result, nil
 	}
-	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-	selected := make(map[string]deckPrintingRow)
-	for start := 0; start < len(oracles); start += 500 {
-		query, args, err := sqlx.In(`SELECT p.uuid AS printing_uuid,c.oracle_id,c.released_at
+	query, args, err := sqlx.In(`SELECT p.uuid AS printing_uuid,c.oracle_id,c.released_at
  FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
- WHERE c.oracle_id IN (?) AND c.face_index IN (-1,0)`, oracles[start:min(start+500, len(oracles))])
-		if err != nil {
-			return nil, err
-		}
-		var rows []deckPrintingRow
-		if err := tx.SelectContext(ctx, &rows, query, args...); err != nil {
-			return nil, err
-		}
-		for _, row := range rows {
-			old, exists := selected[row.OracleID]
-			if !exists || preferredDeckPrinting(row, old, preferred) {
-				selected[row.OracleID] = row
-			}
-		}
-	}
-	ids := make([]string, 0, len(selected))
-	for _, oracle := range oracles {
-		row, ok := selected[oracle]
-		if !ok {
-			return nil, fmt.Errorf("deck Oracle %s has no available printing", oracle)
-		}
-		ids = append(ids, row.UUID)
-	}
-	printings, err := deckCardsByPrinting(ctx, tx, ids)
+ WHERE c.oracle_id IN (?) AND c.face_index IN (-1,0)`, oracles)
 	if err != nil {
 		return nil, err
 	}
-	for _, oracle := range oracles {
-		card, ok := printings[selected[oracle].UUID]
-		if !ok || card.Card.OracleID == nil || *card.Card.OracleID != oracle {
-			return nil, fmt.Errorf("deck Oracle %s identity is unavailable", oracle)
-		}
-		result[oracle] = card
+	if err := s.tx.SelectContext(ctx, &result, query, args...); err != nil {
+		return nil, err
 	}
-	return result, tx.Commit()
+	return result, nil
 }
 
-func preferredDeckPrinting(a, b deckPrintingRow, preferred map[string]int) bool {
-	pa, pb := preferred[a.UUID], preferred[b.UUID]
-	if pa == 0 {
-		pa = 3
-	}
-	if pb == 0 {
-		pb = 3
-	}
-	if pa != pb {
-		return pa < pb
-	}
-	if a.ReleasedAt == nil || b.ReleasedAt == nil {
-		if (a.ReleasedAt == nil) != (b.ReleasedAt == nil) {
-			return a.ReleasedAt != nil
-		}
-	} else if !a.ReleasedAt.Equal(*b.ReleasedAt) {
-		return a.ReleasedAt.After(*b.ReleasedAt)
-	}
-	return a.UUID < b.UUID
+// DeckCards reads the requested printings in the active Card DB snapshot.
+func (s *CardTx) DeckCards(ctx context.Context, ids []string) (map[string]model.DeckCardData, error) {
+	return deckCardsByPrinting(ctx, s.tx, ids)
 }
 
 func deckCardsByPrinting(ctx context.Context, tx *sqlx.Tx, ids []string) (map[string]model.DeckCardData, error) {

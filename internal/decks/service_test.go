@@ -262,3 +262,33 @@ func TestDeckCursorsBindScope(t *testing.T) {
 		}
 	}
 }
+
+func TestSelectDeckPrintingsKeepsRequestedOrderAndRejectsMissingOracle(t *testing.T) {
+	candidates := []model.DeckPrinting{
+		{UUID: "fallback", OracleID: "first"},
+		{UUID: "owned", OracleID: "first"},
+		{UUID: "second-printing", OracleID: "second"},
+	}
+	ids, err := selectDeckPrintings([]string{"second", "first"}, candidates, map[string]model.DeckPrintingState{"owned": {Owned: true}})
+	if err != nil || len(ids) != 2 || ids[0] != "second-printing" || ids[1] != "owned" {
+		t.Fatalf("selected=%v error=%v", ids, err)
+	}
+	if _, err := selectDeckPrintings([]string{"missing"}, candidates, nil); err == nil {
+		t.Fatal("missing Oracle printing accepted")
+	}
+}
+
+func TestDeckPrintingPreferenceUsesTierThenDateThenUUID(t *testing.T) {
+	oldDate := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	newDate := oldDate.AddDate(20, 0, 0)
+	owned := model.DeckPrinting{UUID: "owned", ReleasedAt: &oldDate}
+	wishlist := model.DeckPrinting{UUID: "wish", ReleasedAt: &newDate}
+	latest := model.DeckPrinting{UUID: "latest", ReleasedAt: &newDate}
+	states := map[string]model.DeckPrintingState{"owned": {Owned: true, Included: true}, "wish": {Included: true}}
+	if !preferredDeckPrinting(owned, wishlist, states) || !preferredDeckPrinting(wishlist, latest, states) || preferredDeckPrinting(latest, owned, states) {
+		t.Fatal("printing preference ignored ownership or wishlist")
+	}
+	if !preferredDeckPrinting(latest, model.DeckPrinting{UUID: "a", ReleasedAt: &oldDate}, nil) || !preferredDeckPrinting(model.DeckPrinting{UUID: "a", ReleasedAt: &newDate}, latest, nil) {
+		t.Fatal("printing date or UUID tie ordering changed")
+	}
+}

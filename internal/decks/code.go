@@ -100,7 +100,7 @@ func (s *Service) ParseCode(ctx context.Context, id uint64, source string) (mode
 	if err != nil {
 		return model.ParsedDeck{}, safeError(err)
 	}
-	data, err := s.display(ctx, oracles, personal.Preferred, false)
+	data, err := s.display(ctx, oracles, personal.PrintingStates, false)
 	if err != nil {
 		return model.ParsedDeck{}, safeError(err)
 	}

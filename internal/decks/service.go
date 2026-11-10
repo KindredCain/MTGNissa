@@ -36,7 +36,7 @@ func NewService(cards *store.CardStore, app *store.AppTransactions, intents *ide
 func (s *Service) Detail(ctx context.Context, id uint64) (model.DeckDetail, error) {
 	var deck model.SavedDeck
 	var personal model.DeckPersonal
-	err := s.app.WithAppRead(ctx, func(tx *store.TxStores) error {
+	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
 		var err error
 		deck, err = tx.Decks.Get(ctx, id, false)
 		if err != nil {
@@ -48,7 +48,7 @@ func (s *Service) Detail(ctx context.Context, id uint64) (model.DeckDetail, erro
 	if err != nil {
 		return model.DeckDetail{}, safeError(err)
 	}
-	data, err := s.display(ctx, deckOracles([]model.SavedDeck{deck}), personal.Preferred, true)
+	data, err := s.display(ctx, deckOracles([]model.SavedDeck{deck}), personal.PrintingStates, true)
 	if err != nil {
 		return model.DeckDetail{}, safeError(err)
 	}
@@ -73,7 +73,7 @@ func (s *Service) List(ctx context.Context, params model.DeckListParams) (model.
 	page := model.DeckPage{Items: []model.DeckListItem{}}
 	var selected []model.SavedDeck
 	var personal model.DeckPersonal
-	err := s.app.WithAppRead(ctx, func(tx *store.TxStores) error {
+	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
 		var more bool
 		var err error
 		selected, page.Total, more, err = tx.Decks.List(ctx, params, position, s.pageSize)
@@ -93,7 +93,7 @@ func (s *Service) List(ctx context.Context, params model.DeckListParams) (model.
 	if err != nil {
 		return model.DeckPage{}, safeError(err)
 	}
-	data, err := s.display(ctx, deckOracles(selected), personal.Preferred, false)
+	data, err := s.display(ctx, deckOracles(selected), personal.PrintingStates, false)
 	if err != nil {
 		return model.DeckPage{}, safeError(err)
 	}
@@ -114,7 +114,7 @@ func (s *Service) Create(ctx context.Context, name, key string) (model.DeckIdent
 	}{name})
 	id, duplicate, err := s.intents.DoResource(ctx, key, "POST /api/v1/decks|"+string(body), func() (uint64, error) {
 		var id uint64
-		err := s.app.WithAppTx(ctx, func(tx *store.TxStores) error {
+		err := s.app.WithAppTx(ctx, func(tx *store.AppTx) error {
 			var err error
 			id, err = tx.Decks.Create(ctx, model.SavedDeck{Name: name, SourceText: "About\nName " + name + "\n\nDeck"})
 			if err != nil {
@@ -135,7 +135,7 @@ func (s *Service) Create(ctx context.Context, name, key string) (model.DeckIdent
 func (s *Service) Copy(ctx context.Context, id uint64, key string) (model.DeckIdentity, bool, error) {
 	newID, duplicate, err := s.intents.DoResource(ctx, key, fmt.Sprintf("POST /api/v1/decks/%d/copies", id), func() (uint64, error) {
 		var created uint64
-		err := s.app.WithAppTx(ctx, func(tx *store.TxStores) error {
+		err := s.app.WithAppTx(ctx, func(tx *store.AppTx) error {
 			source, err := tx.Decks.Get(ctx, id, true)
 			if err != nil {
 				return err
@@ -166,7 +166,7 @@ func (s *Service) Copy(ctx context.Context, id uint64, key string) (model.DeckId
 
 // Delete serializes with saves, deletes the definition, and logs its previous name.
 func (s *Service) Delete(ctx context.Context, id uint64) error {
-	err := s.app.WithAppTx(ctx, func(tx *store.TxStores) error {
+	err := s.app.WithAppTx(ctx, func(tx *store.AppTx) error {
 		deck, err := tx.Decks.Get(ctx, id, true)
 		if err != nil {
 			return err
@@ -206,7 +206,7 @@ func (s *Service) Save(ctx context.Context, id uint64, input model.DeckSave) (mo
 	if err != nil {
 		return model.DeckDetail{}, safeError(err)
 	}
-	data, err := s.display(ctx, deckOracles([]model.SavedDeck{next}), personal.Preferred, false)
+	data, err := s.display(ctx, deckOracles([]model.SavedDeck{next}), personal.PrintingStates, false)
 	if err != nil {
 		return model.DeckDetail{}, safeError(err)
 	}
@@ -214,7 +214,7 @@ func (s *Service) Save(ctx context.Context, id uint64, input model.DeckSave) (mo
 	if err := validateCode(next.SourceText); err != nil {
 		return model.DeckDetail{}, err
 	}
-	err = s.app.WithAppTx(ctx, func(tx *store.TxStores) error {
+	err = s.app.WithAppTx(ctx, func(tx *store.AppTx) error {
 		current, err := tx.Decks.Get(ctx, id, true)
 		if err != nil {
 			return err
@@ -254,7 +254,7 @@ func (s *Service) CardContexts(ctx context.Context, id uint64, ids []string) ([]
 	if err != nil {
 		return nil, safeError(err)
 	}
-	data, err := s.display(ctx, uniqueStrings(oracles), personal.Preferred, true)
+	data, err := s.display(ctx, uniqueStrings(oracles), personal.PrintingStates, true)
 	if err != nil {
 		return nil, safeError(err)
 	}
@@ -303,7 +303,7 @@ func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckS
 	if err != nil {
 		return model.DeckCandidatePage{}, safeError(err)
 	}
-	data, err := s.display(ctx, oracles, personal.Preferred, false)
+	data, err := s.display(ctx, oracles, personal.PrintingStates, false)
 	if err != nil {
 		return model.DeckCandidatePage{}, safeError(err)
 	}
@@ -330,7 +330,7 @@ func (s *Service) NameSuggestions(ctx context.Context, id uint64, query string) 
 
 func (s *Service) identity(ctx context.Context, id uint64) (model.DeckIdentity, error) {
 	var result model.DeckIdentity
-	err := s.app.WithAppRead(ctx, func(tx *store.TxStores) error {
+	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
 		deck, err := tx.Decks.Get(ctx, id, false)
 		result = model.DeckIdentity{ID: deck.ID, Name: deck.Name}
 		return err
@@ -341,7 +341,7 @@ func (s *Service) identity(ctx context.Context, id uint64) (model.DeckIdentity, 
 func (s *Service) personal(ctx context.Context, id uint64, oracles []string) (model.DeckPersonal, map[string]uint64, error) {
 	var result model.DeckPersonal
 	current := map[string]uint64{}
-	err := s.app.WithAppRead(ctx, func(tx *store.TxStores) error {
+	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
 		deck, err := tx.Decks.Get(ctx, id, false)
 		if err != nil {
 			return err
@@ -353,10 +353,47 @@ func (s *Service) personal(ctx context.Context, id uint64, oracles []string) (mo
 	return result, current, err
 }
 
-func (s *Service) display(ctx context.Context, oracles []string, preferred map[string]int, tags bool) (map[string]model.DeckCardData, error) {
-	data, err := s.cards.DeckCards(ctx, oracles, preferred)
-	if err != nil || !tags || len(oracles) == 0 {
-		return data, err
+func (s *Service) display(ctx context.Context, oracles []string, states map[string]model.DeckPrintingState, tags bool) (map[string]model.DeckCardData, error) {
+	data := make(map[string]model.DeckCardData)
+	if len(oracles) == 0 {
+		return data, nil
+	}
+	err := s.cards.WithCardRead(ctx, func(tx *store.CardTx) error {
+		ids := make([]string, 0, len(oracles))
+		for start := 0; start < len(oracles); start += 500 {
+			batch := oracles[start:min(start+500, len(oracles))]
+			candidates, err := tx.DeckPrintings(ctx, batch)
+			if err != nil {
+				return err
+			}
+			selected, err := selectDeckPrintings(batch, candidates, states)
+			if err != nil {
+				return err
+			}
+			ids = append(ids, selected...)
+		}
+		var err error
+		data, err = tx.DeckCards(ctx, ids)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	selected := make(map[string]model.DeckCardData, len(oracles))
+	for _, card := range data {
+		if card.Card.OracleID == nil {
+			return nil, fmt.Errorf("selected deck printing has no Oracle identity")
+		}
+		selected[*card.Card.OracleID] = card
+	}
+	for _, oracle := range oracles {
+		if _, ok := selected[oracle]; !ok {
+			return nil, fmt.Errorf("deck Oracle %s identity is unavailable", oracle)
+		}
+	}
+	data = selected
+	if !tags || len(oracles) == 0 {
+		return data, nil
 	}
 	labels, err := s.cards.DeckTags(ctx, oracles)
 	if err != nil {
@@ -523,4 +560,48 @@ func safeError(err error) error {
 		return err
 	}
 	return apperror.Wrap(apperror.CodeDependencyUnavailable, "deck or card data is temporarily unavailable", err)
+}
+
+func selectDeckPrintings(oracles []string, candidates []model.DeckPrinting, states map[string]model.DeckPrintingState) ([]string, error) {
+	selected := make(map[string]model.DeckPrinting)
+	for _, row := range candidates {
+		old, exists := selected[row.OracleID]
+		if !exists || preferredDeckPrinting(row, old, states) {
+			selected[row.OracleID] = row
+		}
+	}
+	ids := make([]string, 0, len(oracles))
+	for _, oracle := range oracles {
+		row, ok := selected[oracle]
+		if !ok {
+			return nil, fmt.Errorf("deck Oracle %s has no available printing", oracle)
+		}
+		ids = append(ids, row.UUID)
+	}
+	return ids, nil
+}
+
+func preferredDeckPrinting(a, b model.DeckPrinting, states map[string]model.DeckPrintingState) bool {
+	pa, pb := printingPriority(states[a.UUID]), printingPriority(states[b.UUID])
+	if pa != pb {
+		return pa < pb
+	}
+	if a.ReleasedAt == nil || b.ReleasedAt == nil {
+		if (a.ReleasedAt == nil) != (b.ReleasedAt == nil) {
+			return a.ReleasedAt != nil
+		}
+	} else if !a.ReleasedAt.Equal(*b.ReleasedAt) {
+		return a.ReleasedAt.After(*b.ReleasedAt)
+	}
+	return a.UUID < b.UUID
+}
+
+func printingPriority(state model.DeckPrintingState) int {
+	if state.Owned {
+		return 1
+	}
+	if state.Included {
+		return 2
+	}
+	return 3
 }

@@ -150,6 +150,38 @@ type CardChange struct {
 	OccurredAt time.Time
 }
 
+// CardDetailData contains card metadata and candidates for service-level detail assembly.
+type CardDetailData struct {
+	Card     CardSummary
+	Faces    []CardFace
+	Versions []CardVersionCandidate
+	Rulings  []Ruling
+	Tags     []OracleTagLabel
+}
+
+// CardVersionCandidate identifies a language printing within a card version.
+type CardVersionCandidate struct {
+	Set             SetRef
+	CollectorNumber string
+	ReleasedAt      *time.Time
+	PrintingUUID    string
+	OracleID        *string
+	Language        Language
+}
+
+// OracleTagLabel contains an Oracle tag identity and its original search label.
+type OracleTagLabel struct {
+	ID    string
+	Label string
+}
+
+// CardPersonalState contains exact ownership, logical ownership and wishlist membership.
+type CardPersonalState struct {
+	Collection        Quantity
+	LogicalCollection Quantity
+	Included          bool
+}
+
 // ValidUUID checks canonical UUID text without accepting alternate encodings.
 func ValidUUID(value string) bool {
 	if len(value) != 36 || value[8] != '-' || value[13] != '-' || value[18] != '-' || value[23] != '-' {

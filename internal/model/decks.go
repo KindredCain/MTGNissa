@@ -40,12 +40,18 @@ type DeckSaveCard struct {
 	Quantity     uint64
 }
 
-// DeckPersonal contains snapshot ownership, saved usage, and printing preferences.
+// DeckPrintingState records ownership and wishlist membership for one printing.
+type DeckPrintingState struct {
+	Owned    bool
+	Included bool
+}
+
+// DeckPersonal contains snapshot ownership, saved usage, and printing states.
 type DeckPersonal struct {
-	Owned       map[string]uint64
-	AllQuantity map[string]uint64
-	UsingDecks  map[string]uint64
-	Preferred   map[string]int
+	Owned          map[string]uint64
+	AllQuantity    map[string]uint64
+	UsingDecks     map[string]uint64
+	PrintingStates map[string]DeckPrintingState
 }
 
 // DeckCardData combines a selected printing with the raw attributes used by decks.
@@ -210,4 +216,11 @@ type ParsedDeckSection struct {
 type ParsedDeck struct {
 	Name     *string
 	Sections []ParsedDeckSection
+}
+
+// DeckPrinting identifies a candidate printing and its release date.
+type DeckPrinting struct {
+	UUID       string     `db:"printing_uuid"`
+	OracleID   string     `db:"oracle_id"`
+	ReleasedAt *time.Time `db:"released_at"`
 }

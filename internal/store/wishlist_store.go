@@ -63,28 +63,22 @@ func (s *WishlistStore) Summaries(ctx context.Context, ids []string) (map[string
 	return s.cards.Summaries(ctx, ids)
 }
 
-// SetState changes the target state and reports whether a log event is needed.
-func (s *WishlistTx) SetState(ctx context.Context, card model.CardSummary, included bool) (model.CardChange, bool, error) {
-	now := time.Now().UTC()
+// Lock ensures the reference exists and reads wishlist state under its mutation lock.
+func (s *WishlistTx) Lock(ctx context.Context, card model.CardSummary, now time.Time) (bool, error) {
 	if err := lockPrintingRef(ctx, s.tx, card, now); err != nil {
-		return model.CardChange{}, false, err
+		return false, err
 	}
-	current, err := s.State(ctx, card.PrintingUUID)
-	if err != nil {
-		return model.CardChange{}, false, err
-	}
-	if current == included {
-		return model.CardChange{}, false, nil
-	}
+	return s.State(ctx, card.PrintingUUID)
+}
+
+// SetState persists a target state after the service has locked and compared it.
+func (s *WishlistTx) SetState(ctx context.Context, id string, included bool, now time.Time) error {
 	if included {
-		_, err = s.tx.ExecContext(ctx, "INSERT INTO wishlist_item (printing_uuid,created_at) VALUES (?,?)", card.PrintingUUID, now)
-	} else {
-		_, err = s.tx.ExecContext(ctx, "DELETE FROM wishlist_item WHERE printing_uuid=?", card.PrintingUUID)
+		_, err := s.tx.ExecContext(ctx, "INSERT INTO wishlist_item (printing_uuid,created_at) VALUES (?,?)", id, now)
+		return err
 	}
-	if err != nil {
-		return model.CardChange{}, false, err
-	}
-	return model.CardChange{Card: card, Included: &included, OccurredAt: now}, true, nil
+	_, err := s.tx.ExecContext(ctx, "DELETE FROM wishlist_item WHERE printing_uuid=?", id)
+	return err
 }
 
 // State returns the current state of one precise printing in the active snapshot.

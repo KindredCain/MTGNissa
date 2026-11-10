@@ -4,13 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"math"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
 	"github.com/jmoiron/sqlx"
 
-	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/model"
 )
 
@@ -33,6 +31,14 @@ type CollectionTx struct {
 type versionQuantityRow struct {
 	UUID string `db:"printing_uuid"`
 	model.Quantity
+}
+
+type personalStateRow struct {
+	Normal        uint64 `db:"normal_quantity"`
+	Foil          uint64 `db:"foil_quantity"`
+	LogicalNormal uint64 `db:"logical_normal"`
+	LogicalFoil   uint64 `db:"logical_foil"`
+	Included      bool   `db:"included"`
 }
 
 // NewCollectionStore creates a collection reader using separate application and card databases.
@@ -131,32 +137,29 @@ func (s *CollectionStore) Summaries(ctx context.Context, ids []string) (map[stri
 	return s.faces.Summaries(ctx, ids)
 }
 
-// Adjust changes one precise printing and returns the event for transactional logging.
-func (s *CollectionTx) Adjust(ctx context.Context, card model.CardSummary, finish string, delta int) (model.CardChange, error) {
-	now := time.Now().UTC()
+// Lock ensures a reference exists and reads its quantity under the mutation lock.
+func (s *CollectionTx) Lock(ctx context.Context, card model.CardSummary, now time.Time) (model.Quantity, error) {
 	if err := lockPrintingRef(ctx, s.tx, card, now); err != nil {
-		return model.CardChange{}, err
+		return model.Quantity{}, err
 	}
 	var quantity model.Quantity
 	err := s.tx.GetContext(ctx, &quantity, "SELECT normal_quantity,foil_quantity FROM collection_item WHERE printing_uuid=? FOR UPDATE", card.PrintingUUID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return model.CardChange{}, err
+	if errors.Is(err, sql.ErrNoRows) {
+		err = nil
 	}
-	quantity, err = adjustQuantity(quantity, finish, delta)
-	if err != nil {
-		return model.CardChange{}, err
-	}
+	return quantity, err
+}
+
+// SetQuantity persists the service-defined state while the reference remains locked.
+func (s *CollectionTx) SetQuantity(ctx context.Context, id string, quantity model.Quantity, now time.Time) error {
 	if quantity.Normal+quantity.Foil == 0 {
-		_, err = s.tx.ExecContext(ctx, "DELETE FROM collection_item WHERE printing_uuid=?", card.PrintingUUID)
-	} else {
-		_, err = s.tx.ExecContext(ctx, `INSERT INTO collection_item (printing_uuid,normal_quantity,foil_quantity,created_at,updated_at)
+		_, err := s.tx.ExecContext(ctx, "DELETE FROM collection_item WHERE printing_uuid=?", id)
+		return err
+	}
+	_, err := s.tx.ExecContext(ctx, `INSERT INTO collection_item (printing_uuid,normal_quantity,foil_quantity,created_at,updated_at)
  VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE normal_quantity=VALUES(normal_quantity),foil_quantity=VALUES(foil_quantity),updated_at=VALUES(updated_at)`,
-			card.PrintingUUID, quantity.Normal, quantity.Foil, now, now)
-	}
-	if err != nil {
-		return model.CardChange{}, err
-	}
-	return model.CardChange{Card: card, Finish: finish, Delta: delta, OccurredAt: now}, nil
+		id, quantity.Normal, quantity.Foil, now, now)
+	return err
 }
 
 // State reads precise quantities and unfiltered collection and series totals.
@@ -178,7 +181,8 @@ func (s *CollectionTx) State(ctx context.Context, card model.CardSummary) (model
 	return state, nil
 }
 
-func (s *CollectionTx) quantities(ctx context.Context, ids []string) (map[string]model.Quantity, error) {
+// Quantities reads exact ownership for the requested printing identities.
+func (s *CollectionTx) Quantities(ctx context.Context, ids []string) (map[string]model.Quantity, error) {
 	owned := make(map[string]model.Quantity)
 	for start := 0; start < len(ids); start += 500 {
 		query, args, err := sqlx.In("SELECT printing_uuid,normal_quantity,foil_quantity FROM collection_item WHERE printing_uuid IN (?)", ids[start:min(start+500, len(ids))])
@@ -196,24 +200,19 @@ func (s *CollectionTx) quantities(ctx context.Context, ids []string) (map[string
 	return owned, nil
 }
 
-func adjustQuantity(quantity model.Quantity, finish string, delta int) (model.Quantity, error) {
-	if (finish != "normal" && finish != "foil") || (delta != 1 && delta != -1) {
-		return model.Quantity{}, apperror.New(apperror.CodeValidationFailed, "invalid collection adjustment")
-	}
-	value := &quantity.Normal
-	if finish == "foil" {
-		value = &quantity.Foil
-	}
-	if delta < 0 {
-		if *value == 0 {
-			return model.Quantity{}, apperror.New(apperror.CodeCollectionUnderflow, "collection quantity cannot be negative")
-		}
-		*value--
-	} else {
-		if *value >= math.MaxUint32 {
-			return model.Quantity{}, apperror.New(apperror.CodeValidationFailed, "collection quantity is at its maximum")
-		}
-		*value++
-	}
-	return quantity, nil
+// CardPersonalState reads ownership and wishlist state in one application query.
+func (s *CollectionTx) CardPersonalState(ctx context.Context, id string, oracle *string) (model.CardPersonalState, error) {
+	var state personalStateRow
+	err := s.tx.GetContext(ctx, &state, `
+ SELECT COALESCE(c.normal_quantity,0) AS normal_quantity,COALESCE(c.foil_quantity,0) AS foil_quantity,
+ CASE WHEN ? IS NULL THEN COALESCE(c.normal_quantity,0) ELSE COALESCE(logical.normal_quantity,0) END AS logical_normal,
+ CASE WHEN ? IS NULL THEN COALESCE(c.foil_quantity,0) ELSE COALESCE(logical.foil_quantity,0) END AS logical_foil,
+ EXISTS(SELECT 1 FROM wishlist_item w WHERE w.printing_uuid=requested.printing_uuid) AS included
+ FROM (SELECT ? AS printing_uuid) requested
+ LEFT JOIN collection_item c ON c.printing_uuid=requested.printing_uuid
+ LEFT JOIN (
+  SELECT SUM(c.normal_quantity) AS normal_quantity,SUM(c.foil_quantity) AS foil_quantity
+  FROM card_print_ref r JOIN collection_item c ON c.printing_uuid=r.printing_uuid WHERE r.oracle_id=?
+ ) logical ON 1=1`, oracle, oracle, id, oracle)
+	return model.CardPersonalState{Collection: model.Quantity{Normal: state.Normal, Foil: state.Foil}, LogicalCollection: model.Quantity{Normal: state.LogicalNormal, Foil: state.LogicalFoil}, Included: state.Included}, err
 }
