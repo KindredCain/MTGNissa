@@ -96,7 +96,7 @@ func (s *Service) ParseCode(ctx context.Context, id uint64, source string) (mode
 		}
 	}
 	oracles := deckOracles([]model.SavedDeck{{Cards: entries}})
-	personal, _, err := s.personal(ctx, id, oracles)
+	personal, err := s.personal(ctx, id, oracles)
 	if err != nil {
 		return model.ParsedDeck{}, safeError(err)
 	}

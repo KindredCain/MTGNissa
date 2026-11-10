@@ -97,7 +97,7 @@ func deckCardsByPrinting(ctx context.Context, tx *sqlx.Tx, ids []string) (map[st
 }
 
 // DeckTags resolves all functional labels without filtering mapping weights.
-func (s *CardStore) DeckTags(ctx context.Context, oracles []string) (map[string][]string, error) {
+func (s *CardTx) DeckTags(ctx context.Context, oracles []string) (map[string][]string, error) {
 	result := make(map[string][]string)
 	for start := 0; start < len(oracles); start += 500 {
 		query, args, err := sqlx.In(`SELECT m.oracle_id,t.label FROM oracle_tag_mapping m JOIN oracle_tag t ON t.tag_id=m.tag_id WHERE m.oracle_id IN (?) ORDER BY m.oracle_id,t.label,t.tag_id`, oracles[start:min(start+500, len(oracles))])
@@ -105,7 +105,7 @@ func (s *CardStore) DeckTags(ctx context.Context, oracles []string) (map[string]
 			return nil, err
 		}
 		var rows []deckTagRow
-		if err := s.db.SelectContext(ctx, &rows, query, args...); err != nil {
+		if err := s.tx.SelectContext(ctx, &rows, query, args...); err != nil {
 			return nil, err
 		}
 		for _, row := range rows {

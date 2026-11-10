@@ -46,6 +46,30 @@ type deckPrintingStateRow struct {
 	Included bool   `db:"included"`
 }
 
+// Identity reads only the saved deck ID and name without loading its definition.
+func (s *DeckTx) Identity(ctx context.Context, id uint64) (model.DeckIdentity, error) {
+	var row model.DeckIdentity
+	err := s.tx.GetContext(ctx, &row, "SELECT id,name FROM deck WHERE id=?", id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.DeckIdentity{}, apperror.New(apperror.CodeDeckNotFound, "deck not found")
+	}
+	return row, err
+}
+
+// CountedCards reads per-Oracle quantities for the counted sections of one deck.
+func (s *DeckTx) CountedCards(ctx context.Context, id uint64) (map[string]uint64, error) {
+	var rows []deckPersonalRow
+	if err := s.tx.SelectContext(ctx, &rows, `SELECT oracle_id,SUM(quantity) AS quantity FROM deck_card
+ WHERE deck_id=? AND section_type IN ('commander','mainboard','sideboard') GROUP BY oracle_id`, id); err != nil {
+		return nil, err
+	}
+	result := make(map[string]uint64, len(rows))
+	for _, row := range rows {
+		result[row.OracleID] = row.Quantity
+	}
+	return result, nil
+}
+
 // Get reads a saved definition and optionally locks its parent row for a mutation.
 func (s *DeckTx) Get(ctx context.Context, id uint64, lock bool) (model.SavedDeck, error) {
 	query := "SELECT id,name,source_text,cover_oracle_id,created_at,updated_at FROM deck WHERE id=?"

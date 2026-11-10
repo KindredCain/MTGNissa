@@ -202,7 +202,7 @@ func (s *Service) Save(ctx context.Context, id uint64, input model.DeckSave) (mo
 	if err != nil {
 		return model.DeckDetail{}, err
 	}
-	personal, _, err := s.personal(ctx, id, deckOracles([]model.SavedDeck{next}))
+	personal, err := s.personal(ctx, id, deckOracles([]model.SavedDeck{next}))
 	if err != nil {
 		return model.DeckDetail{}, safeError(err)
 	}
@@ -250,7 +250,7 @@ func (s *Service) CardContexts(ctx context.Context, id uint64, ids []string) ([]
 		}
 		oracles = append(oracles, oracle)
 	}
-	personal, current, err := s.personal(ctx, id, uniqueStrings(oracles))
+	personal, current, err := s.personalWithCurrent(ctx, id, uniqueStrings(oracles))
 	if err != nil {
 		return nil, safeError(err)
 	}
@@ -299,7 +299,7 @@ func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckS
 	for _, name := range names {
 		oracles = append(oracles, *name.OracleID)
 	}
-	personal, _, err := s.personal(ctx, id, oracles)
+	personal, err := s.personal(ctx, id, oracles)
 	if err != nil {
 		return model.DeckCandidatePage{}, safeError(err)
 	}
@@ -331,30 +331,48 @@ func (s *Service) NameSuggestions(ctx context.Context, id uint64, query string) 
 func (s *Service) identity(ctx context.Context, id uint64) (model.DeckIdentity, error) {
 	var result model.DeckIdentity
 	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
-		deck, err := tx.Decks.Get(ctx, id, false)
-		result = model.DeckIdentity{ID: deck.ID, Name: deck.Name}
+		var err error
+		result, err = tx.Decks.Identity(ctx, id)
 		return err
 	})
 	return result, err
 }
 
-func (s *Service) personal(ctx context.Context, id uint64, oracles []string) (model.DeckPersonal, map[string]uint64, error) {
+func (s *Service) personal(ctx context.Context, id uint64, oracles []string) (model.DeckPersonal, error) {
+	var result model.DeckPersonal
+	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
+		var err error
+		result, err = readPersonal(ctx, tx, id, oracles)
+		return err
+	})
+	return result, err
+}
+
+func (s *Service) personalWithCurrent(ctx context.Context, id uint64, oracles []string) (model.DeckPersonal, map[string]uint64, error) {
 	var result model.DeckPersonal
 	current := map[string]uint64{}
 	err := s.app.WithAppRead(ctx, func(tx *store.AppTx) error {
-		deck, err := tx.Decks.Get(ctx, id, false)
+		var err error
+		result, err = readPersonal(ctx, tx, id, oracles)
 		if err != nil {
 			return err
 		}
-		current = countedCards(deck)
-		result, err = tx.Decks.Personal(ctx, oracles)
+		current, err = tx.Decks.CountedCards(ctx, id)
 		return err
 	})
 	return result, current, err
 }
 
+func readPersonal(ctx context.Context, tx *store.AppTx, id uint64, oracles []string) (model.DeckPersonal, error) {
+	if _, err := tx.Decks.Identity(ctx, id); err != nil {
+		return model.DeckPersonal{}, err
+	}
+	return tx.Decks.Personal(ctx, oracles)
+}
+
 func (s *Service) display(ctx context.Context, oracles []string, states map[string]model.DeckPrintingState, tags bool) (map[string]model.DeckCardData, error) {
 	data := make(map[string]model.DeckCardData)
+	var labels map[string][]string
 	if len(oracles) == 0 {
 		return data, nil
 	}
@@ -374,6 +392,12 @@ func (s *Service) display(ctx context.Context, oracles []string, states map[stri
 		}
 		var err error
 		data, err = tx.DeckCards(ctx, ids)
+		if err != nil {
+			return err
+		}
+		if tags {
+			labels, err = tx.DeckTags(ctx, oracles)
+		}
 		return err
 	})
 	if err != nil {
@@ -392,12 +416,8 @@ func (s *Service) display(ctx context.Context, oracles []string, states map[stri
 		}
 	}
 	data = selected
-	if !tags || len(oracles) == 0 {
+	if !tags {
 		return data, nil
-	}
-	labels, err := s.cards.DeckTags(ctx, oracles)
-	if err != nil {
-		return nil, err
 	}
 	for oracle, card := range data {
 		card.OracleTags = append([]string{}, labels[oracle]...)
