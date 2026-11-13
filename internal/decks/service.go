@@ -167,7 +167,7 @@ func (s *Service) Copy(ctx context.Context, id uint64, key string) (model.DeckId
 // Delete serializes with saves, deletes the definition, and logs its previous name.
 func (s *Service) Delete(ctx context.Context, id uint64) error {
 	err := s.app.WithAppTx(ctx, func(tx *store.AppTx) error {
-		deck, err := tx.Decks.Get(ctx, id, true)
+		deck, err := tx.Decks.LockIdentity(ctx, id)
 		if err != nil {
 			return err
 		}

@@ -676,6 +676,8 @@ func createCardUUIDBridgeTable(ctx context.Context, db *sql.DB, table string) er
 }
 
 func dropCardUUIDBridgeTable(ctx context.Context, db *sql.DB, table string) error {
+	ctx, cancel := context.WithTimeout(ctx, config.SQLExecutionTimeout)
+	defer cancel()
 	_, err := db.ExecContext(ctx, "DROP TABLE "+quote(table))
 	return err
 }

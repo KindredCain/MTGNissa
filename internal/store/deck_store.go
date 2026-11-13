@@ -49,8 +49,21 @@ type deckPrintingStateRow struct {
 
 // Identity reads only the saved deck ID and name without loading its definition.
 func (s *DeckTx) Identity(ctx context.Context, id uint64) (model.DeckIdentity, error) {
+	return s.identity(ctx, id, false)
+}
+
+// LockIdentity locks the saved deck and reads only its ID and name for a mutation.
+func (s *DeckTx) LockIdentity(ctx context.Context, id uint64) (model.DeckIdentity, error) {
+	return s.identity(ctx, id, true)
+}
+
+func (s *DeckTx) identity(ctx context.Context, id uint64, lock bool) (model.DeckIdentity, error) {
+	query := "SELECT id,name FROM deck WHERE id=?"
+	if lock {
+		query += " FOR UPDATE"
+	}
 	var row model.DeckIdentity
-	err := s.tx.GetContext(ctx, &row, "SELECT id,name FROM deck WHERE id=?", id)
+	err := s.tx.GetContext(ctx, &row, query, id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return model.DeckIdentity{}, apperror.New(apperror.CodeDeckNotFound, "deck not found")
 	}
