@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/config"
 	"mtgnissa/internal/httpresponse"
 )
 
@@ -23,7 +23,7 @@ func (h Handler) Live(c *gin.Context) {
 	httpresponse.WriteJSON(c, http.StatusOK, statusResponse{Status: "ok"})
 }
 func (h Handler) Ready(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), config.HealthCheckTimeout)
 	defer cancel()
 	if err := h.Card.PingContext(ctx); err != nil {
 		httpresponse.WriteAppError(c, apperror.Wrap(apperror.CodeDependencyUnavailable, "card database is unavailable", err))

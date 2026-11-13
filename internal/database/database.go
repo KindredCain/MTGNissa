@@ -47,7 +47,7 @@ func open(ctx context.Context, c config.DB) (*sqlx.DB, error) {
 	db.SetMaxIdleConns(c.MaxIdle)
 	db.SetConnMaxIdleTime(c.MaxIdleTime)
 	db.SetConnMaxLifetime(c.MaxLifetime)
-	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	pingCtx, cancel := context.WithTimeout(ctx, config.DatabasePingTimeout)
 	defer cancel()
 	if err = db.PingContext(pingCtx); err != nil {
 		db.Close()

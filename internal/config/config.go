@@ -20,17 +20,16 @@ type DB struct {
 
 // Config contains the validated runtime configuration for the application.
 type Config struct {
-	DisplayName     string
-	TimeZone        string
-	HTTPAddr        string
-	CursorPageSize  int
-	LogLevel        string
-	LogDir          string
-	ShutdownTimeout time.Duration
-	CardDB          DB
-	AppDB           DB
-	CardDataDir     string
-	LoadEnabled     bool
+	DisplayName    string
+	TimeZone       string
+	HTTPAddr       string
+	CursorPageSize int
+	LogLevel       string
+	LogDir         string
+	CardDB         DB
+	AppDB          DB
+	CardDataDir    string
+	LoadEnabled    bool
 }
 
 type fileConfig struct {
@@ -39,9 +38,8 @@ type fileConfig struct {
 		TimeZone    string `yaml:"timezone"`
 	} `yaml:"app"`
 	HTTP struct {
-		Addr            string `yaml:"addr"`
-		ShutdownTimeout string `yaml:"shutdown_timeout"`
-		CursorPageSize  int    `yaml:"cursor_page_size"`
+		Addr           string `yaml:"addr"`
+		CursorPageSize int    `yaml:"cursor_page_size"`
 	} `yaml:"http"`
 	Log struct {
 		Level string `yaml:"level"`
@@ -76,7 +74,7 @@ func Load() (Config, error) {
 // LoadFile applies defaults, an optional YAML file, then environment overrides.
 func LoadFile(path string) (Config, error) {
 	db := DB{Host: "127.0.0.1", Port: 3306, MaxOpen: 5, MaxIdle: 1, MaxIdleTime: 5 * time.Minute, MaxLifetime: 30 * time.Minute}
-	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", CursorPageSize: 50, LogLevel: "info", LogDir: "logs", ShutdownTimeout: 10 * time.Second, CardDB: db, AppDB: db}
+	c := Config{TimeZone: "UTC", HTTPAddr: ":8080", CursorPageSize: 50, LogLevel: "info", LogDir: "logs", CardDB: db, AppDB: db}
 	if path != "" {
 		if err := applyFile(&c, path); err != nil {
 			return Config{}, err
@@ -162,13 +160,6 @@ func applyFile(c *Config, path string) error {
 	if raw.CardData.LoadEnabled != nil {
 		c.LoadEnabled = *raw.CardData.LoadEnabled
 	}
-	if raw.HTTP.ShutdownTimeout != "" {
-		v, err := positiveDuration("http.shutdown_timeout", raw.HTTP.ShutdownTimeout)
-		if err != nil {
-			return err
-		}
-		c.ShutdownTimeout = v
-	}
 	if err := applyFileDB(&c.CardDB, raw.Databases.Card, "databases.card"); err != nil {
 		return err
 	}
@@ -225,9 +216,6 @@ func applyEnvironment(c *Config) error {
 	setString("LOG_LEVEL", &c.LogLevel)
 	setString("LOG_DIR", &c.LogDir)
 	setString("CARD_DATA_DIR", &c.CardDataDir)
-	if err := setDuration("SHUTDOWN_TIMEOUT", &c.ShutdownTimeout); err != nil {
-		return err
-	}
 	if err := setBool("CARD_DATA_LOAD_ENABLED", &c.LoadEnabled); err != nil {
 		return err
 	}

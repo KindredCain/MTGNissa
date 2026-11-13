@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"mtgnissa/internal/apperror"
+	"mtgnissa/internal/config"
 )
 
-// Cache retains successful mutation fingerprints for thirty minutes.
+// Cache retains successful mutation fingerprints for the configured cache lifetime.
 type Cache struct {
 	mu       sync.Mutex
 	entries  map[string]*entry
@@ -89,7 +90,7 @@ func (c *Cache) execute(key string, e *entry, mutation func() error) error {
 		defer c.mu.Unlock()
 		e.err = err
 		if err == nil {
-			e.expires = time.Now().Add(30 * time.Minute)
+			e.expires = time.Now().Add(config.IdempotencyCacheTTL)
 		} else {
 			delete(c.entries, key)
 		}

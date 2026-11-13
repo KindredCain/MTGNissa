@@ -16,11 +16,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"mtgnissa/internal/config"
 )
 
 const Confirmation = "LOAD_CARD_DATA"
-
-const cleanupTimeout = 30 * time.Second
 
 // Stage identifies the current phase of a card-data loading task.
 type Stage string
@@ -171,7 +171,7 @@ func (m *Manager) progressSnapshot() (id string, stage Stage, file string, rows,
 }
 
 func (m *Manager) logHeartbeat(id string, startedAt time.Time, done <-chan struct{}) {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(config.LogProgressInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -334,7 +334,7 @@ func (m *Manager) cleanupTables(id string, tables []spec, names map[tableName]st
 	for _, table := range tables {
 		name := names[table.table]
 		tableStartedAt := time.Now()
-		ctx, cancel := context.WithTimeout(m.ctx, cleanupTimeout)
+		ctx, cancel := context.WithTimeout(m.ctx, config.SQLExecutionTimeout)
 		_, err := m.db.ExecContext(ctx, "DROP TABLE IF EXISTS "+quote(name))
 		cancel()
 		if err != nil {

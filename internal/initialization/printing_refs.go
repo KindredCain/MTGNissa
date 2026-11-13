@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"mtgnissa/internal/appdata"
+	"mtgnissa/internal/config"
 )
 
 // PrintingRefSource provides persistence operations for personal query metadata initialization.
@@ -50,7 +51,7 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 			log.Info("card printing reference initialization completed", attributes...)
 		}
 	}()
-	queryCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	queryCtx, cancel := context.WithTimeout(ctx, config.SQLExecutionTimeout)
 	total, err := source.CountPending(queryCtx)
 	err = errors.Join(err, queryCtx.Err())
 	cancel()
@@ -62,7 +63,7 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		queryCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		queryCtx, cancel := context.WithTimeout(ctx, config.SQLExecutionTimeout)
 		ids, err := source.Pending(queryCtx, after, 500)
 		err = errors.Join(err, queryCtx.Err())
 		cancel()
@@ -72,7 +73,7 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 		if len(ids) == 0 {
 			break
 		}
-		queryCtx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		queryCtx, cancel = context.WithTimeout(ctx, config.SQLExecutionTimeout)
 		refs, readErr := source.Load(queryCtx, ids)
 		readErr = errors.Join(readErr, queryCtx.Err())
 		cancel()
@@ -84,7 +85,7 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 					refreshErr = errors.New("data not found")
 				} else {
 					ref.PrintingUUID = id
-					updateCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+					updateCtx, cancel := context.WithTimeout(ctx, config.SQLExecutionTimeout)
 					refreshErr = source.Update(updateCtx, ref)
 					refreshErr = errors.Join(refreshErr, updateCtx.Err())
 					cancel()

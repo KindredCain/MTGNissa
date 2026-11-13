@@ -9,9 +9,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"mtgnissa/internal/bootstrap"
+	"mtgnissa/internal/config"
 )
 
 func main() {
@@ -26,10 +26,10 @@ func main() {
 	}
 	server := &http.Server{
 		Addr: app.Config.HTTPAddr, Handler: app.Router,
-		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      35 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: config.HTTPReadHeaderTimeout,
+		ReadTimeout:       config.HTTPReadTimeout,
+		WriteTimeout:      config.HTTPWriteTimeout,
+		IdleTimeout:       config.HTTPIdleTimeout,
 	}
 	errCh := make(chan error, 1)
 	go func() {
@@ -43,7 +43,7 @@ func main() {
 			app.Logger.Error("http server failed", "error", err)
 		}
 	}
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), app.Config.ShutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), config.HTTPShutdownTimeout)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		app.Logger.Error("http shutdown failed", "error", err)
