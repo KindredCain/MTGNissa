@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
@@ -223,8 +224,14 @@ func (s *DeckTx) Replace(ctx context.Context, deck model.SavedDeck) error {
 }
 
 func (s *DeckTx) insertCards(ctx context.Context, id uint64, cards []model.SavedDeckCard) error {
-	for _, card := range cards {
-		if _, err := s.tx.ExecContext(ctx, "INSERT INTO deck_card (deck_id,section_type,oracle_id,quantity,name_snapshot) VALUES (?,?,?,?,?)", id, card.Section, card.OracleID, card.Quantity, card.Name); err != nil {
+	for start := 0; start < len(cards); start += 500 {
+		batch := cards[start:min(start+500, len(cards))]
+		args := make([]any, 0, len(batch)*5)
+		for _, card := range batch {
+			args = append(args, id, card.Section, card.OracleID, card.Quantity, card.Name)
+		}
+		query := "INSERT INTO deck_card (deck_id,section_type,oracle_id,quantity,name_snapshot) VALUES " + strings.TrimSuffix(strings.Repeat("(?,?,?,?,?),", len(batch)), ",")
+		if _, err := s.tx.ExecContext(ctx, query, args...); err != nil {
 			return err
 		}
 	}

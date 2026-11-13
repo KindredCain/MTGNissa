@@ -13,20 +13,24 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"mtgnissa/internal/appdata"
 )
 
 type printingRefStub struct {
-	pending map[string]bool
-	fail    map[string]error
-	visited []string
-	readErr error
-	missing map[string]bool
-	loadErr error
+	pending  map[string]bool
+	fail     map[string]error
+	visited  []string
+	readErr  error
+	missing  map[string]bool
+	loadErr  error
+	contexts []context.Context
+	updated  []string
 }
 
-func (s *printingRefStub) CountPending(context.Context) (int64, error) {
+func (s *printingRefStub) CountPending(ctx context.Context) (int64, error) {
+	s.contexts = append(s.contexts, ctx)
 	var count int64
 	for _, pending := range s.pending {
 		if pending {
@@ -36,7 +40,8 @@ func (s *printingRefStub) CountPending(context.Context) (int64, error) {
 	return count, nil
 }
 
-func (s *printingRefStub) Pending(_ context.Context, after string, _ int) ([]string, error) {
+func (s *printingRefStub) Pending(ctx context.Context, after string, _ int) ([]string, error) {
+	s.contexts = append(s.contexts, ctx)
 	if s.readErr != nil {
 		return nil, s.readErr
 	}
@@ -50,7 +55,8 @@ func (s *printingRefStub) Pending(_ context.Context, after string, _ int) ([]str
 	return ids[:min(2, len(ids))], nil
 }
 
-func (s *printingRefStub) Load(_ context.Context, ids []string) (map[string]appdata.CardPrintRef, error) {
+func (s *printingRefStub) Load(ctx context.Context, ids []string) (map[string]appdata.CardPrintRef, error) {
+	s.contexts = append(s.contexts, ctx)
 	refs := make(map[string]appdata.CardPrintRef)
 	for _, id := range ids {
 		s.visited = append(s.visited, id)
@@ -61,12 +67,73 @@ func (s *printingRefStub) Load(_ context.Context, ids []string) (map[string]appd
 	return refs, s.loadErr
 }
 
-func (s *printingRefStub) Update(_ context.Context, ref appdata.CardPrintRef) error {
+func (s *printingRefStub) Update(ctx context.Context, ref appdata.CardPrintRef) error {
+	s.contexts = append(s.contexts, ctx)
+	s.updated = append(s.updated, ref.PrintingUUID)
 	if err := s.fail[ref.PrintingUUID]; err != nil {
 		return err
 	}
 	s.pending[ref.PrintingUUID] = false
 	return nil
+}
+
+func TestPrintingRefOperationsHaveIndependentThirtySecondDeadlines(t *testing.T) {
+	source := &printingRefStub{pending: map[string]bool{"one": true, "two": true}}
+	started := time.Now()
+	log := slog.New(slog.NewJSONHandler(&bytes.Buffer{}, nil))
+	if err := refreshPrintingRefs(context.Background(), source, t.TempDir(), log); err != nil {
+		t.Fatal(err)
+	}
+	seen := map[context.Context]bool{}
+	if len(source.contexts) != 6 {
+		t.Fatalf("operation contexts=%d", len(source.contexts))
+	}
+	for _, ctx := range source.contexts {
+		deadline, ok := ctx.Deadline()
+		if !ok || deadline.Before(started.Add(30*time.Second)) || deadline.After(time.Now().Add(30*time.Second)) || seen[ctx] {
+			t.Fatalf("missing independent 30-second deadline: %v", deadline)
+		}
+		seen[ctx] = true
+	}
+}
+
+func TestPrintingRefTimeoutLogsAndStopsStartup(t *testing.T) {
+	for _, operation := range []string{"load", "update"} {
+		t.Run(operation, func(t *testing.T) {
+			var output bytes.Buffer
+			log := slog.New(slog.NewJSONHandler(&output, nil))
+			cause := fmt.Errorf("database operation: %w", context.DeadlineExceeded)
+			source := &printingRefStub{pending: map[string]bool{"one": true, "two": true, "three": true}}
+			if operation == "load" {
+				source.loadErr = cause
+			} else {
+				source.fail = map[string]error{"one": cause}
+			}
+			next := false
+			dir := t.TempDir()
+			err := Run(context.Background(), log, PrintingRefs(source, dir, log), Step{Name: "next", Run: func(context.Context) error {
+				next = true
+				return nil
+			}})
+			if !errors.Is(err, context.DeadlineExceeded) || next || !source.pending["two"] || !source.pending["three"] {
+				t.Fatalf("next=%v pending=%v error=%v", next, source.pending, err)
+			}
+			if operation == "load" && len(source.updated) != 0 || operation == "update" && !reflect.DeepEqual(source.updated, []string{"one"}) {
+				t.Fatalf("unexpected later updates: %v", source.updated)
+			}
+			files, err := os.ReadDir(dir)
+			if err != nil || len(files) != 1 {
+				t.Fatalf("failure files=%v error=%v", files, err)
+			}
+			content, err := os.ReadFile(filepath.Join(dir, files[0].Name()))
+			if err != nil || !strings.Contains(string(content), "printing_uuid=one") || bytes.Count(content, []byte("\n")) != 1 {
+				t.Fatalf("failure content=%q error=%v", content, err)
+			}
+			if !strings.Contains(output.String(), "initialization incomplete") || !strings.Contains(output.String(), `"failed":1`) || strings.Contains(output.String(), "application initialization completed") {
+				t.Fatalf("logs=%s", output.String())
+			}
+		})
+	}
 }
 
 func TestPrintingRefMissingDataAndBatchReadFailureRemainPending(t *testing.T) {

@@ -36,12 +36,8 @@ func PrintingRefs(source PrintingRefSource, logDir string, log *slog.Logger) Ste
 }
 
 func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir string, log *slog.Logger) (resultErr error) {
-	total, err := source.CountPending(ctx)
-	if err != nil {
-		return err
-	}
 	started := time.Now()
-	var synced, failed int64
+	var total, synced, failed int64
 	journal := failureLog{dir: logDir}
 	defer func() {
 		resultErr = errors.Join(resultErr, journal.close())
@@ -54,20 +50,32 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 			log.Info("card printing reference initialization completed", attributes...)
 		}
 	}()
+	queryCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	total, err := source.CountPending(queryCtx)
+	err = errors.Join(err, queryCtx.Err())
+	cancel()
+	if err != nil {
+		return err
+	}
 	after := ""
 	for total > 0 {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		ids, err := source.Pending(ctx, after, 500)
+		queryCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		ids, err := source.Pending(queryCtx, after, 500)
+		err = errors.Join(err, queryCtx.Err())
+		cancel()
 		if err != nil {
 			return err
 		}
 		if len(ids) == 0 {
 			break
 		}
-		batchCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		refs, readErr := source.Load(batchCtx, ids)
+		queryCtx, cancel = context.WithTimeout(ctx, 30*time.Second)
+		refs, readErr := source.Load(queryCtx, ids)
+		readErr = errors.Join(readErr, queryCtx.Err())
+		cancel()
 		for _, id := range ids {
 			refreshErr := readErr
 			if refreshErr == nil {
@@ -76,7 +84,10 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 					refreshErr = errors.New("data not found")
 				} else {
 					ref.PrintingUUID = id
-					refreshErr = source.Update(batchCtx, ref)
+					updateCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+					refreshErr = source.Update(updateCtx, ref)
+					refreshErr = errors.Join(refreshErr, updateCtx.Err())
+					cancel()
 				}
 			}
 			if refreshErr == nil {
@@ -87,8 +98,10 @@ func refreshPrintingRefs(ctx context.Context, source PrintingRefSource, logDir s
 			if err := journal.write(id, refreshErr); err != nil {
 				log.Error("initialization failure file unavailable", "printing_uuid", id, "refresh_error", refreshErr, "error", err)
 			}
+			if errors.Is(refreshErr, context.DeadlineExceeded) || errors.Is(refreshErr, context.Canceled) {
+				return refreshErr
+			}
 		}
-		cancel()
 		after = ids[len(ids)-1]
 	}
 	return ctx.Err()
