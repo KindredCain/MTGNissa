@@ -54,7 +54,7 @@
 | `status` | integer | 否 | 与实际 HTTP 状态码完全相同 |
 | `data` | endpoint DTO | 是 | 成功时为对应 DTO，失败时固定为 `null` |
 | `error` | `ErrorDTO` | 是 | 成功时固定为 `null`，失败时必填 |
-| `request_id` | string | 否 | 本次请求最终 ID，最长 128 字符 |
+| `request_id` | string | 否 | 本次请求最终 ID，最长 128 字节 |
 
 `ErrorDTO` 必须包含非空 `code` 和安全的 `message`。可选 `details` 是对象数组；字段校验项使用 `field` 与 `reason`，代码解析项使用从 1 开始的 `line`、`reason` 和可选的安全输入摘要 `input`。同一项不得同时返回 `field` 和 `line`。`field` 使用从请求 DTO 根开始的点号与零基数组下标格式，例如 `sections[1].cards[3].printing_uuid`、`printing_uuids[2]`；不得混用 JSON Pointer、美元符号路径或一基数组下标。
 
@@ -67,7 +67,7 @@
 - JSON 请求对象拒绝未知字段、尾随的第二个 JSON 值和错误类型。
 - 除非端点正文明确标记为可选，请求示例和请求字段表中的字段均为必填。缺少必填字段返回 `422 validation_failed` 并在 `error.details[].field` 中定位；未知字段、错误 JSON 类型或多余 JSON 值返回 `400 invalid_request`。
 - 查询参数同样拒绝未在当前端点声明的名称；例如擅自传入 `limit` 返回 `400 invalid_request`，不得静默忽略。可选查询参数会在各端点明确标记，类型后的 `?` 表示可省略；可选多选筛选参数省略时表示不限制该维度，排序及合并参数省略时使用端点声明的默认值。重复参数只允许用于声明为数组的字段。
-- 客户端可发送不超过 128 字符的 `X-Request-ID`；服务端始终在响应头和信封中返回最终请求 ID。
+- 客户端可发送 `X-Request-ID`；服务端去除首尾空白后，按字节判断长度。值为空或超过 128 字节时，由服务端生成新 ID；服务端始终在响应头和信封中返回同一个最终请求 ID。
 - 时间戳在数据库中统一以 UTC 保存，并在接口中使用 RFC 3339 UTC 表示，例如 `2026-10-09T04:00:00Z`；自然日使用 `YYYY-MM-DD`，其时区语义由具体端点声明。
 - 业务资源标识作为不透明字符串返回；前端只用于回传、路由和缓存键，不解析其来源或结构。
 - MySQL `BIGINT UNSIGNED` 标识统一按十进制字符串返回，避免 JavaScript 精度丢失。
@@ -228,7 +228,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | 多选参数 | 单个字段去重后最多 128 项；空数组等同未提供 |
 | 页码 | 十进制整数，最小为 1；超过末页返回空 `items` 而不是错误 |
 
-字符串不得包含 NUL。违反边界返回 `422 validation_failed`；JSON 结构、参数类型或枚举错误返回 `400 invalid_request`。
+字符串不得包含 NUL。请求能够正常解析后，必填、非空、长度、数量范围、枚举值、数组唯一性以及字段组合或业务约束校验失败，统一返回 `422`；通常使用 `validation_failed` 并通过 `error.details[].field` 定位，另有专用错误码的场景使用对应错误码，例如日期范围颠倒返回 `422 invalid_date_range`。JSON 语法或结构、参数类型、未知字段或参数、重复的单值参数错误返回 `400 invalid_request`；查询布尔参数只接受 `true`、`false`，其他文本属于类型错误。无效游标、幂等请求头和维护接口确认文本继续使用第 11 节定义的专用 `400` 错误。
 
 ## 3. 接口总览
 
@@ -365,7 +365,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 }
 ```
 
-后端按 `mtgnissa_card_printing -> mtgnissa_card -> 翻译` 读取当前 Set、语言和名称条件内的完整轻量结果；只返回普通卡牌，双面或多牌面按具体印刷及语言组织为一个 `CardSummaryDTO`，统一使用主牌面 `printing_uuid`。当前语言属于项目字典但该 Set 无记录时返回空结果，未知语言代码返回 `422 validation_failed`；Set 不存在返回 `404 set_not_found`。Token Set 不接受本接口，返回 `400 invalid_request`，客户端应使用 5.5。
+后端按 `mtgnissa_card_printing -> mtgnissa_card -> 翻译` 读取当前 Set、语言和名称条件内的完整轻量结果；只返回普通卡牌，双面或多牌面按具体印刷及语言组织为一个 `CardSummaryDTO`，统一使用主牌面 `printing_uuid`。当前语言属于项目字典但该 Set 无记录时返回空结果，未知语言代码返回 `422 validation_failed`；Set 不存在返回 `404 set_not_found`。Token Set 不接受本接口，返回 `422 validation_failed` 并定位 `set_code`，客户端应使用 5.5。
 
 前端在完整结果上执行颜色、法术力、稀有度筛选和收藏编号／法术力／名称排序，再本地分批显示图片；主排序相同时按收藏编号自然升序、`printing_uuid ASC` 兜底。`total` 为本次名称条件内组织后的印刷列表项数，不是卡面数；前端再计算本地筛选后的计数。
 
@@ -493,7 +493,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 请求示例：`GET /api/v1/tokens?set_code=TKLD`。普通卡牌与 Token 列表分别使用并列的 `/cards` 和 `/tokens` 入口，系列代码均通过查询参数传入。
 
-缺少或传入空白 `set_code` 返回 `422 validation_failed`，在 `error.details[].field` 中定位 `set_code`；重复传入 `set_code` 返回 `400 invalid_request`。本接口除 `set_code` 外不接受其他查询参数，包括 `q`、`language`、筛选、`sort`、`cursor` 和 `limit`；传入返回 `400 invalid_request`。Set 不存在返回 `404 set_not_found`；存在但不是 `set_type = token` 时返回 `400 invalid_request`。只读查询，无个人数据或 mutation 入口。
+缺少或传入空白 `set_code` 返回 `422 validation_failed`，在 `error.details[].field` 中定位 `set_code`；重复传入 `set_code` 返回 `400 invalid_request`。本接口除 `set_code` 外不接受其他查询参数，包括 `q`、`language`、筛选、`sort`、`cursor` 和 `limit`；传入返回 `400 invalid_request`。Set 不存在返回 `404 set_not_found`；存在但不是 `set_type = token` 时返回 `422 validation_failed` 并定位 `set_code`。只读查询，无个人数据或 mutation 入口。
 
 响应为 `TokenSetCardsDTO`，完整字段如下：
 
@@ -1132,7 +1132,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
 | `end_date` | date? | 应用时区自然日闭区间结束 |
 | `page` | integer | 默认 1，最小 1 |
 
-开始日期晚于结束日期返回 `400 invalid_date_range`。每页固定 10 条，不接受 `page_size`。
+开始日期晚于结束日期返回 `422 invalid_date_range`。每页固定 10 条，不接受 `page_size`。
 
 响应：
 
@@ -1224,9 +1224,8 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
 
 | HTTP | `error.code` | 场景 |
 | ---: | --- | --- |
-| 400 | `invalid_request` | JSON、参数类型、未知字段或参数组合错误 |
+| 400 | `invalid_request` | JSON 语法或结构、参数类型、未知字段或参数、重复的单值参数错误；不接受请求体的操作带非空请求体 |
 | 400 | `invalid_cursor` | 游标无效、过期或与当前查询条件不匹配 |
-| 400 | `invalid_date_range` | 开始日期晚于结束日期 |
 | 400 | `confirmation_required` | 卡牌加载确认文本错误 |
 | 400 | `idempotency_key_required` | 收藏调整、愿望单状态、创建卡组或复制卡组缺少或未正确填写 `Idempotency-Key` |
 | 403 | `load_disabled` | 卡牌数据加载未启用 |
@@ -1241,7 +1240,8 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
 | 405 | `method_not_allowed` | 路径存在但 HTTP 方法不受支持 |
 | 413 | `request_too_large` | 请求体超过服务端限制 |
 | 415 | `unsupported_media_type` | 带请求体的接口未使用 `application/json` |
-| 422 | `validation_failed` | 字段值或业务规则不合法 |
+| 422 | `invalid_date_range` | 开始日期晚于结束日期 |
+| 422 | `validation_failed` | 必填、非空、长度、数量范围、枚举值、数组唯一性、字段组合或业务规则校验失败 |
 | 422 | `card_reference_invalid` | 保存卡组或查询编辑上下文时，请求体中的 `printing_uuid` 不存在或已失效；`details[].field` 定位具体元素 |
 | 422 | `deck_parse_failed` | 卡组代码存在无法识别或歧义行 |
 | 422 | `deck_card_not_supported` | 请求的 `printing_uuid` 没有逻辑卡牌身份，不能加入卡组 |

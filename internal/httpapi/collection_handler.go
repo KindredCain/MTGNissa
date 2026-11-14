@@ -63,7 +63,7 @@ func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
 		params.Sort = value
 	}
 	if !oneOf(params.Sort, "set", "color", "mana_value", "name") {
-		return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
+		return model.CollectionParams{}, validationError("sort", "must_be_a_valid_collection_sort")
 	}
 	for field, target := range map[string]*bool{"merge_sets": &params.MergeSets, "merge_languages": &params.MergeLanguages} {
 		if _, present := query[field]; present {
@@ -75,7 +75,7 @@ func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
 		}
 	}
 	if params.Sort == "set" && params.MergeSets {
-		return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "merge_sets must be false when sort is set")
+		return model.CollectionParams{}, validationError("merge_sets", "must_be_false_when_sort_is_set")
 	}
 	for _, filter := range []struct {
 		field  string
@@ -96,15 +96,15 @@ func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
 				}
 			case "color":
 				if !oneOf(value, "W", "U", "B", "R", "G", "multicolor", "colorless") {
-					return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "color is invalid")
+					return model.CollectionParams{}, validationError("color", "must_be_a_valid_color_group")
 				}
 			case "mana_value":
 				if !oneOf(value, "0", "1", "2", "3", "4", "5", "6", "7", "8_plus") {
-					return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "mana_value is invalid")
+					return model.CollectionParams{}, validationError("mana_value", "must_be_a_valid_mana_value_group")
 				}
 			case "rarity":
 				if !oneOf(value, "common", "uncommon", "rare", "mythic", "special", "bonus") {
-					return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, "rarity is invalid")
+					return model.CollectionParams{}, validationError("rarity", "must_be_a_valid_rarity")
 				}
 			}
 		}

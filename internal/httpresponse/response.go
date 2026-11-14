@@ -96,7 +96,6 @@ func statusForCode(code apperror.Code) int {
 	switch code {
 	case apperror.CodeInvalidRequest,
 		apperror.CodeInvalidCursor,
-		apperror.CodeInvalidDateRange,
 		apperror.CodeConfirmationRequired,
 		apperror.CodeIdempotencyRequired:
 		return http.StatusBadRequest
@@ -119,6 +118,7 @@ func statusForCode(code apperror.Code) int {
 	case apperror.CodeUnsupportedMediaType:
 		return http.StatusUnsupportedMediaType
 	case apperror.CodeValidationFailed,
+		apperror.CodeInvalidDateRange,
 		apperror.CodeCardReferenceInvalid,
 		apperror.CodeDeckParseFailed,
 		apperror.CodeDeckCardNotSupported:

@@ -113,7 +113,7 @@ func TestGetSetsRejectsInvalidInputs(t *testing.T) {
 		wantStatus int
 		wantCode   string
 	}{
-		{name: "unknown sort", target: "/api/v1/sets?sort=newest", wantStatus: http.StatusBadRequest, wantCode: "invalid_request"},
+		{name: "unknown sort", target: "/api/v1/sets?sort=newest", wantStatus: http.StatusUnprocessableEntity, wantCode: "validation_failed"},
 		{name: "repeated scalar", target: "/api/v1/sets?q=a&q=b", wantStatus: http.StatusBadRequest, wantCode: "invalid_request"},
 		{name: "long query", target: "/api/v1/sets?q=" + strings.Repeat("界", 513), wantStatus: http.StatusUnprocessableEntity, wantCode: "validation_failed"},
 		{name: "unknown parameter", target: "/api/v1/sets?limit=1", wantStatus: http.StatusBadRequest, wantCode: "invalid_request"},

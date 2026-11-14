@@ -176,7 +176,7 @@ func (s *CardStore) List(ctx context.Context, code, language, query string) (mod
 		return model.CardList{}, err
 	}
 	if set.Kind == "token" {
-		return model.CardList{}, apperror.New(apperror.CodeInvalidRequest, "use the tokens endpoint for token sets")
+		return model.CardList{}, apperror.WithDetails(apperror.CodeValidationFailed, "use the tokens endpoint for token sets", []apperror.Detail{{Field: "set_code", Reason: "must_be_a_normal_set"}})
 	}
 	var lang languageRow
 	if err := tx.GetContext(ctx, &lang, "SELECT code, display_name, sort_order FROM scryfall_language WHERE code=?", language); err != nil {

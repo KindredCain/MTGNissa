@@ -48,7 +48,7 @@ func (s *TokenStore) Read(ctx context.Context, code string) (model.TokenSet, []m
 		return model.TokenSet{}, nil, err
 	}
 	if set.SetType != "token" {
-		return model.TokenSet{}, nil, apperror.New(apperror.CodeInvalidRequest, "set must be a token set")
+		return model.TokenSet{}, nil, apperror.WithDetails(apperror.CodeValidationFailed, "set must be a token set", []apperror.Detail{{Field: "set_code", Reason: "must_be_a_token_set"}})
 	}
 	const facesQuery = `
 		SELECT uuid, scryfall_id, face_index, name, collector_number, layout

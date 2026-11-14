@@ -65,7 +65,7 @@ func parseSetListParams(c *gin.Context) (model.SetParams, error) {
 		params.Sort = model.SetSort(value)
 	}
 	if !validSetSort(params.Sort) {
-		return model.SetParams{}, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
+		return model.SetParams{}, validationError("sort", "must_be_a_valid_set_sort")
 	}
 	if containsNUL(params.Cursor) {
 		return model.SetParams{}, validationError("cursor", "must_not_contain_nul")

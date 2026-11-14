@@ -57,7 +57,7 @@ func parseDeckQuery(query url.Values) (model.DeckListParams, error) {
 		params.Sort = value
 	}
 	if !oneOf(params.Sort, "updated_desc", "created_desc", "name_asc", "card_count_desc") {
-		return params, apperror.New(apperror.CodeInvalidRequest, "sort is invalid")
+		return params, validationError("sort", "must_be_a_valid_deck_sort")
 	}
 	return params, nil
 }
@@ -253,8 +253,11 @@ func parseDeckSave(request deckSaveRequest) (model.DeckSave, error) {
 		if section.Type == nil {
 			return result, validationError(field+".type", "required")
 		}
-		if !oneOf(*section.Type, "commander", "mainboard", "sideboard", "maybeboard") || seen[*section.Type] {
-			return result, apperror.New(apperror.CodeInvalidRequest, "section types must be valid and unique")
+		if !oneOf(*section.Type, "commander", "mainboard", "sideboard", "maybeboard") {
+			return result, validationError(field+".type", "must_be_a_valid_deck_section")
+		}
+		if seen[*section.Type] {
+			return result, validationError(field+".type", "must_be_a_unique_deck_section")
 		}
 		seen[*section.Type] = true
 		if section.Cards == nil {

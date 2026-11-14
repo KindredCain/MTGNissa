@@ -50,7 +50,7 @@ func TestRequestBodyLogValuePreservesJSONStructure(t *testing.T) {
 
 func TestHTTPErrorInterception(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	router := New(Dependencies{Logger: log})
+	router := New(Dependencies{Logger: log, LoadEnabled: true})
 	tests := []struct {
 		name        string
 		method      string
