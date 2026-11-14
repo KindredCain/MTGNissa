@@ -1,0 +1,87 @@
+import { lazy, Suspense, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams } from "react-router";
+import { api } from "../api/client";
+import { Board } from "../decks/Board";
+import { DeleteConfirmation, useDeckActions } from "../decks/actions";
+import { Skeleton } from "../ui/controls";
+import styles from "../decks/decks.module.css";
+import { Bookmark } from "../decks/Bookmark";
+const Statistics = lazy(() => import("../decks/Statistics"));
+export function Component() {
+  const { deck_id = "" } = useParams(),
+    [stats, setStats] = useState(false),
+    [deleting, setDeleting] = useState(false),
+    action = useDeckActions(deck_id);
+  const query = useQuery({
+      queryKey: ["decks", "detail", deck_id],
+      queryFn: ({ signal }) =>
+        api.get("/api/v1/decks/{deck_id}", undefined, {
+          path: { deck_id },
+          signal,
+        }),
+    }),
+    deck = query.data;
+  return (
+    <main className={styles.dark}>
+      {deck ? (
+        <>
+          <header className={styles.header}>
+            <div>
+              <h1>{deck.name}</h1>
+              <p>
+                共 {deck.summary.counted_total} 张 · 收集率{" "}
+                {Math.round(deck.summary.collection_rate * 100)}%
+              </p>
+            </div>
+            <div className={styles.headerActions}>
+              <Link to={`/decks/${encodeURIComponent(deck_id)}/edit`}>
+                编辑卡组
+              </Link>
+              <button
+                disabled={action.isPending}
+                onClick={() => action.mutate("copy")}
+              >
+                复制卡组
+              </button>
+              <button
+                disabled={action.isPending}
+                onClick={() => action.mutate("code")}
+              >
+                复制卡组代码
+              </button>
+              <button
+                className={styles.danger}
+                disabled={action.isPending}
+                onClick={() => setDeleting(true)}
+              >
+                删除卡组
+              </button>
+            </div>
+          </header>
+          <Board deck={deck} />
+          <Bookmark top={310} onClick={() => setStats(true)} />
+          {stats && (
+            <Suspense>
+              <Statistics
+                deck={deck}
+                close={() => setStats(false)}
+                bookmark_top={310}
+              />
+            </Suspense>
+          )}
+          <DeleteConfirmation
+            open={deleting}
+            pending={action.isPending}
+            cancel={() => setDeleting(false)}
+            confirm={() =>
+              action.mutate("delete", { onSettled: () => setDeleting(false) })
+            }
+          />
+        </>
+      ) : (
+        query.isPending && <Skeleton />
+      )}
+    </main>
+  );
+}

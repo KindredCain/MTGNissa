@@ -1,0 +1,78 @@
+.dates {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.dates label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.dates input {
+  height: 36px;
+  font-size: 12px;
+  background: white;
+}
+.dates button {
+  width: 72px;
+  height: 34px;
+  padding: 0;
+  font-size: 12px;
+}
+.typeLink {
+  background: transparent;
+  border: 0;
+  color: var(--green);
+  padding: 0;
+  border-radius: 0;
+  font-size: 12px;
+}
+.detail {
+  width: 1040px;
+  height: 650px;
+  max-height: calc(100dvh - 32px);
+}
+.detail h2 {
+  font-size: 17px;
+}
+.detailCount {
+  margin-top: -8px;
+  padding-bottom: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.tableArea {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.tableArea td {
+  height: 43px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.snapshot {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  border-radius: 0;
+  text-align: left;
+}
+.positive {
+  color: #277c4d;
+}
+.negative {
+  color: #b94b43;
+}
+.preview {
+  position: absolute;
+  right: 40px;
+  top: 120px;
+  width: 200px;
+  box-shadow: 0 4px 24px #0005;
+}
+.preview > button {
+  width: 100%;
+}

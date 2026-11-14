@@ -1,0 +1,116 @@
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { search_options } from "../api/lists";
+import { api } from "../api/client";
+import { SearchInput } from "../ui/controls";
+import styles from "./layout.module.css";
+export function Layout() {
+  const client = useQueryClient(),
+    search_revision = useRef(0);
+  const navigate = useNavigate(),
+    location = useLocation();
+  useEffect(() => {
+    search_revision.current++;
+  }, [location.key]);
+  async function search(value: string) {
+    if (!value) return;
+    const revision = ++search_revision.current;
+    try {
+      await client.fetchInfiniteQuery(search_options(value));
+      if (revision === search_revision.current)
+        navigate(`/search?q=${encodeURIComponent(value)}`);
+    } catch {
+      /* QueryCache reports the error and the current page is preserved. */
+    }
+  }
+  const app = useQuery({
+    queryKey: ["app"],
+    queryFn: ({ signal }) => api.get("/api/v1/app", undefined, { signal }),
+    staleTime: Infinity,
+  });
+  const cards =
+    !location.pathname.startsWith("/decks") &&
+    !location.pathname.startsWith("/operation_logs");
+  return (
+    <>
+      <header className={styles.nav}>
+        <NavLink to="/sets" className={styles.logo}>
+          <img src="/assets/kQcrD.svg" alt="" width="24" height="24" /> MTG
+          NISSA
+        </NavLink>
+        <nav aria-label="主导航">
+          <NavLink to="/sets" className={cards ? styles.active : ""}>
+            卡牌中心
+          </NavLink>
+          <NavLink to="/decks">卡组</NavLink>
+          <NavLink to="/operation_logs">操作日志</NavLink>
+        </nav>
+        <div className={styles.right}>
+          <SearchInput
+            value={
+              location.pathname === "/search"
+                ? (new URLSearchParams(location.search).get("q") ?? "")
+                : ""
+            }
+            onSubmit={(value) => {
+              void search(value);
+            }}
+            placeholder="按卡名或语法搜索"
+          />
+          <a
+            href="https://scryfall.com/docs/syntax"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="查看搜索语法帮助"
+            className={styles.help}
+          >
+            ⓘ
+          </a>
+          <span>{app.data?.display_name}</span>
+        </div>
+      </header>
+      <Outlet />
+    </>
+  );
+}
+export function PageHeader({
+  title,
+  description,
+  children,
+  tabs = false,
+}: {
+  title: string;
+  description?: string;
+  children?: React.ReactNode;
+  tabs?: boolean;
+}) {
+  const location = useLocation();
+  const all_cards =
+    location.pathname.startsWith("/sets") || location.pathname === "/search";
+  return (
+    <section className={styles.pageHeader}>
+      <div>
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
+      </div>
+      <div>
+        {tabs ? (
+          <nav aria-label="卡牌中心">
+            <NavLink
+              to="/sets"
+              className={all_cards ? styles.tabActive : undefined}
+            >
+              全部卡牌
+            </NavLink>
+            <NavLink to="/collection">我的卡牌</NavLink>
+            <NavLink to="/wishlist">愿望单</NavLink>
+          </nav>
+        ) : (
+          children
+        )}
+      </div>
+    </section>
+  );
+}
+export const pageStyles = styles;

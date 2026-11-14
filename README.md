@@ -74,6 +74,8 @@ GET /api/v1/card_data/load/{task_id}
 
 - [功能需求](docs/requirements.md)：页面行为、查询规则、卡组规则、日志规则和卡牌数据加载要求。
 - [API 契约](docs/api-contract.md)：接口路径、请求参数、响应 DTO、错误码、分页与服务端排序约定。
+- [OpenAPI 3.1](docs/openapi.json)：机器可读的业务接口契约及前端类型生成输入。
+- [前端开发](web/README.md)：本地启动、接口代理、类型生成、页面路由、测试和构建命令。
 - [搜索语法支持矩阵](docs/search-syntax-support.md)：首版必须实现的查询关键字、别名、比较符和值域。
 - [技术架构设计](docs/architecture.md)：系统边界、技术选型、生命周期、配置与部署约束。
 - [卡牌数据字典](docs/card-data-dictionary.md)：原始卡牌文件、字段含义、关联关系和 Card DB 物理模型。

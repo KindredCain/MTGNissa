@@ -1,0 +1,595 @@
+.deckGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 328px);
+  gap: 24px 16px;
+}
+.deckCard {
+  width: 328px;
+  height: 292px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px #18201d10;
+}
+.cover {
+  display: block;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+}
+.cover > div:first-child {
+  width: 328px;
+  height: 457px;
+  position: relative;
+  top: -54px;
+  border-radius: 0;
+}
+.cover::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 108px;
+  height: 72px;
+  background: linear-gradient(transparent, white 92%, white);
+  pointer-events: none;
+}
+.cover time {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  z-index: 1;
+  color: #34433a;
+  font-size: 10px;
+}
+.emptyCover {
+  background: #dce5dc;
+  color: #97a798;
+  display: grid;
+  place-items: center;
+  font-size: 80px;
+}
+.colorBand {
+  display: flex;
+  height: 5px;
+  background: white;
+}
+.colorBand span {
+  height: 5px;
+}
+.deckInfo {
+  padding: 10px 14px 12px;
+}
+.deckName {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.deckName > a {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.deckName button {
+  border: 0;
+  padding: 0 4px;
+  background: none;
+}
+.deckCounts {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 7px;
+  white-space: nowrap;
+}
+.deckCounts > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.deckFooter {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  height: 22px;
+  align-items: end;
+}
+.deckFooter > a {
+  margin-left: auto;
+}
+.shortage {
+  color: #c66b62;
+}
+.usage {
+  color: #d8a553;
+}
+.menu {
+  display: grid;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 70;
+  min-width: 160px;
+  box-shadow: 0 8px 24px #18201d22;
+}
+.menu button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 10px;
+}
+.menu button:hover {
+  background: #eef2eb;
+}
+.dangerText {
+  color: var(--danger);
+}
+.danger {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.dark {
+  background: linear-gradient(110deg, #0b1210, #123425);
+  color: #f2f5f1;
+  min-height: calc(100dvh - 72px);
+  padding: 0 40px 80px;
+}
+.header {
+  padding: 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.header h1 {
+  font-size: 26px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.header p {
+  font-size: 12px;
+  color: #a5b4ab;
+  margin: 0;
+}
+.headerActions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.headerActions button,
+.headerActions a {
+  background: var(--orange);
+  border: 1px solid var(--orange);
+  border-radius: 7px;
+  color: #243426;
+  font-size: 12px;
+  padding: 8px 14px;
+  height: 36px;
+}
+.headerActions .danger {
+  background: #713a37;
+  border-color: #9a5750;
+  color: #f6dedb;
+}
+.headerActions .coverMode {
+  color: var(--orange);
+  background: #153526;
+  border-color: var(--orange);
+}
+.nameInput {
+  width: 360px;
+  height: 38px;
+  background: #ffffff0d;
+  border: 1px solid #b58539;
+  color: white;
+  border-radius: 7px;
+  margin-bottom: 8px;
+}
+.region {
+  margin-bottom: 34px;
+}
+.regionTitle {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.regionTitle h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+.regionTitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #395046;
+  order: 1;
+}
+.regionTitle > span {
+  order: 2;
+}
+.regionTitle small {
+  order: 3;
+  color: #a5b4ab;
+  font-size: 11px;
+}
+.badge {
+  width: 144px;
+  padding: 5px 7px;
+  font-size: 9px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.columns {
+  display: grid;
+  grid-template-columns: repeat(8, 150px);
+  gap: 18px;
+  padding-right: 12px;
+  min-height: 230px;
+  width: max-content;
+}
+.regionScroll {
+  overflow-x: auto;
+  padding-bottom: 18px;
+}
+.columnTitle {
+  font-size: 11px;
+  color: #dce5df;
+  height: 24px;
+  display: flex;
+  justify-content: space-between;
+}
+.column {
+  width: 150px;
+  position: relative;
+}
+.stack {
+  position: relative;
+}
+.slot {
+  width: 162px;
+  height: 30px;
+  position: relative;
+  transition: height 0.12s;
+}
+.slot:last-child,
+.expanded {
+  height: 210px;
+}
+.deckImage {
+  width: 150px;
+  height: 210px;
+  aspect-ratio: 150 / 210;
+  border-radius: 6px;
+}
+.deckImage img {
+  border-radius: 6px;
+}
+.cardButton {
+  background: none;
+  border: 0;
+  padding: 0;
+  border-radius: 6px;
+  width: 150px;
+  display: block;
+  user-select: none;
+}
+.cardButton img {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.quantity {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 26px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  background: #ecb142;
+  color: #18251d;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 0 0 4px;
+  pointer-events: none;
+}
+.cardButton.selected {
+  outline: 3px solid var(--orange);
+  outline-offset: -3px;
+}
+.quick {
+  position: absolute;
+  left: 27px;
+  top: 172px;
+  width: 96px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #afbdaf66;
+  display: flex;
+  align-items: center;
+  background: #15261fe8;
+  overflow: hidden;
+  z-index: 3;
+}
+.quick button {
+  width: 47px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  color: white;
+  background: transparent;
+  border-radius: 0;
+}
+.quick > i {
+  width: 1px;
+  height: 16px;
+  background: #ffffff66;
+}
+.exception {
+  position: absolute;
+  left: 150px;
+  top: 7px;
+  width: 12px;
+  height: 22px;
+  border-radius: 0 4px 4px 0;
+  padding: 0;
+  background: #603a35;
+  border: 1px solid #c66b62;
+  font-size: 9px;
+  color: #f7c6be;
+  z-index: 5;
+}
+.exception.usage {
+  background: #5e4b2c;
+  border-color: #b79551;
+  color: #f7d9a0;
+}
+.exceptionInfo {
+  position: fixed;
+  background: #fff8f5;
+  border: 1px solid #c66b62;
+  color: #54372f;
+  border-radius: 8px;
+  width: 232px;
+  height: 92px;
+  padding: 16px 12px;
+  display: grid;
+  grid-template-columns: 42px 42px 48px 42px;
+  gap: 10px;
+  font-size: 9px;
+  z-index: 82;
+  pointer-events: none;
+}
+.exceptionInfo strong {
+  display: block;
+  font-size: 15px;
+  padding-top: 8px;
+}
+.bubble {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  gap: 14px;
+  width: 440px;
+  padding: 14px;
+  background: #f1f2ec;
+  color: #18201d;
+  box-shadow: 0 8px 26px #0004;
+  border: 1px solid #d7dbd6;
+  border-radius: 8px;
+  pointer-events: none;
+}
+.bubble h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+.bubble p {
+  font-size: 11px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  margin: 6px 0 0;
+}
+.bubble > div:last-child {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  max-height: 440px;
+  overflow: hidden;
+}
+.bubble .deckImage {
+  flex-shrink: 0;
+}
+.import {
+  margin-bottom: 28px;
+}
+.importHeader {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  height: 46px;
+  align-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: #e4ede7;
+  border-radius: 0;
+  font-size: 13px;
+}
+.importHeader::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #395046;
+  order: 1;
+}
+.importHeader span {
+  order: 2;
+}
+.importBody {
+  padding: 0 32px 14px;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+.importBody textarea {
+  width: 100%;
+  height: 256px;
+  resize: none;
+  background: #0c1913;
+  color: #d1dfd6;
+  border-color: #395046;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.importBody button {
+  height: 32px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.importBody .importRead {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #263728;
+}
+.dragGhost {
+  width: 150px;
+  pointer-events: none;
+  position: relative;
+}
+.dragGhost > span {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  color: white;
+  background: #243b2d;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.dropActive {
+  outline: 1px dashed #e9b34b;
+  background: #b7973b18;
+}
+.drawerButton {
+  position: fixed;
+  right: 0;
+  width: 38px;
+  height: 118px;
+  z-index: 45;
+  background: var(--orange);
+  color: #263728;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 8px 0 0 8px;
+  writing-mode: vertical-rl;
+  letter-spacing: 5px;
+  font-size: 13px;
+}
+.addModal {
+  width: 940px;
+  height: 702px;
+  padding: 20px;
+  background: #f1f2ec;
+}
+.addModal :global([data-modal-title]) {
+  height: 40px;
+}
+.addModal :global([data-modal-title]) h2 {
+  margin: 0;
+}
+.addModal :global([data-modal-title]) > button {
+  margin: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+.addTools {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  padding-bottom: 6px;
+  flex-shrink: 0;
+}
+.addTools input {
+  width: 310px;
+  height: 36px;
+}
+.addTools span {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.suggestions {
+  position: absolute;
+  left: 0;
+  top: 38px;
+  width: 400px;
+  display: grid;
+  z-index: 5;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 8px;
+  padding: 6px;
+}
+.suggestions button {
+  text-align: left;
+  background: white;
+  border: 0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.results {
+  overflow: auto;
+  background: white;
+  height: 580px;
+  min-height: 0;
+  flex: 1;
+}
+.resultRow {
+  height: 58px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid #edf0e9;
+  font-size: 13px;
+}
+.resultRow > span {
+  margin-right: auto;
+  font-weight: 400;
+}
+.resultRow > button {
+  width: 72px;
+  height: 34px;
+  padding: 0;
+  font-weight: 400;
+}
+.resultRow .resultName {
+  background: transparent;
+  text-align: left;
+  width: auto;
+  margin-right: auto;
+  height: auto;
+  border: 0;
+  padding: 0;
+}

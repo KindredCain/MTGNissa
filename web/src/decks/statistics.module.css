@@ -1,0 +1,178 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #07120a44;
+  backdrop-filter: blur(7px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 150px 0;
+}
+.drawer {
+  position: relative;
+  margin-left: max(38px, calc(100% - 1080px));
+  width: 1080px;
+  background: #122a1e;
+  color: #e1ebe3;
+  padding: 36px 38px;
+  border-radius: 12px 0 0 12px;
+  box-shadow: -12px 0 50px #0004;
+}
+.bookmark {
+  position: absolute;
+  left: -38px;
+  width: 38px;
+  height: 118px;
+  background: var(--orange);
+  color: #263728;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 8px 0 0 8px;
+  writing-mode: vertical-rl;
+  letter-spacing: 5px;
+  font-size: 13px;
+}
+.title {
+  font-size: 26px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.subtitle {
+  font-size: 12px;
+  color: #9db2a4;
+}
+.overview {
+  display: flex;
+  gap: 80px;
+  margin: 28px 0;
+}
+.overview span {
+  font-size: 12px;
+  color: #9db2a4;
+}
+.overview strong {
+  display: block;
+  font-size: 32px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+.colors {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.colors > div {
+  background: #ffffff06;
+  border: 1px solid #314d3b;
+  padding: 14px;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+}
+.colors > div > span {
+  font-size: 11px;
+}
+.colors small {
+  font-size: 10px;
+  color: #a8b8ad;
+}
+.bar {
+  height: 5px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: #2e4437;
+}
+.bar i {
+  display: block;
+  height: 5px;
+}
+.module {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid #324b3b;
+}
+.module h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 16px;
+}
+.moduleTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.moduleTitle h3 {
+  margin: 0;
+}
+.moduleTitle select {
+  background: #203b2b;
+  border-color: #3b5846;
+  color: #c6d6cb;
+}
+.curves {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+.curves > div {
+  min-width: 0;
+  border: 1px solid #314d3b;
+  border-radius: 8px;
+  padding: 10px 4px;
+}
+.curves h4 {
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.probability th {
+  background: #203b2b;
+  color: #c6d6cb;
+}
+.probability tbody tr {
+  background: transparent;
+}
+.probability td {
+  border-bottom: 1px solid #314d3b;
+  color: #c6d6cb;
+  padding: 10px 14px;
+}
+.condition {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  gap: 6px;
+  margin-right: auto;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+}
+.stepper input {
+  width: 40px;
+  height: 26px;
+  border: 0;
+  padding: 2px;
+  border-radius: 0;
+  text-align: center;
+  background: #203b2b;
+  color: #c6d6cb;
+  -moz-appearance: textfield;
+}
+.stepper input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.stepper button {
+  width: 24px;
+  height: 26px;
+  padding: 0;
+  border-color: #3b5846;
+  background: #203b2b;
+  color: #c6d6cb;
+}

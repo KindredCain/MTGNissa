@@ -1,0 +1,139 @@
+.nav {
+  position: sticky;
+  top: 0;
+  height: var(--nav-height);
+  z-index: 40;
+  min-width: 1280px;
+  background: #121d19;
+  border-bottom: 1px solid #2b3a34;
+  color: #f2f5f1;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 28px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  color: white;
+  letter-spacing: 1px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.logo span {
+  color: #35c98b;
+  font-size: 26px;
+  vertical-align: middle;
+}
+.nav > nav {
+  display: flex;
+  gap: 28px;
+  height: 100%;
+  align-items: center;
+}
+.nav nav a {
+  color: #9daaa4;
+}
+.nav nav a[aria-current],
+.nav nav a.active {
+  color: #f2f5f1;
+  font-weight: 650;
+}
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.right form {
+  background: #192722;
+  border-color: #2b3a34;
+  width: 260px;
+}
+.right input {
+  color: white;
+}
+.help {
+  color: #9daaa4;
+  border-radius: 50%;
+  padding: 5px;
+}
+.pageHeader {
+  height: 100px;
+  background: linear-gradient(100deg, #102119, #163c2d);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+}
+.pageHeader h1 {
+  font-size: 26px;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+.pageHeader p {
+  font-size: 12px;
+  color: #b4c2b8;
+  margin: 0;
+}
+.pageHeader nav {
+  display: flex;
+  background: #264236;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+.pageHeader nav a {
+  color: #d0dbd2;
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.pageHeader nav a[aria-current],
+.pageHeader nav a.tabActive {
+  background: var(--orange);
+  color: #17251c;
+}
+.content {
+  padding: 0 40px 40px;
+}
+.breadcrumb {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 18;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.breadcrumb + :global([data-toolbar]) {
+  top: calc(var(--nav-height) + 44px);
+}
+.primary {
+  background: var(--orange);
+  border-color: var(--orange);
+}
+.heading {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 24px 0;
+}
+.heading h1 {
+  margin: 0;
+  font-size: 26px;
+}
+.heading > :last-child {
+  margin-left: auto;
+}
+.panel {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+}

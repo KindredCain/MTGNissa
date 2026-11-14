@@ -1,0 +1,53 @@
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.table th:first-child {
+  width: 38%;
+}
+.table th:last-child {
+  width: 39%;
+}
+.table small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.table td {
+  height: 67px;
+}
+.table td > a {
+  color: var(--ink);
+}
+.clickable {
+  cursor: pointer;
+}
+.clickable:hover {
+  background: #e8eee7;
+}
+.code {
+  background: #e9ede7;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 10px;
+}
+.languages {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.languages button {
+  background: #d7f1df;
+  border: 0;
+  color: #21744b;
+  border-radius: 3px;
+  padding: 3px 5px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.languages .unavailable {
+  color: #abb4ac;
+  background: #e9ede7;
+  cursor: default;
+}
