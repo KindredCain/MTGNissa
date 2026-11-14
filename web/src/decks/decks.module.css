@@ -293,7 +293,6 @@
   user-select: none;
 }
 .cardButton img {
-  -webkit-touch-callout: none;
   user-select: none;
 }
 .quantity {

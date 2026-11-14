@@ -30,7 +30,7 @@ export function useDeckActions(deck_id: string) {
           { path: { deck_id }, idempotency_key: crypto.randomUUID() },
         );
         await client.invalidateQueries({ queryKey: ["decks", "list"] });
-        navigate(`/decks/${encodeURIComponent(copy.deck_id)}`);
+        navigate(`/decks/${encodeURIComponent(copy.deck_id)}/edit`);
       }
       if (kind === "delete") {
         await api.post("/api/v1/decks/{deck_id}/delete", undefined, {

@@ -385,7 +385,6 @@ function DraggableCard({
         style={
           {
             opacity: draggable.isDragging ? 0.3 : 1,
-            touchAction: disabled ? "auto" : "none",
           } as CSSProperties
         }
         onPointerDownCapture={onPress}

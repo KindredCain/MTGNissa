@@ -62,6 +62,10 @@ corepack pnpm check:contract
 | 卡组编辑 | `/decks/:deck_id/edit` | `DeckEdit.tsx` |
 | 操作日志 | `/operation_logs` | `OperationLogs.tsx` |
 
+## 后续移动端计划
+
+移动端不提供卡组编辑。列表中的新建、编辑、复制入口及详情页中的编辑、复制入口保留原有样式，但不响应操作、不发送新建或复制请求；直接访问 `/decks/:deck_id/edit` 时转到对应详情页。此方案为后续版本预留，本期暂不实现设备判断和路由拦截。
+
 ## 常用命令
 
 | 命令 | 用途 |
@@ -72,4 +76,4 @@ corepack pnpm check:contract
 | `corepack pnpm test:e2e` | 浏览器测试 |
 | `corepack pnpm build` | 构建，输出到 `dist/` |
 
-首次运行浏览器测试前，执行 `corepack pnpm exec playwright install chromium webkit`。
+首次运行浏览器测试前，执行 `corepack pnpm exec playwright install chromium`。

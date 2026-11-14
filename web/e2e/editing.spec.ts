@@ -20,11 +20,7 @@ test("failed filters preserve the current results and submitted URL", async ({
 });
 test("quick drag moves one copy and held drag moves the whole source stack", async ({
   page,
-}, info) => {
-  test.skip(
-    info.project.name.startsWith("mobile"),
-    "Touch pointer coverage runs separately.",
-  );
+}) => {
   await mock_api(page);
   for (const held of [false, true]) {
     await page.goto("/decks/1/edit");
@@ -51,54 +47,4 @@ test("quick drag moves one copy and held drag moves the whole source stack", asy
         .count(),
     ).toBe(0);
   }
-});
-test("touch pointer drags cards without requiring a hover state", async ({
-  page,
-}, info) => {
-  test.skip(
-    !info.project.name.startsWith("mobile"),
-    "Touch guard runs on mobile projects.",
-  );
-  await mock_api(page);
-  await page.goto("/decks/1/edit");
-  await page.getByRole("button", { name: "卡组代码", exact: false }).click();
-  const source = page.getByRole("button", { name: "测试卡牌 1，2 张" });
-  await source.scrollIntoViewIfNeeded();
-  const region = page
-    .locator("section")
-    .filter({ has: page.getByRole("heading", { name: "备牌", exact: true }) });
-  const box = (await source.boundingBox())!,
-    target = (await region.boundingBox())!;
-  await expect(source).toHaveCSS("touch-action", "none");
-  const pointer = {
-    pointerId: 7,
-    pointerType: "touch",
-    isPrimary: true,
-    button: 0,
-    buttons: 1,
-  };
-  await source.dispatchEvent("pointerdown", {
-    ...pointer,
-    clientX: box.x + 70,
-    clientY: box.y + 80,
-  });
-  await page.dispatchEvent("body", "pointermove", {
-    ...pointer,
-    clientX: box.x + 76,
-    clientY: box.y + 80,
-  });
-  await page.dispatchEvent("body", "pointermove", {
-    ...pointer,
-    clientX: target.x + 420,
-    clientY: target.y + 100,
-  });
-  await page.dispatchEvent("body", "pointerup", {
-    ...pointer,
-    buttons: 0,
-    clientX: target.x + 420,
-    clientY: target.y + 100,
-  });
-  await expect(
-    region.getByRole("button", { name: "测试卡牌 1，1 张" }),
-  ).toBeVisible();
 });

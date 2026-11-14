@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -18,7 +18,5 @@ export default defineConfig({
     { name: "desktop-1280", use: { viewport: { width: 1280, height: 720 } } },
     { name: "desktop-1366", use: { viewport: { width: 1366, height: 768 } } },
     { name: "desktop-1440", use: { viewport: { width: 1440, height: 900 } } },
-    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
-    { name: "mobile-webkit", use: { ...devices["iPhone 13"] } },
   ],
 });

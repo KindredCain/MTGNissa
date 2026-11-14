@@ -127,7 +127,7 @@ test("deck editor imports atomically, preserves names and warns before leaving",
   expect(state.save_body?.name).toBe("未保存名称");
   expect(JSON.stringify(state.save_body)).not.toContain("source_text");
 });
-test("add-card overlay and statistics close on touch and keep background locked", async ({
+test("add-card overlay and statistics keep background locked", async ({
   page,
 }) => {
   await mock_api(page);
@@ -170,9 +170,7 @@ test("logs use read-only snapshots and retain summary when closing details", asy
     page.getByRole("button", { name: "增加卡牌", exact: true }),
   ).toBeVisible();
 });
-test("all page deep links render without script crashes", async ({
-  page,
-}, info) => {
+test("all page deep links render without script crashes", async ({ page }) => {
   await mock_api(page);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -198,9 +196,5 @@ test("all page deep links render without script crashes", async ({
         .first(),
     ).toBeVisible();
   }
-  if (info.project.name.startsWith("mobile"))
-    expect(
-      await page.evaluate(() => document.body.scrollWidth),
-    ).toBeGreaterThan(1000);
   expect(errors).toEqual([]);
 });
