@@ -27,7 +27,7 @@
 
 Card DB 和 App DB 使用独立连接，可能部署在不同主机。App DB 只保存卡牌 ID 和必要的引用快照，不对 Card DB 建物理外键。写入收藏、愿望单或卡组前，由应用先从 Card DB 验证标识并取得快照，然后在 App DB 事务中写入。
 
-`card_print_ref` 保存个人数据实际引用过的印刷身份及筛选、分组、排序所需的查询副本。查询副本不作为展示数据来源；名称、费用、类型、颜色、发行日期、系列及语言显示信息和图片仍从 Card DB 批量取得。操作日志例外：写入时保存必要的名称、语言与图片快照，之后读取历史不依赖 Card DB。普通版本信息通过 `mtgnissa_card_printing -> mtgnissa_card -> 翻译或 Oracle 数据` 取得，主牌面 UUID 与语言在写入前验证。
+`card_print_ref` 保存个人数据实际引用过的印刷身份及筛选、分组、排序所需的查询副本。查询副本不作为展示数据来源；名称、费用、类型、颜色、发行日期、系列及语言显示信息和图片仍从 Card DB 批量取得。操作日志例外：写入时保存必要的名称与语言快照，之后读取历史不依赖 Card DB。普通版本信息通过 `mtgnissa_card_printing -> mtgnissa_card -> 翻译或 Oracle 数据` 取得，主牌面 UUID 与语言在写入前验证。
 
 ## 3. 关系概览
 
@@ -167,15 +167,12 @@ operation_log
 | `collector_number` | `VARCHAR(64)` | 收藏编号快照。 |
 | `lang` | `VARCHAR(8)` | 原语言代码快照；UI 统一显示为“语言”。 |
 | `lang_display_name` | `VARCHAR(64)` | 操作时从 `scryfall_language.display_name` 取得的语言展示名快照。 |
-| `front_url` | `TEXT NULL` | 操作时解析的正面卡图 URL；缺图时为 `NULL`。 |
-| `back_url` | `TEXT NULL` | 操作时解析的反面卡图 URL；无独立反面或缺图时为 `NULL`。 |
-| `has_distinct_back` | `BOOLEAN` | 快照是否具备独立正反面卡图；由应用写入，缺图或单张卡图时为 `false`。 |
 | `finish_kind` | `TINYINT UNSIGNED NULL` | 收藏操作为 1=普通、2=闪；愿望单操作为 `NULL`。 |
 | `quantity_delta` | `BIGINT NULL` | 收藏操作保存有符号变化量；使用 `BIGINT` 才能覆盖 `INT UNSIGNED` 数量列的完整变化范围。愿望单操作为 `NULL`。 |
 
-日志必须保存展示快照，不能依赖以后仍能从 Card DB 查到同一记录。写入卡牌日志时同时保存主牌面 `printing_uuid`、名称、系列、收藏编号、语言代码、语言展示名及图片快照；仅图片来源可回退，不能改写操作版本及语言。读取时直接使用快照，原版本失效时历史仍可展示，不能从当前 Card DB 补齐或改写历史，也不为日志明细行新增编辑或详情跳转。
+日志必须保存展示快照，不能依赖以后仍能从 Card DB 查到同一记录。写入卡牌日志时同时保存主牌面 `printing_uuid`、名称、系列、收藏编号、语言代码及语言展示名，不保存图片快照。读取时直接使用快照，原版本失效时历史仍可展示，不能从当前 Card DB 补齐或改写历史，也不为日志明细行新增编辑或详情跳转。
 
-HTTP 层将 `lang`、`lang_display_name` 映射为 `language`、`language_display_name`，将三个图片列组织为 `images: CardImageDTO`；不直接暴露持久化模型。收藏步进请求的 `delta` 只能为 `1` 或 `-1`，每次成功改变一个版本的一种数量桶写一条日志，不将连续点击合并成批量调整；愿望单日志的工艺和数量变化为空。
+HTTP 层将 `lang`、`lang_display_name` 映射为 `language`、`language_display_name`，不直接暴露持久化模型。收藏步进请求的 `delta` 只能为 `1` 或 `-1`，每次成功改变一个版本的一种数量桶写一条日志，不将连续点击合并成批量调整；愿望单日志的工艺和数量变化为空。
 
 ### 4.8 `operation_deck_detail`：卡组操作快照
 
@@ -246,7 +243,7 @@ options 从 App DB 取得涉及的系列、语言代码，显示信息及选项�
 
 ## 8. 迁移落地顺序
 
-Goose 建表迁移按依赖顺序各自创建一张表：`card_print_ref`、`collection_item`、`wishlist_item`、`deck`、`deck_card`、`operation_log`、`operation_card_detail`、`operation_deck_detail`。各表字段、主键和索引按第 4 节定义创建，包含主牌面 `printing_uuid` 引用、`deck.cover_oracle_id` 和卡牌日志图片快照。
+Goose 建表迁移按依赖顺序各自创建一张表：`card_print_ref`、`collection_item`、`wishlist_item`、`deck`、`deck_card`、`operation_log`、`operation_card_detail`、`operation_deck_detail`。各表字段、主键和索引按第 4 节定义创建，包含主牌面 `printing_uuid` 引用和 `deck.cover_oracle_id`。
 
 MySQL DDL 会隐式提交，因此不把多张表放进同一个版本；迁移失败后从尚未完成的版本重试，回滚按版本反序执行。结构变更通过新增迁移版本表达，不改写已执行版本；首次部署依次执行全部版本，已有部署只执行尚未应用的版本。
 

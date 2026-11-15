@@ -22,15 +22,14 @@ type operationSummaryPageResponse struct {
 }
 
 type operationCardResponse struct {
-	PrintingUUID        string             `json:"printing_uuid"`
-	Name                string             `json:"name"`
-	SetCode             string             `json:"set_code"`
-	CollectorNumber     string             `json:"collector_number"`
-	Language            string             `json:"language"`
-	LanguageDisplayName string             `json:"language_display_name"`
-	Finish              *string            `json:"finish"`
-	QuantityDelta       *int64             `json:"quantity_delta"`
-	Images              cardImagesResponse `json:"images"`
+	PrintingUUID        string  `json:"printing_uuid"`
+	Name                string  `json:"name"`
+	SetCode             string  `json:"set_code"`
+	CollectorNumber     string  `json:"collector_number"`
+	Language            string  `json:"language"`
+	LanguageDisplayName string  `json:"language_display_name"`
+	Finish              *string `json:"finish"`
+	QuantityDelta       *int64  `json:"quantity_delta"`
 }
 
 type operationDeckResponse struct {
@@ -79,8 +78,7 @@ func newOperationLogPage(page model.OperationLogPage) operationLogPageResponse {
 			card := item.Card
 			row.Kind = "card"
 			row.Card = &operationCardResponse{PrintingUUID: card.PrintingUUID, Name: card.Name, SetCode: card.SetCode, CollectorNumber: card.CollectorNumber,
-				Language: card.Language, LanguageDisplayName: card.LanguageDisplayName, Finish: card.Finish, QuantityDelta: card.QuantityDelta,
-				Images: cardImagesResponse{FrontURL: card.Images.FrontURL, BackURL: card.Images.BackURL, HasDistinctBack: card.HasDistinctBack}}
+				Language: card.Language, LanguageDisplayName: card.LanguageDisplayName, Finish: card.Finish, QuantityDelta: card.QuantityDelta}
 		} else if item.Deck != nil {
 			row.Kind = "deck"
 			row.Deck = &operationDeckResponse{ID: strconv.FormatUint(item.Deck.ID, 10), Name: item.Deck.Name}

@@ -4799,9 +4799,6 @@
               }
             ],
             "description": "For add_card/remove_card snapshots this is +1/-1 respectively. For wishlist snapshots it is null. Historical snapshots are read-only."
-          },
-          "images": {
-            "$ref": "#/components/schemas/CardImagesResponse"
           }
         },
         "required": [
@@ -4812,8 +4809,7 @@
           "language",
           "language_display_name",
           "finish",
-          "quantity_delta",
-          "images"
+          "quantity_delta"
         ]
       },
       "OperationDeckResponse": {

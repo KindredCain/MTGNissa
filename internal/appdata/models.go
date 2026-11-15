@@ -104,9 +104,6 @@ type OperationCardDetail struct {
 	CollectorNumber string      `db:"collector_number"`
 	Lang            string      `db:"lang"`
 	LangDisplayName string      `db:"lang_display_name"`
-	FrontURL        *string     `db:"front_url"`
-	BackURL         *string     `db:"back_url"`
-	HasDistinctBack bool        `db:"has_distinct_back"`
 	FinishKind      *FinishKind `db:"finish_kind"`
 	QuantityDelta   *int64      `db:"quantity_delta"`
 }

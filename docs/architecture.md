@@ -159,7 +159,7 @@ Service 决定事务包含哪些业务步骤，`store.AppTransactions` 封装开
 
 全局搜索命中、卡组代码解析、逻辑卡聚合与统计及 Oracle 查询可直接使用 `mtgnissa_card`。全局结果按 Oracle 去重，代表基础印刷取最小 `scryfall_id` 后取主牌面，仅为详情入口解析对应语言印刷 UUID。Token 直接使用 `mtgnissa_token`，不进入普通卡语言、详情、收藏、愿望单、卡组或全局搜索链路。系列以 `mtgnissa_set.code` 为业务标识，层级唯一依据 `parent_code`。
 
-图片由后端解析为 `CardImageDTO`，前端不拼接地址；语言印刷缺少图片 ID 时仅图片来源回退基础卡图，不能改变业务 UUID、语言、分组、路由或个人状态。历史日志直接读取快照，图片及文字均不以当前 Card DB 重新补齐或改写。
+图片由后端解析为 `CardImageDTO`，前端不拼接地址；语言印刷缺少图片 ID 时仅图片来源回退基础卡图，不能改变业务 UUID、语言、分组、路由或个人状态。历史日志直接读取文字及身份快照，不以当前 Card DB 重新补齐或改写，也不保存或返回卡图。
 
 卡牌加载按新字典读取九个文件：AllPrintings 标准 JSON、七个旧 NDJSON 及 Oracle Tags 标准 JSONL；旧卡文件只作翻译 UUID 桥，废弃 `rulings.jsonl` 不属于输入。加载使用固定白名单临时表和原子换表，不写 App DB，不依赖 Redis 或外部搜索引擎。
 

@@ -46,8 +46,6 @@ type OperationCardSnapshot struct {
 	LanguageDisplayName string
 	Finish              *string
 	QuantityDelta       *int64
-	Images              CardImages
-	HasDistinctBack     bool
 }
 
 // OperationDeckSnapshot preserves a deck identity and name even after deletion.

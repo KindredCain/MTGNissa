@@ -105,7 +105,7 @@ func (s *OperationLogStore) List(ctx context.Context, bounds model.OperationRang
 			var rows []operationCardRow
 			err = tx.SelectContext(ctx, &rows, `SELECT l.id,l.action_type,l.occurred_at,
  d.operation_id,d.printing_uuid,d.oracle_id,d.card_name,d.set_code,d.collector_number,
- d.lang,d.lang_display_name,d.front_url,d.back_url,d.has_distinct_back,d.finish_kind,d.quantity_delta
+ d.lang,d.lang_display_name,d.finish_kind,d.quantity_delta
  FROM operation_log l LEFT JOIN operation_card_detail d ON d.operation_id=l.id`+suffix, args...)
 			if err != nil {
 				return nil, 0, err
@@ -125,7 +125,7 @@ func (s *OperationLogStore) List(ctx context.Context, bounds model.OperationRang
 				items = append(items, model.OperationItem{ID: row.ID, Action: model.OperationActionName(uint8(row.ActionType)), OccurredAt: row.OccurredAt,
 					Card: &model.OperationCardSnapshot{PrintingUUID: row.PrintingUUID, Name: row.CardName, SetCode: row.SetCode,
 						CollectorNumber: row.CollectorNumber, Language: row.Lang, LanguageDisplayName: row.LangDisplayName,
-						Finish: finish, QuantityDelta: row.QuantityDelta, Images: model.CardImages{FrontURL: row.FrontURL, BackURL: row.BackURL}, HasDistinctBack: row.HasDistinctBack}})
+						Finish: finish, QuantityDelta: row.QuantityDelta}})
 			}
 		} else {
 			var rows []operationDeckRow
@@ -209,9 +209,8 @@ func (s *OperationLogTx) AppendCard(ctx context.Context, change model.CardChange
 	}
 	card := change.Card
 	_, err = s.tx.ExecContext(ctx, `INSERT INTO operation_card_detail
- (operation_id,printing_uuid,oracle_id,card_name,set_code,collector_number,lang,lang_display_name,front_url,back_url,has_distinct_back,finish_kind,quantity_delta)
- VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`, operationID, card.PrintingUUID, card.OracleID, card.DisplayName, card.Set.Code,
-		card.CollectorNumber, card.Language.Code, card.Language.DisplayName, card.Images.FrontURL, card.Images.BackURL,
-		card.Images.BackURL != nil, finish, delta)
+ (operation_id,printing_uuid,oracle_id,card_name,set_code,collector_number,lang,lang_display_name,finish_kind,quantity_delta)
+ VALUES (?,?,?,?,?,?,?,?,?,?)`, operationID, card.PrintingUUID, card.OracleID, card.DisplayName, card.Set.Code,
+		card.CollectorNumber, card.Language.Code, card.Language.DisplayName, finish, delta)
 	return err
 }

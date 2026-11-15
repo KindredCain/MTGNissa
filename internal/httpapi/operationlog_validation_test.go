@@ -62,6 +62,9 @@ func TestOperationLogDTOAndRoutesWithoutRequests(t *testing.T) {
 	if page.Items[0].Deck != nil || page.Items[1].Card != nil {
 		t.Fatal("snapshot discriminators contain unrelated objects")
 	}
+	if strings.Contains(string(raw), `"images"`) {
+		t.Fatal("operation snapshots must not include card images")
+	}
 	routes := make(map[string]bool)
 	for _, route := range New(Dependencies{}).Routes() {
 		if route.Method == "GET" {

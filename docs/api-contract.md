@@ -1172,8 +1172,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
         "language": "en",
         "language_display_name": "英文",
         "finish": "normal",
-        "quantity_delta": 1,
-        "images": {"front_url": "https://cards.scryfall.io/normal/front/...jpg", "back_url": null, "has_distinct_back": false}
+        "quantity_delta": 1
       }
     }
   ],
@@ -1184,7 +1183,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
 }
 ```
 
-愿望单日志的 `finish` 和 `quantity_delta` 为 `null`。卡牌日志使用 `OperationCardSnapshotDTO`，完整字段为示例中 `card` 的全部键：`printing_uuid`、`name`、`set_code`、`collector_number`、`language`、`language_display_name` 均为非空字符串，`images` 为非空的 `CardImageDTO`；普通收藏日志的 `finish` 为 `finish_kind`、`quantity_delta` 为 `1` 或 `-1`。`printing_uuid` 是操作时具体语言印刷版本的主牌面业务标识，用于识别操作版本，日志明细行保持只读，不因此新增卡牌详情跳转；图片来源单独解析并写快照，仅图片可回退，不能改写 UUID 或语言。`language_display_name` 直接记录操作时 `scryfall_language.display_name`，前端不维护语言映射。读取历史日志只使用快照，不重新查询 Card DB 来改变文字、语言、图片或版本身份；原记录失效时详情入口可以返回 `404 card_not_found`，历史日志仍可展示。卡组动作将 `kind` 设为 `deck`，以 `deck: {"deck_id":"12","name":"Superfriends"}` 代替 `card`；快照展示不依赖当前卡组仍存在。
+愿望单日志的 `finish` 和 `quantity_delta` 为 `null`。卡牌日志使用 `OperationCardSnapshotDTO`，完整字段为示例中 `card` 的全部键：`printing_uuid`、`name`、`set_code`、`collector_number`、`language`、`language_display_name` 均为非空字符串；普通收藏日志的 `finish` 为 `finish_kind`、`quantity_delta` 为 `1` 或 `-1`。`printing_uuid` 是操作时具体语言印刷版本的主牌面业务标识，用于识别操作版本，日志明细行保持只读，不因此新增卡牌详情跳转。`language_display_name` 直接记录操作时 `scryfall_language.display_name`，前端不维护语言映射。读取历史日志只使用快照，不重新查询 Card DB 来改变文字、语言或版本身份；日志不保存或返回卡图，原记录失效时历史日志仍可展示。卡组动作将 `kind` 设为 `deck`，以 `deck: {"deck_id":"12","name":"Superfriends"}` 代替 `card`；快照展示不依赖当前卡组仍存在。
 
 ## 10. 卡牌数据维护接口
 
