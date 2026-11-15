@@ -3934,19 +3934,6 @@
               "other"
             ]
           },
-          "translated_type_line": {
-            "type": "string"
-          },
-          "translated_oracle_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "owned_quantity": {
             "type": "integer",
             "minimum": 0
@@ -3961,6 +3948,14 @@
           },
           "statistics": {
             "$ref": "#/components/schemas/DeckStatisticsResponse"
+          },
+          "faces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardFaceResponse"
+            },
+            "minItems": 1,
+            "description": "All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry."
           }
         },
         "required": [
@@ -3968,12 +3963,11 @@
           "oracle_id",
           "card",
           "type_group",
-          "translated_type_line",
-          "translated_oracle_text",
           "owned_quantity",
           "other_decks_quantity",
           "other_decks_count",
-          "statistics"
+          "statistics",
+          "faces"
         ]
       },
       "DeckEditContextResponse": {
@@ -4009,19 +4003,6 @@
               "other"
             ]
           },
-          "translated_type_line": {
-            "type": "string"
-          },
-          "translated_oracle_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "owned_quantity": {
             "type": "integer",
             "minimum": 0
@@ -4036,6 +4017,14 @@
           },
           "statistics": {
             "$ref": "#/components/schemas/DeckStatisticsResponse"
+          },
+          "faces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardFaceResponse"
+            },
+            "minItems": 1,
+            "description": "All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry."
           }
         },
         "required": [
@@ -4044,12 +4033,11 @@
           "oracle_id",
           "card",
           "type_group",
-          "translated_type_line",
-          "translated_oracle_text",
           "owned_quantity",
           "other_decks_quantity",
           "other_decks_count",
-          "statistics"
+          "statistics",
+          "faces"
         ]
       },
       "DeckContextsResponse": {
@@ -4138,19 +4126,6 @@
               "other"
             ]
           },
-          "translated_type_line": {
-            "type": "string"
-          },
-          "translated_oracle_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "owned_quantity": {
             "type": "integer",
             "minimum": 0
@@ -4188,6 +4163,14 @@
                 "type": "null"
               }
             ]
+          },
+          "faces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardFaceResponse"
+            },
+            "minItems": 1,
+            "description": "All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry."
           }
         },
         "required": [
@@ -4195,8 +4178,6 @@
           "oracle_id",
           "card",
           "type_group",
-          "translated_type_line",
-          "translated_oracle_text",
           "owned_quantity",
           "other_decks_quantity",
           "other_decks_count",
@@ -4204,7 +4185,8 @@
           "quantity",
           "all_decks_quantity",
           "using_decks",
-          "exception"
+          "exception",
+          "faces"
         ]
       },
       "DeckSectionResponse": {
@@ -4515,24 +4497,18 @@
           "card": {
             "$ref": "#/components/schemas/CardSummaryResponse"
           },
-          "display_type_line": {
-            "type": "string"
-          },
-          "display_oracle_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "faces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardFaceResponse"
+            },
+            "minItems": 1,
+            "description": "All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry."
           }
         },
         "required": [
           "card",
-          "display_type_line",
-          "display_oracle_text"
+          "faces"
         ]
       },
       "DeckCandidatePageResponse": {

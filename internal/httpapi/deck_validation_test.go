@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -110,13 +111,52 @@ func TestDeckDTOsKeepEmptyArraysNullsFixedKeysAndStringIDs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, fragment := range []string{`"colors":[]`, `"produced_mana":[]`, `"type_groups":[]`, `"oracle_tags":[]`, `"translated_oracle_text":null`} {
+	for _, fragment := range []string{`"colors":[]`, `"produced_mana":[]`, `"type_groups":[]`, `"oracle_tags":[]`, `"faces":[]`} {
 		if !strings.Contains(string(raw), fragment) {
 			t.Errorf("missing %s in %s", fragment, raw)
 		}
 	}
 	if strings.Contains(string(raw), `"all_decks_quantity"`) || strings.Contains(string(raw), `"exception"`) {
 		t.Fatal("edit context included saved-state-only fields")
+	}
+}
+
+func TestDeckResponsesKeepEveryFaceWithoutFirstFaceSummaries(t *testing.T) {
+	frontText, backText := "front text", "back text"
+	frontImage, backImage := "https://example.com/front.jpg", "https://example.com/back.jpg"
+	faces := []model.CardFace{
+		{FaceIndex: 0, Name: "Front", OracleText: &frontText, ImageURL: &frontImage},
+		{FaceIndex: 1, Name: "Back", OracleText: &backText, ImageURL: &backImage},
+	}
+	context := model.DeckEditCardContext{Faces: faces}
+	detail := newDeckDetail(model.DeckDetail{Sections: []model.DeckSection{{Cards: []model.DeckCard{{Context: context}}}}})
+	items := []any{
+		newDeckContext(context),
+		deckEditContextResponse{deckContextResponse: newDeckContext(context)},
+		detail.Sections[0].Cards[0],
+		newDeckCandidates(model.DeckCandidatePage{Items: []model.DeckCandidate{{Faces: faces}}}).Items[0],
+	}
+	for _, item := range items {
+		raw, err := json.Marshal(item)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var decoded struct {
+			Faces []cardFaceResponse `json:"faces"`
+		}
+		if err := json.Unmarshal(raw, &decoded); err != nil || len(decoded.Faces) != 2 ||
+			decoded.Faces[1].Name != "Back" || decoded.Faces[1].OracleText == nil || *decoded.Faces[1].OracleText != backText ||
+			decoded.Faces[1].ImageURL == nil || *decoded.Faces[1].ImageURL != backImage {
+			t.Fatalf("incomplete face response: %s error=%v", raw, err)
+		}
+		if !reflect.DeepEqual(decoded.Faces, newCardDetail(model.CardDetail{Faces: faces}).Faces) {
+			t.Fatalf("face schema differs from card detail: %s", raw)
+		}
+		for _, field := range []string{`"translated_type_line"`, `"translated_oracle_text"`} {
+			if strings.Contains(string(raw), field) {
+				t.Fatalf("first-face summary remains: %s", raw)
+			}
+		}
 	}
 }
 

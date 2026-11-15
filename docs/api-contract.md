@@ -806,8 +806,7 @@ counted_total
             "layout": "normal",
             "images": {"front_url":"https://...","back_url":null,"has_distinct_back":false}
           },
-          "translated_type_line": "鹏洛客",
-          "translated_oracle_text": "...",
+          "faces": [{"face_index": -1, "name": "Nissa, Vital Force", "display_name": "生机妮莎", "mana_cost": "{3}{G}{G}", "type_line": "Legendary Planeswalker — Nissa", "display_type_line": "传奇鹏洛客～妮莎", "oracle_text": "...", "display_oracle_text": "...", "flavor_text": null, "display_flavor_text": null, "power": null, "toughness": null, "loyalty": "5", "image_url": "https://..."}],
           "owned_quantity": 0,
           "other_decks_quantity": 1,
           "other_decks_count": 1,
@@ -859,8 +858,7 @@ counted_total
 |  | `quantity` | integer | 否 | 当前分区编辑数量，最小为 1 |
 |  | `type_group` | `deck_card_type_group` | 否 | 后端确定的单一牌列归类；只用于决定非指挥官牌显示在哪个固定类型列 |
 |  | `card` | `CardSummaryDTO` | 否 | 自动选定的展示版本及详情入口 |
-|  | `translated_type_line` | string | 否 | 翻译缺失时回退英文 |
-|  | `translated_oracle_text` | string | 是 | 卡牌没有规则叙述时为 `null` |
+|  | `faces` | `CardFaceDTO[]` | 否 | 复用卡牌详情的完整牌面结构，按 `face_index` 排序；单面牌一项，多面牌返回全部牌面 |
 |  | `owned_quantity` | integer | 否 | 当前逻辑卡的实际拥有量，最小为 0 |
 |  | `other_decks_quantity` | integer | 否 | 排除当前 `deck_id` 后，其他卡组计数分区中该逻辑卡的已保存数量总和，最小为 0 |
 |  | `other_decks_count` | integer | 否 | 排除当前 `deck_id` 后，在计数分区使用该逻辑卡的其他卡组数，最小为 0 |
@@ -1026,7 +1024,7 @@ counted_total
 
 正式搜索只在点击“搜索”按钮或点击名称联想项时主动触发；输入变化本身只可能请求 8.10 的 `q%` 联想，不自动请求本接口。按钮不受联想最小长度限制；重复提交同一查询期间锁定按钮。关键字变化后尚未提交时继续保留上次正式结果，新查询成功后替换结果、更新计数并重置结果视口。
 
-响应使用通用游标结构，`total` 是名称条件下按 `oracle_id` 去重后的完整数量；每项为 `DeckCardCandidateDTO`，固定包含 `card: CardSummaryDTO`、`display_type_line: string` 和可空的 `display_oracle_text: string | null`。名称查询命中的语言版本只用于确定 Oracle 候选集合；展示版本仍由后端按“拥有版本 → 愿望单版本 → 最新印刷版本”选取，返回其主牌面语言印刷 `printing_uuid`。按候选主牌面英文名不区分大小写 A–Z、`oracle_id ASC` 排序并生成绑定关键字的游标；前端使用只读 `oracle_id` 判断主牌中是否已存在该卡。空 Oracle 卡不返回，也不得通过上下文、导入或保存绕过限制。
+响应使用通用游标结构，`total` 是名称条件下按 `oracle_id` 去重后的完整数量；每项为 `DeckCardCandidateDTO`，固定包含 `card: CardSummaryDTO` 和 `faces: CardFaceDTO[]`。`faces` 与卡牌详情使用同一结构，按 `face_index` 返回所选印刷的全部牌面，包含各牌面的文字及图片；单面牌返回一项。名称查询命中的语言版本只用于确定 Oracle 候选集合；展示版本仍由后端按“拥有版本 → 愿望单版本 → 最新印刷版本”选取，返回其主牌面语言印刷 `printing_uuid`。按候选主牌面英文名不区分大小写 A–Z、`oracle_id ASC` 排序并生成绑定关键字的游标；前端使用只读 `oracle_id` 判断主牌中是否已存在该卡。空 Oracle 卡不返回，也不得通过上下文、导入或保存绕过限制。
 
 候选搜索保持轻量，不返回拥有量、其他卡组占用或完整统计属性。用户首次点击某个尚无编辑上下文的候选项“加入”时，前端先以该项 `card.printing_uuid` 调用下述批量上下文接口；成功后把牌加入本地编辑态，失败时不加入并打开统一错误弹窗。已经缓存上下文的逻辑卡再次加入时不重复请求。
 
@@ -1068,8 +1066,7 @@ counted_total
         "images": {"front_url": "https://cards.scryfall.io/normal/front/...jpg", "back_url": null, "has_distinct_back": false}
       },
       "type_group": "artifact",
-      "translated_type_line": "神器",
-      "translated_oracle_text": "...",
+      "faces": [{"face_index": -1, "name": "Sol Ring", "display_name": "阳光戒", "mana_cost": "{1}", "type_line": "Artifact", "display_type_line": "神器", "oracle_text": "...", "display_oracle_text": "...", "flavor_text": null, "display_flavor_text": null, "power": null, "toughness": null, "loyalty": null, "image_url": "https://cards.scryfall.io/normal/front/...jpg"}],
       "owned_quantity": 1,
       "other_decks_quantity": 2,
       "other_decks_count": 2,
@@ -1088,7 +1085,7 @@ counted_total
 }
 ```
 
-- `requested_printing_uuid` 原样回显请求数组当前位置的标识，只用于前端关联响应；`printing_uuid` 是后端根据解析出的 `oracle_id` 按统一规则重新选择的最终展示版本，两者允许不同。`card` 是完整 `CardSummaryDTO`，其 `printing_uuid`、`oracle_id` 必须与外层最终展示字段一致；卡图选择规则与卡组详情一致。
+- `requested_printing_uuid` 原样回显请求数组当前位置的标识，只用于前端关联响应；`printing_uuid` 是后端根据解析出的 `oracle_id` 按统一规则重新选择的最终展示版本，两者允许不同。`card` 是完整 `CardSummaryDTO`，其 `printing_uuid`、`oracle_id` 必须与外层最终展示字段一致；`faces: CardFaceDTO[]` 按 `face_index` 返回该展示印刷的全部牌面，与卡牌详情及卡组详情使用相同结构；卡图选择规则与卡组详情一致。
 - 任一请求数组元素不存在或已经失效时，整个请求返回 `422 card_reference_invalid`，并以 `printing_uuids[n]` 定位原始元素，不返回部分结果。记录存在但 `oracle_id` 为空时返回 `422 deck_card_not_supported`，使用相同字段路径定位。
 - `owned_quantity` 是当前逻辑卡实际拥有量；`other_decks_quantity` 和 `other_decks_count` 明确排除当前 `deck_id`，作为前端计算当前未保存编辑态下所有卡组合计及使用卡组数的稳定基线。
 - `statistics` 直接复用 `DeckCardStatisticsDTO`；数量不属于该 DTO，前端始终使用卡牌在当前分区的 `quantity` 计权。卡组详情、代码解析后批量补齐上下文和首次增加卡牌三条路径取得的统计属性结构必须一致。

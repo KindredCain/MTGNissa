@@ -58,16 +58,15 @@ type deckStatisticsResponse struct {
 }
 
 type deckContextResponse struct {
-	PrintingUUID         string                 `json:"printing_uuid"`
-	OracleID             string                 `json:"oracle_id"`
-	Card                 cardSummaryResponse    `json:"card"`
-	TypeGroup            string                 `json:"type_group"`
-	TranslatedTypeLine   string                 `json:"translated_type_line"`
-	TranslatedOracleText *string                `json:"translated_oracle_text"`
-	OwnedQuantity        uint64                 `json:"owned_quantity"`
-	OtherDecksQuantity   uint64                 `json:"other_decks_quantity"`
-	OtherDecksCount      uint64                 `json:"other_decks_count"`
-	Statistics           deckStatisticsResponse `json:"statistics"`
+	PrintingUUID       string                 `json:"printing_uuid"`
+	OracleID           string                 `json:"oracle_id"`
+	Card               cardSummaryResponse    `json:"card"`
+	Faces              []cardFaceResponse     `json:"faces"`
+	TypeGroup          string                 `json:"type_group"`
+	OwnedQuantity      uint64                 `json:"owned_quantity"`
+	OtherDecksQuantity uint64                 `json:"other_decks_quantity"`
+	OtherDecksCount    uint64                 `json:"other_decks_count"`
+	Statistics         deckStatisticsResponse `json:"statistics"`
 }
 
 type deckEditContextResponse struct {
@@ -161,9 +160,8 @@ type deckPageResponse struct {
 }
 
 type deckCandidateResponse struct {
-	Card              cardSummaryResponse `json:"card"`
-	DisplayTypeLine   string              `json:"display_type_line"`
-	DisplayOracleText *string             `json:"display_oracle_text"`
+	Card  cardSummaryResponse `json:"card"`
+	Faces []cardFaceResponse  `json:"faces"`
 }
 
 type deckCandidatePageResponse struct {
@@ -203,8 +201,8 @@ func newDeckContext(item model.DeckEditCardContext) deckContextResponse {
 	if item.Card.OracleID != nil {
 		oracle = *item.Card.OracleID
 	}
-	return deckContextResponse{PrintingUUID: item.Card.PrintingUUID, OracleID: oracle, Card: newCardSummary(item.Card), TypeGroup: item.TypeGroup,
-		TranslatedTypeLine: item.TranslatedTypeLine, TranslatedOracleText: item.TranslatedOracleText, OwnedQuantity: item.OwnedQuantity,
+	return deckContextResponse{PrintingUUID: item.Card.PrintingUUID, OracleID: oracle, Card: newCardSummary(item.Card), Faces: newCardFaces(item.Faces), TypeGroup: item.TypeGroup,
+		OwnedQuantity:      item.OwnedQuantity,
 		OtherDecksQuantity: item.OtherDecksQuantity, OtherDecksCount: item.OtherDecksCount,
 		Statistics: deckStatisticsResponse{CMC: stats.CMC, ManaCost: stats.ManaCost, Colors: append([]string{}, stats.Colors...), ProducedMana: append([]string{}, stats.ProducedMana...), TypeGroups: append([]string{}, stats.TypeGroups...), OracleTags: append([]string{}, stats.OracleTags...), IsLand: stats.IsLand, CanBeCommander: stats.CanBeCommander}}
 }
@@ -253,7 +251,7 @@ func newDeckPage(page model.DeckPage) deckPageResponse {
 func newDeckCandidates(page model.DeckCandidatePage) deckCandidatePageResponse {
 	result := deckCandidatePageResponse{Items: []deckCandidateResponse{}, Total: page.Total, NextCursor: page.NextCursor}
 	for _, item := range page.Items {
-		result.Items = append(result.Items, deckCandidateResponse{Card: newCardSummary(item.Card), DisplayTypeLine: item.DisplayTypeLine, DisplayOracleText: item.DisplayOracleText})
+		result.Items = append(result.Items, deckCandidateResponse{Card: newCardSummary(item.Card), Faces: newCardFaces(item.Faces)})
 	}
 	return result
 }

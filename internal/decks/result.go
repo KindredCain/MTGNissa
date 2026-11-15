@@ -77,27 +77,8 @@ func hasColorlessCost(cost *string) bool {
 	return false
 }
 
-func displayText(data model.DeckCardData) (string, *string) {
-	if len(data.Faces) == 0 {
-		return "", nil
-	}
-	face := data.Faces[0]
-	typeLine := ""
-	if face.DisplayTypeLine != nil {
-		typeLine = *face.DisplayTypeLine
-	} else if face.TypeLine != nil {
-		typeLine = *face.TypeLine
-	}
-	text := face.DisplayOracleText
-	if text == nil {
-		text = face.OracleText
-	}
-	return typeLine, text
-}
-
 func editContext(data model.DeckCardData, personal model.DeckPersonal, current map[string]uint64, oracle string) model.DeckEditCardContext {
 	stats := statistics(data)
-	typeLine, text := displayText(data)
 	otherQuantity := personal.AllQuantity[oracle]
 	otherCount := personal.UsingDecks[oracle]
 	if current[oracle] > 0 {
@@ -106,7 +87,7 @@ func editContext(data model.DeckCardData, personal model.DeckPersonal, current m
 			otherCount--
 		}
 	}
-	return model.DeckEditCardContext{Card: data.Card, TypeGroup: stats.TypeGroups[0], TranslatedTypeLine: typeLine, TranslatedOracleText: text, OwnedQuantity: personal.Owned[oracle], OtherDecksQuantity: otherQuantity, OtherDecksCount: otherCount, Statistics: stats}
+	return model.DeckEditCardContext{Card: data.Card, Faces: data.Faces, TypeGroup: stats.TypeGroups[0], OwnedQuantity: personal.Owned[oracle], OtherDecksQuantity: otherQuantity, OtherDecksCount: otherCount, Statistics: stats}
 }
 
 func buildDetail(deck model.SavedDeck, data map[string]model.DeckCardData, personal model.DeckPersonal) model.DeckDetail {

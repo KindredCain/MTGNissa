@@ -90,9 +90,8 @@ type DeckExceptionTotals struct {
 type DeckEditCardContext struct {
 	RequestedPrintingUUID string
 	Card                  CardSummary
+	Faces                 []CardFace
 	TypeGroup             string
-	TranslatedTypeLine    string
-	TranslatedOracleText  *string
 	OwnedQuantity         uint64
 	OtherDecksQuantity    uint64
 	OtherDecksCount       uint64
@@ -182,9 +181,8 @@ type DeckSearchParams struct {
 
 // DeckCandidate is a lightweight display printing for one logical card search hit.
 type DeckCandidate struct {
-	Card              CardSummary
-	DisplayTypeLine   string
-	DisplayOracleText *string
+	Card  CardSummary
+	Faces []CardFace
 }
 
 // DeckCandidatePage contains Oracle-deduplicated search results.

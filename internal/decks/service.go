@@ -309,8 +309,7 @@ func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckS
 	}
 	for _, oracle := range oracles {
 		card := data[oracle]
-		typeLine, text := displayText(card)
-		page.Items = append(page.Items, model.DeckCandidate{Card: card.Card, DisplayTypeLine: typeLine, DisplayOracleText: text})
+		page.Items = append(page.Items, model.DeckCandidate{Card: card.Card, Faces: card.Faces})
 	}
 	return page, nil
 }

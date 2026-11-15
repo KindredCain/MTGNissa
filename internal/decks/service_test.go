@@ -15,6 +15,18 @@ import (
 	"mtgnissa/internal/model"
 )
 
+func TestDeckContextKeepsEveryFace(t *testing.T) {
+	front, back := "front text", "back text"
+	data := model.DeckCardData{Faces: []model.CardFace{
+		{FaceIndex: 0, Name: "Front", OracleText: &front},
+		{FaceIndex: 1, Name: "Back", OracleText: &back},
+	}}
+	context := editContext(data, model.DeckPersonal{}, nil, "oracle")
+	if !reflect.DeepEqual(context.Faces, data.Faces) {
+		t.Fatalf("incomplete deck faces: %+v", context.Faces)
+	}
+}
+
 func TestStandardCodeFollowsColorWheelOrder(t *testing.T) {
 	order := []string{
 		"W", "U", "B", "R", "G",

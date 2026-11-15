@@ -211,15 +211,20 @@ func newCardLanguages(options []model.CardLanguageOption) []cardLanguageOptionRe
 	return r
 }
 
-func newCardDetail(d model.CardDetail) cardDetailResponse {
-	r := cardDetailResponse{Card: newCardSummary(d.Card), Collection: newQuantity(d.Collection), LogicalCollection: newTotalQuantity(d.LogicalCollection),
-		Wishlist: wishlistStateResponse{Included: d.Included}, Faces: []cardFaceResponse{}, Rulings: []rulingResponse{}, Tags: []oracleTagResponse{},
-		Languages: newCardLanguages(d.Languages), OtherVersions: []cardVersionResponse{}, DeckUsage: cardDeckUsageResponse{Total: len(d.Decks), Decks: []cardDeckResponse{}}}
-	for _, f := range d.Faces {
-		r.Faces = append(r.Faces, cardFaceResponse{FaceIndex: f.FaceIndex, Name: f.Name, DisplayName: f.DisplayName, ManaCost: f.ManaCost,
+func newCardFaces(faces []model.CardFace) []cardFaceResponse {
+	r := make([]cardFaceResponse, 0, len(faces))
+	for _, f := range faces {
+		r = append(r, cardFaceResponse{FaceIndex: f.FaceIndex, Name: f.Name, DisplayName: f.DisplayName, ManaCost: f.ManaCost,
 			TypeLine: f.TypeLine, DisplayTypeLine: f.DisplayTypeLine, OracleText: f.OracleText, DisplayOracleText: f.DisplayOracleText,
 			FlavorText: f.FlavorText, DisplayFlavorText: f.DisplayFlavorText, Power: f.Power, Toughness: f.Toughness, Loyalty: f.Loyalty, ImageURL: f.ImageURL})
 	}
+	return r
+}
+
+func newCardDetail(d model.CardDetail) cardDetailResponse {
+	r := cardDetailResponse{Card: newCardSummary(d.Card), Collection: newQuantity(d.Collection), LogicalCollection: newTotalQuantity(d.LogicalCollection),
+		Wishlist: wishlistStateResponse{Included: d.Included}, Faces: newCardFaces(d.Faces), Rulings: []rulingResponse{}, Tags: []oracleTagResponse{},
+		Languages: newCardLanguages(d.Languages), OtherVersions: []cardVersionResponse{}, DeckUsage: cardDeckUsageResponse{Total: len(d.Decks), Decks: []cardDeckResponse{}}}
 	for _, v := range d.OtherVersions {
 		r.OtherVersions = append(r.OtherVersions, cardVersionResponse{Set: newCardSet(v.Set), CollectorNumber: v.CollectorNumber, ReleasedAt: cardDate(v.ReleasedAt), quantityResponse: newQuantity(v.Quantity), Languages: newCardLanguages(v.Languages)})
 	}
