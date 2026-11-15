@@ -32,47 +32,46 @@
   width: 1040px;
   height: 650px;
   max-height: calc(100dvh - 32px);
+  padding: 0;
 }
-.detail h2 {
+.detail :global([data-modal-title]) {
+  height: 64px;
+  padding: 0 20px;
+}
+.detail :global([data-modal-title]) h2 {
   font-size: 17px;
+  margin: 0;
 }
-.detailCount {
-  margin-top: -8px;
-  padding-bottom: 14px;
-  color: var(--muted);
-  font-size: 12px;
+.detail :global([data-modal-title]) > button {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+}
+.detail :global([data-pagination]) {
+  height: 86px;
+  flex-shrink: 0;
+  padding: 12px 20px 38px;
 }
 .tableArea {
   min-height: 0;
   flex: 1;
   overflow-y: auto;
+  margin: 0 20px;
+}
+.tableArea th {
+  height: 40px;
+  padding: 10px 14px;
+  line-height: 18px;
 }
 .tableArea td {
-  height: 43px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-.snapshot {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font-size: 12px;
-  border-radius: 0;
-  text-align: left;
+  height: 46px;
+  padding: 8px 14px;
+  line-height: 18px;
 }
 .positive {
   color: #277c4d;
 }
 .negative {
   color: #b94b43;
-}
-.preview {
-  position: absolute;
-  right: 40px;
-  top: 120px;
-  width: 200px;
-  box-shadow: 0 4px 24px #0005;
-}
-.preview > button {
-  width: 100%;
 }

@@ -1,13 +1,14 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   useMutation,
   useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query";
-import { api, type DTO } from "../api/client";
+import { create_idempotent_post, type DTO } from "../api/client";
 import type { WishlistPageView } from "../api/lists";
 type CollectionPage = DTO<"CollectionPageResponse">;
 export function useCardActions(printing_uuid: string) {
+  const [post_intent] = useState(create_idempotent_post);
   const client = useQueryClient(),
     gate = useRef(false);
   const mutation = useMutation({
@@ -17,10 +18,9 @@ export function useCardActions(printing_uuid: string) {
     ) => {
       const options = {
         path: { printing_uuid },
-        idempotency_key: crypto.randomUUID(),
       };
       if ("included" in intent) {
-        const state = await api.post(
+        const state = await post_intent(
           "/api/v1/cards/{printing_uuid}/wishlist_state",
           intent,
           options,
@@ -50,7 +50,7 @@ export function useCardActions(printing_uuid: string) {
           refetchType: "none",
         });
       } else {
-        const state = await api.post(
+        const state = await post_intent(
           "/api/v1/cards/{printing_uuid}/collection_adjustments",
           intent,
           options,
@@ -82,6 +82,12 @@ export function useCardActions(printing_uuid: string) {
               })),
             },
         );
+        // Keep the current list in place; refresh other views when revisited.
+        void client.invalidateQueries({
+          queryKey: ["collection", "list"],
+          type: "inactive",
+          refetchType: "none",
+        });
         client.setQueryData<DTO<"CardDetailResponse">>(
           ["card", printing_uuid],
           (current) => current && { ...current, collection: state.group },

@@ -1,4 +1,11 @@
-import { useId, useRef, useState, type CSSProperties } from "react";
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -13,7 +20,6 @@ import {
 } from "@dnd-kit/core";
 import { useNavigate } from "react-router";
 import { CardImage } from "../cards/CardImage";
-import { Mana } from "../cards/Mana";
 import {
   compare_cards,
   section_names,
@@ -26,10 +32,16 @@ import {
 import type { EditorStore } from "./store";
 import styles from "./decks.module.css";
 import { useVisualViewport } from "../ui/viewport";
+import { useHoverPreview } from "../ui/preview";
 /* dnd-kit returns refs and render state in the same hook result. Its public
  * isDragging/listeners/setNodeRef fields are intentionally read during render. */
 /* eslint-disable react-hooks/refs */
-type Preview = { card: DeckCard; rect: DOMRect; exception?: boolean };
+type Preview = {
+  card: DeckCard;
+  rect: DOMRect;
+  exception?: boolean;
+  section?: SectionType;
+};
 export function Board({
   deck,
   editor,
@@ -43,7 +55,7 @@ export function Board({
 }) {
   const [pinned, setPinned] = useState<string | null>(null),
     [hover, setHover] = useState<string | null>(null),
-    [preview, setPreview] = useState<Preview | null>(null),
+    [back_faces, setBackFaces] = useState<Record<string, boolean>>({}),
     [drag, setDrag] = useState<{
       card: DeckCard;
       section: SectionType;
@@ -53,6 +65,13 @@ export function Board({
     pressed = useRef(0),
     pinned_preview = useRef<Preview | null>(null),
     suppress_click = useRef(false);
+  const {
+    value: preview,
+    show: setPreview,
+    keep: keep_preview,
+    leave: hide_preview,
+    hide: hide_bubble,
+  } = useHoverPreview<Preview>(() => pinned_preview.current);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
@@ -206,6 +225,13 @@ export function Board({
                               card={card}
                               section={section}
                               expanded={expanded}
+                              back={!!back_faces[id]}
+                              onFlip={() =>
+                                setBackFaces((current) => ({
+                                  ...current,
+                                  [id]: !current[id],
+                                }))
+                              }
                               disabled={
                                 !editor || cover_mode || card.quantity === 0
                               }
@@ -218,7 +244,7 @@ export function Board({
                               onEnter={(rect) => {
                                 if (drag) return;
                                 setHover(id);
-                                setPreview({ card, rect });
+                                setPreview({ card, rect, section });
                               }}
                               onLeave={() => {
                                 setHover(null);
@@ -226,7 +252,7 @@ export function Board({
                                   pinned_preview.current = null;
                                   setPinned(null);
                                 }
-                                setPreview(pinned_preview.current);
+                                hide_preview();
                                 editor?.getState().remove_zero();
                               }}
                               onClick={(rect) => {
@@ -244,13 +270,22 @@ export function Board({
                                 }
                                 setPinned(pinned === id ? null : id);
                                 pinned_preview.current =
-                                  pinned === id ? null : { card, rect };
+                                  pinned === id
+                                    ? null
+                                    : { card, rect, section };
                                 setPreview(
-                                  pinned === id ? null : { card, rect },
+                                  pinned === id
+                                    ? null
+                                    : { card, rect, section },
                                 );
                               }}
                               onException={(rect) =>
-                                setPreview({ card, rect, exception: true })
+                                setPreview({
+                                  card,
+                                  rect,
+                                  section,
+                                  exception: true,
+                                })
                               }
                               editor={editor}
                               cover_mode={cover_mode}
@@ -269,7 +304,13 @@ export function Board({
       {preview &&
         !drag &&
         createPortal(
-          <PreviewBubble preview={preview} deck={deck} />,
+          <PreviewBubble
+            preview={preview}
+            deck={deck}
+            onPointerEnter={keep_preview}
+            onPointerLeave={hide_bubble}
+            back={!!back_faces[`${preview.section}:${preview.card.oracle_id}`]}
+          />,
           document.body,
         )}
       <DragOverlay dropAnimation={null}>
@@ -332,6 +373,8 @@ function DraggableCard({
   card,
   section,
   expanded,
+  back,
+  onFlip,
   disabled,
   selected,
   onPress,
@@ -345,6 +388,8 @@ function DraggableCard({
   card: DeckCard;
   section: SectionType;
   expanded: boolean;
+  back: boolean;
+  onFlip: () => void;
   disabled: boolean;
   selected: boolean;
   onPress: () => void;
@@ -356,11 +401,10 @@ function DraggableCard({
   cover_mode: boolean;
 }) {
   const draggable = useDraggable({
-      id: `${section}:${card.oracle_id}`,
-      disabled,
-      data: { card, section },
-    }),
-    [back, setBack] = useState(false);
+    id: `${section}:${card.oracle_id}`,
+    disabled,
+    data: { card, section },
+  });
   const ref = useRef<HTMLDivElement>(null),
     rect = () => ref.current!.getBoundingClientRect();
   const quick = (delta: number) =>
@@ -416,7 +460,7 @@ function DraggableCard({
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {
             event.stopPropagation();
-            setBack((value) => !value);
+            onFlip();
           }}
         >
           ↻
@@ -470,22 +514,42 @@ function DraggableCard({
 export function PreviewBubble({
   preview,
   deck,
+  variant = "text",
+  back = false,
+  in_modal = false,
+  onPointerEnter,
+  onPointerLeave,
 }: {
   preview: Preview;
   deck?: Deck;
+  variant?: "text" | "image";
+  back?: boolean;
+  in_modal?: boolean;
+  onPointerEnter?: () => void;
+  onPointerLeave?: () => void;
 }) {
-  const viewport = useVisualViewport();
+  const viewport = useVisualViewport(),
+    element = useRef<HTMLDivElement>(null),
+    [height, setHeight] = useState(340);
   const { card, rect, exception } = preview;
+  useEffect(() => {
+    const node = element.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => setHeight(node.offsetHeight));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [variant, exception]);
+  const max_height = Math.min(480, viewport.height - 16);
   const width = exception ? 232 : 440,
     left =
       rect.right + 12 + width < viewport.left + viewport.width
         ? rect.right + 12
         : Math.max(viewport.left + 8, rect.left - width - 12);
   const top = Math.max(
-    8,
+    viewport.top + 8,
     Math.min(
       rect.top,
-      viewport.top + viewport.height - (exception ? 100 : 340),
+      viewport.top + viewport.height - (exception ? 100 : height) - 8,
     ),
   );
   const current =
@@ -496,7 +560,15 @@ export function PreviewBubble({
       .reduce((sum, item) => sum + item.quantity, 0) ?? card.quantity;
   if (exception)
     return (
-      <div className={styles.exceptionInfo} style={{ left, top }}>
+      <div
+        className={styles.exceptionInfo}
+        style={{ left, top, maxHeight: viewport.height - 16 }}
+        tabIndex={0}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
+        onFocus={onPointerEnter}
+        onBlur={onPointerLeave}
+      >
         {[
           ["当前卡组", current],
           ["实际拥有", card.owned_quantity],
@@ -520,18 +592,131 @@ export function PreviewBubble({
         ))}
       </div>
     );
+  if (variant === "text")
+    return (
+      <TextPreview
+        card={card}
+        rect={rect}
+        back={back}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
+      />
+    );
   return (
-    <div className={styles.bubble} style={{ left, top }}>
+    <div
+      ref={element}
+      role="tooltip"
+      className={styles.bubble}
+      style={
+        {
+          // A centered modal's transform establishes the portal's containing block.
+          left: in_modal
+            ? `calc(50% + ${left - viewport.left - viewport.width / 2}px)`
+            : left,
+          top: in_modal
+            ? `calc(50% + ${top - viewport.top - viewport.height / 2}px)`
+            : top,
+          "--bubble-max-height": `${max_height}px`,
+        } as CSSProperties
+      }
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onFocusCapture={onPointerEnter}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          onPointerLeave?.();
+      }}
+    >
       <CardImage
         className={styles.deckImage}
         images={card.card.images}
         name={card.card.display_name}
+        back={back}
       />
+      <div className={styles.bubbleText} tabIndex={0} aria-label="卡牌说明">
+        <PreviewText card={card} back={back} />
+      </div>
+    </div>
+  );
+}
+
+function PreviewText({ card, back }: { card: DeckCard; back: boolean }) {
+  const active = card.faces[back ? 1 : 0] ?? card.faces[0],
+    faces = card.card.images.has_distinct_back
+      ? active
+        ? [active]
+        : []
+      : card.faces;
+  return faces.map((face) => (
+    <Fragment key={face.face_index}>
+      <h3>{face.display_name || face.name || card.card.display_name}</h3>
       <div>
-        <h3>{card.card.display_name}</h3>
-        <Mana cost={card.statistics.mana_cost} />
-        <p>{card.translated_type_line}</p>
-        <p>{card.translated_oracle_text}</p>
+        <small>类别</small>
+        <p>{face.display_type_line ?? face.type_line}</p>
+      </div>
+      <div>
+        <small>规则文字</small>
+        <p>{face.display_oracle_text ?? face.oracle_text}</p>
+      </div>
+    </Fragment>
+  ));
+}
+
+function TextPreview({
+  card,
+  rect,
+  back,
+  onPointerEnter,
+  onPointerLeave,
+}: {
+  card: DeckCard;
+  rect: DOMRect;
+  back: boolean;
+  onPointerEnter?: () => void;
+  onPointerLeave?: () => void;
+}) {
+  const viewport = useVisualViewport(),
+    element = useRef<HTMLDivElement>(null),
+    [height, setHeight] = useState(164);
+  useEffect(() => {
+    const node = element.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => setHeight(node.offsetHeight));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const on_left = rect.right + 12 + 300 > viewport.left + viewport.width - 8,
+    left = on_left
+      ? Math.max(viewport.left + 8, rect.left - 300 - 12)
+      : rect.right + 12,
+    top = Math.max(
+      viewport.top + 8,
+      Math.min(rect.top, viewport.top + viewport.height - height - 8),
+    );
+  return (
+    <div
+      ref={element}
+      role="tooltip"
+      className={styles.textPreview}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      onFocusCapture={onPointerEnter}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          onPointerLeave?.();
+      }}
+      data-side={on_left ? "left" : "right"}
+      style={
+        {
+          left,
+          top,
+          "--preview-max-height": `${Math.min(360, viewport.height - 16)}px`,
+          "--arrow-top": `${Math.max(16, Math.min(height - 16, rect.top + 24 - top))}px`,
+        } as CSSProperties
+      }
+    >
+      <div className={styles.previewText} tabIndex={0} aria-label="卡牌说明">
+        <PreviewText card={card} back={back} />
       </div>
     </div>
   );

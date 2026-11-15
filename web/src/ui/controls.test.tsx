@@ -1,15 +1,115 @@
 import {
   cleanup,
+  act,
   fireEvent,
   render,
+  renderHook,
   screen,
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MultiSelect } from "./controls";
+import { createMemoryRouter, RouterProvider } from "react-router";
+import { MultiSelect, useURLState } from "./controls";
 import { FeedbackProvider, validation_error } from "./feedback";
+import { useHoverPreview } from "./preview";
 afterEach(cleanup);
 describe("shared interactions", () => {
+  it("delays leaving the trigger but hides immediately when leaving the preview", () => {
+    vi.useFakeTimers();
+    try {
+      const { result, unmount } = renderHook(() =>
+        useHoverPreview<string>(() => "pinned"),
+      );
+      act(() => result.current.show("first"));
+      act(() => result.current.leave());
+      act(() => vi.advanceTimersByTime(100));
+      expect(result.current.value).toBe("first");
+      act(() => result.current.keep());
+      act(() => vi.advanceTimersByTime(200));
+      expect(result.current.value).toBe("first");
+      act(() => result.current.hide());
+      expect(result.current.value).toBeNull();
+      act(() => vi.advanceTimersByTime(200));
+      expect(result.current.value).toBeNull();
+      act(() => result.current.show("second"));
+      act(() => result.current.leave());
+      act(() => vi.advanceTimersByTime(150));
+      expect(result.current.value).toBe("pinned");
+      act(() => result.current.leave());
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  for (const navigation of ["leave", "history", "late_submit"] as const) {
+    it(`ignores pending URL updates after ${navigation}`, async () => {
+      let release!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      function Filters() {
+        const { update } = useURLState(() => pending);
+        return (
+          <button
+            onClick={() => {
+              if (navigation === "late_submit")
+                void pending.then(() => update({ q: "slow" }));
+              else update({ q: "slow" });
+            }}
+          >
+            查询
+          </button>
+        );
+      }
+      const router = createMemoryRouter(
+        [
+          { path: "/sets", element: <Filters /> },
+          { path: "/decks", element: <div>卡组列表</div> },
+        ],
+        { initialEntries: ["/sets", "/sets?q=current"], initialIndex: 1 },
+      );
+      render(<RouterProvider router={router} />);
+      fireEvent.click(screen.getByRole("button", { name: "查询" }));
+      await act(async () => {
+        if (navigation === "history") await router.navigate(-1);
+        else await router.navigate("/decks");
+      });
+      await act(async () => {
+        release();
+        await pending;
+      });
+      expect(router.state.location.pathname).toBe(
+        navigation === "history" ? "/sets" : "/decks",
+      );
+      expect(router.state.location.search).toBe("");
+      router.dispose();
+    });
+  }
+  it("commits a successful filter when navigation has not changed", async () => {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    function Filters() {
+      const { update } = useURLState(() => pending);
+      return <button onClick={() => update({ q: "accepted" })}>查询</button>;
+    }
+    const router = createMemoryRouter(
+      [{ path: "/sets", element: <Filters /> }],
+      { initialEntries: ["/sets"] },
+    );
+    render(<RouterProvider router={router} />);
+    fireEvent.click(screen.getByRole("button", { name: "查询" }));
+    expect(router.state.location.search).toBe("");
+    await act(async () => {
+      release();
+      await pending;
+    });
+    expect(router.state.location.search).toBe("?q=accepted");
+    router.dispose();
+  });
   it("applies multi-select changes once when the popover closes", async () => {
     const change = vi.fn();
     render(

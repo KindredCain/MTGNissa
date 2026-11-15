@@ -4,12 +4,14 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { api } from "../api/client";
+import { useState } from "react";
+import { api, create_idempotent_post } from "../api/client";
 import { decks_options } from "../api/lists";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardImage } from "../cards/CardImage";
 import { DeckMenu } from "../decks/actions";
 import { colors, palette, section_names } from "../decks/model";
+import { relative_time } from "../decks/time";
 import {
   LoadMore,
   SearchInput,
@@ -20,6 +22,7 @@ import {
 } from "../ui/controls";
 import styles from "../decks/decks.module.css";
 export function Component() {
+  const [post_intent] = useState(create_idempotent_post);
   const client = useQueryClient();
   const { params, update } = useURLState((next) =>
       client.fetchInfiniteQuery(decks_options(next)),
@@ -42,12 +45,7 @@ export function Component() {
     getNextPageParam: (last) => last.next_cursor ?? undefined,
   });
   const create = useMutation({
-    mutationFn: () =>
-      api.post(
-        "/api/v1/decks",
-        { name: "新建卡组" },
-        { idempotency_key: crypto.randomUUID() },
-      ),
+    mutationFn: () => post_intent("/api/v1/decks", { name: "新建卡组" }),
     onSuccess: (deck) => {
       void client.invalidateQueries({
         queryKey: ["decks", "list"],
@@ -100,11 +98,7 @@ export function Component() {
                   target = `/decks/${encodeURIComponent(deck.deck_id)}`;
                 return (
                   <article className={styles.deckCard} key={deck.deck_id}>
-                    <Link
-                      to={target}
-                      aria-label={`查看${deck.name}`}
-                      className={styles.cover}
-                    >
+                    <div className={styles.cover}>
                       {deck.cover_card ? (
                         <CardImage
                           images={deck.cover_card.images}
@@ -114,7 +108,7 @@ export function Component() {
                         <div className={styles.emptyCover}>◌</div>
                       )}
                       <time>◷ {relative_time(deck.updated_at)}</time>
-                    </Link>
+                    </div>
                     <div className={styles.colorBand}>
                       {total > 0 &&
                         colors.map(
@@ -132,8 +126,16 @@ export function Component() {
                     </div>
                     <div className={styles.deckInfo}>
                       <div className={styles.deckName}>
-                        <Link to={target}>{deck.name}</Link>
-                        <DeckMenu deck_id={deck.deck_id} />
+                        <Link
+                          to={target}
+                          aria-label={`查看${deck.name}`}
+                          className={`${styles.deckTitle} ${styles.deckLink}`}
+                        >
+                          {deck.name}
+                        </Link>
+                        <div className={styles.deckMenu}>
+                          <DeckMenu deck_id={deck.deck_id} />
+                        </div>
                       </div>
                       <div className={styles.deckCounts}>
                         <span>
@@ -161,7 +163,9 @@ export function Component() {
                               : "▱ 卡组占用"}
                           </span>
                         )}
-                        <Link to={target}>查看卡组 →</Link>
+                        <span className={styles.deckDetailLink}>
+                          查看卡组 →
+                        </span>
                       </div>
                     </div>
                   </article>
@@ -170,6 +174,10 @@ export function Component() {
           </div>
         )}
         <LoadMore
+          loaded_count={
+            list.data?.pages.flatMap((page) => page.items).length ?? 0
+          }
+          end_label="已加载全部卡组"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}
@@ -180,19 +188,4 @@ export function Component() {
       </main>
     </>
   );
-}
-function relative_time(value: string) {
-  const minutes = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 60000),
-  );
-  return minutes < 1
-    ? "刚刚"
-    : minutes < 60
-      ? `${minutes} 分钟前`
-      : minutes < 1440
-        ? `${Math.floor(minutes / 60)} 小时前`
-        : minutes < 2880
-          ? "昨天"
-          : `${Math.floor(minutes / 1440)} 天前`;
 }

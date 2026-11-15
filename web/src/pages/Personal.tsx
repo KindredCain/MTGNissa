@@ -1,3 +1,5 @@
+import { useId, useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import {
   useInfiniteQuery,
   useQuery,
@@ -20,8 +22,8 @@ import {
   MultiSelect,
   SearchInput,
   Select,
+  SortDivider,
   Skeleton,
-  Stepper,
   Toolbar,
   useURLState,
 } from "../ui/controls";
@@ -80,6 +82,7 @@ function Filters({
         onChange={(value) => update({ language: value })}
       />
       <CardFilters params={params} update={update} sort={false} />
+      <SortDivider />
       <Select
         label="排序"
         value={query.sort}
@@ -136,56 +139,68 @@ function Collection() {
         tabs
       />
       <main className={pageStyles.content}>
-        <Toolbar count={`${list.data?.pages[0].total ?? 0} 张卡牌`}>
+        <nav className={pageStyles.breadcrumb} aria-label="面包屑">
+          <Link to="/sets">卡牌中心</Link>
+          <span aria-hidden="true">›</span>
+          <Link to="/collection" aria-current="page">
+            我的卡牌
+          </Link>
+        </nav>
+        <Toolbar
+          count={
+            <span className={styles.mergeAndCount}>
+              <label className={styles.mergeToggle}>
+                合并不同系列
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={query.merge_sets}
+                  disabled={query.sort === "set"}
+                  onChange={(event) =>
+                    update({ merge_sets: String(event.target.checked) })
+                  }
+                />
+              </label>
+              <label className={styles.mergeToggle}>
+                合并不同语言
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={query.merge_languages}
+                  onChange={(event) =>
+                    update({ merge_languages: String(event.target.checked) })
+                  }
+                />
+              </label>
+              <span>
+                共 {summary?.total_quantity ?? 0} 张，
+                {summary?.distinct_cards ?? 0} 种
+              </span>
+            </span>
+          }
+        >
           <Filters options={options.data} filters={filters} />
         </Toolbar>
-        <div className={styles.group}>
-          <label>
-            <input
-              type="checkbox"
-              checked={query.merge_sets}
-              disabled={query.sort === "set"}
-              onChange={(event) =>
-                update({ merge_sets: String(event.target.checked) })
-              }
-            />
-            合并系列
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={query.merge_languages}
-              onChange={(event) =>
-                update({ merge_languages: String(event.target.checked) })
-              }
-            />
-            合并语言
-          </label>
-        </div>
         {list.isPending ? (
           <Skeleton cards />
         ) : (
           groups.map((group) => (
-            <section key={group.key}>
-              {group.set && (
-                <div className={styles.group}>
-                  {group.set.display_name}
-                  <small>
-                    {group.summary
-                      ? `${group.summary.total_quantity} 张 · ${group.summary.distinct_cards} 种`
-                      : ""}
-                  </small>
-                </div>
-              )}
+            <PersonalGroup
+              key={group.key}
+              set={group.set}
+              summary={group.summary}
+            >
               <div className={styles.grid}>
                 {group.items.map((item) => (
                   <OwnedTile key={item.card.printing_uuid} item={item} />
                 ))}
               </div>
-            </section>
+            </PersonalGroup>
           ))
         )}
         <LoadMore
+          loaded_count={data.length}
+          end_label="已加载全部卡牌"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}
@@ -202,28 +217,40 @@ function OwnedTile({ item }: { item: DTO<"CollectionItemResponse"> }) {
     merged = item.merged_sets || item.merged_languages;
   return (
     <CardTile card={item.card}>
-      <div className={styles.actions}>
-        {merged ? (
-          <div className={styles.readonly}>
-            <span>普通 {item.normal_quantity}</span>
-            <span>闪卡 {item.foil_quantity}</span>
-          </div>
-        ) : (
-          <>
-            <Stepper
-              label="普通卡"
-              value={item.normal_quantity}
-              disabled={actions.pending}
-              onChange={(delta) => actions.act({ finish: "normal", delta })}
-            />
-            <Stepper
-              label="闪卡"
-              value={item.foil_quantity}
-              disabled={actions.pending}
-              onChange={(delta) => actions.act({ finish: "foil", delta })}
-            />
-          </>
-        )}
+      <div className={styles.quantityBar}>
+        {(["normal", "foil"] as const).map((finish) => {
+          const value =
+              finish === "normal" ? item.normal_quantity : item.foil_quantity,
+            label = finish === "normal" ? "普通" : "闪卡",
+            action_label = finish === "normal" ? "普通卡" : "闪卡";
+          return (
+            <div key={finish} className={styles.quantityStep}>
+              {!merged && (
+                <button
+                  type="button"
+                  aria-label={`减少${action_label}`}
+                  disabled={actions.pending || value === 0}
+                  onClick={() => actions.act({ finish, delta: -1 })}
+                >
+                  −
+                </button>
+              )}
+              <span title={`${label} ${value}`}>
+                {label} <output>{value}</output>
+              </span>
+              {!merged && (
+                <button
+                  type="button"
+                  aria-label={`增加${action_label}`}
+                  disabled={actions.pending}
+                  onClick={() => actions.act({ finish, delta: 1 })}
+                >
+                  ＋
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </CardTile>
   );
@@ -252,6 +279,13 @@ function Wishlist() {
     <>
       <PageHeader title="愿望单" description="记录想要收藏的卡牌" tabs />
       <main className={pageStyles.content}>
+        <nav className={pageStyles.breadcrumb} aria-label="面包屑">
+          <Link to="/sets">卡牌中心</Link>
+          <span aria-hidden="true">›</span>
+          <Link to="/wishlist" aria-current="page">
+            愿望单
+          </Link>
+        </nav>
         <Toolbar count={`${list.data?.pages[0].total ?? 0} 张卡牌`}>
           <Filters options={options.data} filters={filters} />
         </Toolbar>
@@ -259,19 +293,18 @@ function Wishlist() {
           <Skeleton cards />
         ) : (
           group_items(data).map((group) => (
-            <section key={group.key}>
-              {group.set && (
-                <div className={styles.group}>{group.set.display_name}</div>
-              )}
+            <PersonalGroup key={group.key} set={group.set}>
               <div className={styles.grid}>
                 {group.items.map((item) => (
                   <WishlistTile key={item.card.printing_uuid} item={item} />
                 ))}
               </div>
-            </section>
+            </PersonalGroup>
           ))
         )}
         <LoadMore
+          loaded_count={data.length}
+          end_label="已加载全部愿望单卡牌"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}
@@ -283,17 +316,63 @@ function Wishlist() {
     </>
   );
 }
+function PersonalGroup({
+  set,
+  summary,
+  children,
+}: {
+  set: DTO<"CardSetResponse"> | null;
+  summary?: DTO<"OwnershipTotalsResponse"> | null;
+  children: ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(true),
+    content_id = useId();
+  return (
+    <section className={styles.personalGroup}>
+      {set && (
+        <button
+          type="button"
+          className={styles.groupToggle}
+          aria-expanded={expanded}
+          aria-controls={content_id}
+          onClick={() => setExpanded((value) => !value)}
+        >
+          <span>
+            {set.display_name} <small>{set.code}</small>
+          </span>
+          <span className={styles.groupDivider} aria-hidden="true" />
+          {summary && (
+            <small>
+              共 {summary.total_quantity} 张，{summary.distinct_cards} 种
+            </small>
+          )}
+          <span aria-hidden="true">{expanded ? "⌃" : "⌄"}</span>
+        </button>
+      )}
+      <div id={content_id} hidden={!!set && !expanded}>
+        {children}
+      </div>
+    </section>
+  );
+}
 function WishlistTile({ item }: { item: WishlistItemView }) {
   const actions = useCardActions(item.card.printing_uuid);
   return (
     <CardTile card={item.card}>
-      <div className={styles.actions}>
+      <div className={styles.wishlistFooter}>
+        <span title={item.card.display_name}>{item.card.display_name}</span>
         <button
+          type="button"
           className={styles.star}
+          aria-label={item.included ? "移出愿望单" : "恢复愿望单"}
+          aria-pressed={item.included}
           disabled={actions.pending}
-          onClick={() => actions.act({ included: !item.included })}
+          onClick={(event) => {
+            event.stopPropagation();
+            actions.act({ included: !item.included });
+          }}
         >
-          {item.included ? "★ 移出愿望单" : "☆ 恢复愿望单"}
+          {item.included ? "★" : "☆"}
         </button>
       </div>
     </CardTile>

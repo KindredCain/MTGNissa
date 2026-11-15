@@ -1,7 +1,13 @@
 import * as Popover from "@radix-ui/react-popover";
 import * as Checkbox from "@radix-ui/react-checkbox";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useLocation, useSearchParams } from "react-router";
 import styles from "./ui.module.css";
 export type Option = { value: string; label: string };
 export function useURLState(
@@ -11,8 +17,18 @@ export function useURLState(
   ) => Promise<unknown>,
 ) {
   const [params, setParams] = useSearchParams();
-  const revision = useRef(0);
+  const location = useLocation(),
+    active_location = useRef<typeof location | null>(location),
+    revision = useRef(0);
+  useLayoutEffect(() => {
+    active_location.current = location;
+    revision.current++;
+    return () => {
+      active_location.current = null;
+    };
+  }, [location]);
   function update(values: Record<string, string | string[] | undefined>) {
+    if (active_location.current !== location) return;
     const next = new URLSearchParams(params);
     next.delete("cursor");
     next.delete("page");
@@ -23,7 +39,7 @@ export function useURLState(
     }
     const intent = ++revision.current;
     const commit = () => {
-      if (intent === revision.current) {
+      if (intent === revision.current && active_location.current === location) {
         setParams(next);
         document.body.scrollTo({ top: 0 });
       }
@@ -206,18 +222,25 @@ export function Toolbar({
     </div>
   );
 }
+export function SortDivider() {
+  return <span className={styles.sortDivider} aria-hidden="true" />;
+}
 export function LoadMore({
   has_more,
   loading,
   load,
   root,
   failed = false,
+  loaded_count = 0,
+  end_label = "已加载全部结果",
 }: {
   has_more: boolean;
   loading: boolean;
   load: () => void;
   root?: Element | null;
   failed?: boolean;
+  loaded_count?: number;
+  end_label?: string;
 }) {
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -237,6 +260,8 @@ export function LoadMore({
         "加载中…"
       ) : has_more ? (
         <button onClick={load}>加载更多</button>
+      ) : loaded_count > 0 ? (
+        <span role="status">{end_label}</span>
       ) : null}
     </div>
   );
@@ -302,7 +327,7 @@ export function Pagination({
 }) {
   const start = Math.max(1, Math.min(page - 2, pages - 4));
   return (
-    <div className={styles.pagination}>
+    <div className={styles.pagination} data-pagination>
       <span>
         {total
           ? `第 ${(page - 1) * 10 + 1}–${Math.min(page * 10, total)} 条，共 ${total} 条`

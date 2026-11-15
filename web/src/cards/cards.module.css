@@ -4,6 +4,29 @@
   gap: 20px 35px;
   align-items: start;
 }
+.resultsMain {
+  padding-top: 22px;
+}
+.resultsMain .resultBreadcrumb {
+  min-height: 20px;
+  height: 20px;
+}
+.resultCount {
+  position: sticky;
+  top: calc(var(--nav-height) + 20px);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 24px;
+  margin: 16px 0;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 12px;
+}
+.tokenCount {
+  height: 20px;
+}
 .tile {
   width: 244px;
 }
@@ -50,39 +73,173 @@
   padding: 0;
   background: #fffdf3e8;
 }
-.actions {
-  background: #f7f8f4;
-  border-radius: 0 0 8px 8px;
-  padding: 8px;
-  display: grid;
-  gap: 7px;
-}
-.readonly {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-}
-.star {
-  width: 100%;
-  color: #ad7a23;
-}
-.group {
+.quantityBar {
+  width: 228px;
+  height: 24px;
+  margin: 4px 8px 0;
+  padding: 0 12px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  height: 46px;
-  margin: 18px 0;
-  font-size: 13px;
+  gap: 24px;
+  background: #f1f5f2;
+  border: 1px solid #d8e1db;
+  border-radius: 7px;
+  color: #365746;
 }
-.group::after {
-  content: "";
-  height: 1px;
-  background: #d5dbd2;
+.quantityStep {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   flex: 1;
+  min-width: 0;
+  position: relative;
+  font-size: 9px;
+  font-weight: 650;
 }
-.group small {
-  margin-left: auto;
+.quantityStep + .quantityStep::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 12px;
+  background: #cdd8d1;
+}
+.quantityStep > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quantityStep > button {
+  flex-shrink: 0;
+  width: 18px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #687a70;
+  font-size: 11px;
+  line-height: 1;
+}
+.wishlistFooter {
+  width: 228px;
+  height: 24px;
+  margin: 4px 8px 0;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #f1f5f2;
+  border: 1px solid #d8e1db;
+  border-radius: 6px;
+  color: #365746;
+}
+.wishlistFooter > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  font-weight: 650;
+}
+.star {
+  flex-shrink: 0;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #c58a20;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.star[aria-pressed="false"] {
   color: var(--muted);
+}
+.mergeAndCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+}
+.mergeToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #365746;
+  cursor: pointer;
+}
+.mergeToggle:has(input:disabled) {
+  opacity: 0.45;
+  cursor: default;
+}
+.mergeToggle input {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #bdcbbf;
+  border-radius: 9px;
+  background: #d8e1db;
+  cursor: inherit;
+}
+.mergeToggle input::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+}
+.mergeToggle input:checked {
+  background: var(--green);
+  border-color: var(--green);
+}
+.mergeToggle input:checked::before {
+  transform: translateX(14px);
+}
+.personalGroup + .personalGroup {
+  margin-top: 14px;
+}
+.groupToggle {
+  width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 400;
+}
+.groupToggle small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.groupToggle > span:first-child small {
+  margin-left: 8px;
+}
+.groupDivider {
+  height: 1px;
+  flex: 1;
+  background: #d5dbd2;
 }
 @media (max-width: 1439px) {
   .grid {

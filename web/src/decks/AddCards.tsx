@@ -15,10 +15,11 @@ import { api, type DTO } from "../api/client";
 import { Modal, validation_error } from "../ui/feedback";
 import { LoadMore } from "../ui/controls";
 import { context_card } from "./model";
-import { get_contexts } from "./contexts";
+import { get_contexts, type EditingSession } from "./contexts";
 import type { EditorStore } from "./store";
 import { PreviewBubble } from "./Board";
 import styles from "./decks.module.css";
+import { useHoverPreview } from "../ui/preview";
 const quantity_schema = z.object({
   quantity: z.number().int().min(1).max(4294967295),
 });
@@ -40,10 +41,12 @@ function candidate_options(
 }
 export function AddCards({
   deck_id,
+  session,
   editor,
   close,
 }: {
   deck_id: string;
+  session: EditingSession;
   editor: EditorStore;
   close: () => void;
 }) {
@@ -51,6 +54,7 @@ export function AddCards({
     search_gate = useRef(false),
     revision = useRef(0);
   const [searching, setSearching] = useState(false);
+  const [modal_root, setModalRoot] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState(""),
     [suggestion, setSuggestion] = useState(""),
     [show, setShow] = useState(false),
@@ -59,6 +63,13 @@ export function AddCards({
       revision: number;
     } | null>(null),
     [scroll_root, setScrollRoot] = useState<HTMLDivElement | null>(null);
+  const {
+    value: preview,
+    show: show_preview,
+    keep: keep_preview,
+    leave: hide_preview,
+    hide: hide_bubble,
+  } = useHoverPreview<{ item: DTO<"DeckCandidateResponse">; rect: DOMRect }>();
   const list = useInfiniteQuery({
     queryKey: ["deck_candidates", deck_id, submitted?.q, submitted?.revision],
     initialPageParam: null as string | null,
@@ -113,6 +124,7 @@ export function AddCards({
       className={styles.addModal}
       close={close}
       close_label="×"
+      content_ref={setModalRoot}
     >
       <form
         className={styles.addTools}
@@ -121,41 +133,54 @@ export function AddCards({
           submit(input);
         }}
       >
-        <input
-          value={input}
-          maxLength={512}
-          placeholder="输入卡牌名称"
-          aria-label="搜索加入卡组的卡牌"
-          autoComplete="off"
-          onChange={(event) => {
-            setInput(event.target.value);
-            setShow(true);
-          }}
-          onFocus={() => setShow(true)}
-          onBlur={() => setTimeout(() => setShow(false), 150)}
-        />
+        <div className={styles.addSearchField}>
+          <svg
+            className={styles.addSearchIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            aria-hidden="true"
+          >
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m16 16 5 5" />
+          </svg>
+          <input
+            value={input}
+            maxLength={512}
+            placeholder="输入卡牌名称"
+            aria-label="搜索加入卡组的卡牌"
+            autoComplete="off"
+            onChange={(event) => {
+              setInput(event.target.value);
+              setShow(true);
+            }}
+            onFocus={() => setShow(true)}
+            onBlur={() => setTimeout(() => setShow(false), 150)}
+          />
+          {show &&
+            enough &&
+            suggestion === input.trim() &&
+            !!suggestions.data?.items.length && (
+              <div className={styles.suggestions}>
+                {suggestions.data.items.map((item) => (
+                  <button
+                    type="button"
+                    key={item.printed_name}
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setInput(item.printed_name);
+                      submit(item.printed_name);
+                    }}
+                  >
+                    {item.printed_name}
+                  </button>
+                ))}
+              </div>
+            )}
+        </div>
         <button disabled={searching}>搜索</button>
         <span>找到 {list.data?.pages[0].total ?? 0} 张</span>
-        {show &&
-          enough &&
-          suggestion === input.trim() &&
-          !!suggestions.data?.items.length && (
-            <div className={styles.suggestions}>
-              {suggestions.data.items.map((item) => (
-                <button
-                  type="button"
-                  key={item.printed_name}
-                  onPointerDown={(event) => event.preventDefault()}
-                  onClick={() => {
-                    setInput(item.printed_name);
-                    submit(item.printed_name);
-                  }}
-                >
-                  {item.printed_name}
-                </button>
-              ))}
-            </div>
-          )}
       </form>
       <div className={styles.results} ref={setScrollRoot}>
         {list.data?.pages
@@ -165,7 +190,10 @@ export function AddCards({
               key={item.card.oracle_id ?? item.card.printing_uuid}
               item={item}
               deck_id={deck_id}
+              session={session}
               editor={editor}
+              onPreview={(rect) => show_preview({ item, rect })}
+              onLeave={hide_preview}
             />
           ))}
         <LoadMore
@@ -178,74 +206,74 @@ export function AddCards({
           }}
         />
       </div>
+      {preview &&
+        modal_root &&
+        createPortal(
+          <PreviewBubble
+            variant="image"
+            in_modal
+            onPointerEnter={keep_preview}
+            onPointerLeave={hide_bubble}
+            preview={{
+              card: candidate_preview(preview.item),
+              rect: preview.rect,
+            }}
+          />,
+          modal_root,
+        )}
     </Modal>
   );
 }
 function Candidate({
   item,
   deck_id,
+  session,
   editor,
+  onPreview,
+  onLeave,
 }: {
   item: DTO<"DeckCandidateResponse">;
   deck_id: string;
+  session: EditingSession;
   editor: EditorStore;
+  onPreview: (rect: DOMRect) => void;
+  onLeave: () => void;
 }) {
   const client = useQueryClient(),
-    gate = useRef(false),
-    [preview, setPreview] = useState<DOMRect | null>(null),
-    [show, setShow] = useState(false);
+    gate = useRef(false);
   const form = useForm({
     defaultValues: { quantity: 1 },
     resolver: zodResolver(quantity_schema),
   });
   const add = useMutation({
-    mutationFn: async (quantity: number) => {
-      const cached = client.getQueryData<DTO<"DeckContextResponse">>([
-        "deck_context",
-        deck_id,
-        "oracle",
-        item.card.oracle_id,
-      ]);
-      const context =
-        cached ??
-        (await get_contexts(client, deck_id, [item.card.printing_uuid])).get(
-          item.card.printing_uuid,
-        )!;
-      editor.getState().add(context_card(context, quantity), quantity);
-    },
+    mutationFn: (quantity: number) =>
+      session.run(async () => {
+        const cached = item.card.oracle_id
+          ? client.getQueryData<DTO<"DeckContextResponse">>(
+              session.key(deck_id, "oracle", item.card.oracle_id),
+            )
+          : undefined;
+        const context =
+          cached ??
+          (
+            await get_contexts(client, deck_id, session, [
+              item.card.printing_uuid,
+            ])
+          ).get(item.card.printing_uuid)!;
+        session.assert_active();
+        editor.getState().add(context_card(context, quantity), quantity);
+      }),
     onSettled: () => {
       gate.current = false;
     },
   });
-  const context = {
-    printing_uuid: item.card.printing_uuid,
-    oracle_id: item.card.oracle_id ?? "",
-    card: item.card,
-    type_group: "other" as const,
-    translated_type_line: item.display_type_line,
-    translated_oracle_text: item.display_oracle_text,
-    owned_quantity: 0,
-    other_decks_quantity: 0,
-    other_decks_count: 0,
-    statistics: {
-      cmc: item.card.cmc,
-      mana_cost: item.card.mana_cost,
-      colors: item.card.colors,
-      produced_mana: [],
-      type_groups: [],
-      oracle_tags: [],
-      is_land: false,
-      can_be_commander: false,
-    },
-  };
   return (
     <form
       className={styles.resultRow}
       onPointerEnter={(event) => {
-        setPreview(event.currentTarget.getBoundingClientRect());
-        setShow(true);
+        onPreview(event.currentTarget.getBoundingClientRect());
       }}
-      onPointerLeave={() => setShow(false)}
+      onPointerLeave={onLeave}
       onSubmit={(event) => {
         void form.handleSubmit(
           ({ quantity }) => {
@@ -261,13 +289,11 @@ function Candidate({
         type="button"
         className={styles.resultName}
         onFocus={(event) => {
-          setPreview(event.currentTarget.getBoundingClientRect());
-          setShow(true);
+          onPreview(event.currentTarget.getBoundingClientRect());
         }}
-        onBlur={() => setShow(false)}
+        onBlur={onLeave}
         onClick={(event) => {
-          setPreview(event.currentTarget.getBoundingClientRect());
-          setShow((current) => !current);
+          onPreview(event.currentTarget.getBoundingClientRect());
         }}
       >
         {item.card.display_name}
@@ -284,14 +310,32 @@ function Candidate({
       <button type="submit" disabled={add.isPending}>
         加入
       </button>
-      {show &&
-        preview &&
-        createPortal(
-          <PreviewBubble
-            preview={{ card: context_card(context, 1), rect: preview }}
-          />,
-          document.body,
-        )}
     </form>
+  );
+}
+
+function candidate_preview(item: DTO<"DeckCandidateResponse">) {
+  return context_card(
+    {
+      printing_uuid: item.card.printing_uuid,
+      oracle_id: item.card.oracle_id ?? "",
+      card: item.card,
+      type_group: "other",
+      faces: item.faces,
+      owned_quantity: 0,
+      other_decks_quantity: 0,
+      other_decks_count: 0,
+      statistics: {
+        cmc: item.card.cmc,
+        mana_cost: item.card.mana_cost,
+        colors: item.card.colors,
+        produced_mana: [],
+        type_groups: [],
+        oracle_tags: [],
+        is_land: false,
+        can_be_commander: false,
+      },
+    },
+    1,
   );
 }

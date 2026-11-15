@@ -3,7 +3,8 @@ import { Link } from "react-router";
 import { api } from "../api/client";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardGrid } from "../cards/CardTile";
-import { LoadMore, Skeleton, Toolbar, useURLState } from "../ui/controls";
+import { LoadMore, Skeleton, useURLState } from "../ui/controls";
+import styles from "../cards/cards.module.css";
 export function Component() {
   const { params } = useURLState(),
     q = params.get("q") ?? "";
@@ -22,8 +23,8 @@ export function Component() {
   return (
     <>
       <PageHeader title="全部卡牌" description="浏览与搜索万智牌" tabs />
-      <main className={pageStyles.content}>
-        <div className={pageStyles.breadcrumb}>
+      <main className={`${pageStyles.content} ${styles.resultsMain}`}>
+        <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
           <Link to="/sets">卡牌中心</Link>›<Link to="/sets">全部卡牌</Link>›
           <span
             title={list.data?.pages[0].executed_query ?? q}
@@ -36,9 +37,9 @@ export function Component() {
             {list.data?.pages[0].executed_query ?? q}
           </span>
         </div>
-        <Toolbar count={`${list.data?.pages[0].total ?? 0} 张卡牌`}>
-          <span>搜索：{q}</span>
-        </Toolbar>
+        <div className={styles.resultCount}>
+          {list.data?.pages[0].total ?? 0} 张卡牌
+        </div>
         {list.isPending && !!q ? (
           <Skeleton cards />
         ) : (
@@ -47,6 +48,10 @@ export function Component() {
           />
         )}
         <LoadMore
+          loaded_count={
+            list.data?.pages.flatMap((page) => page.items).length ?? 0
+          }
+          end_label="已加载全部搜索结果"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}

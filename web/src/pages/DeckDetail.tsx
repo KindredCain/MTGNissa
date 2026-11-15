@@ -7,6 +7,7 @@ import { DeleteConfirmation, useDeckActions } from "../decks/actions";
 import { Skeleton } from "../ui/controls";
 import styles from "../decks/decks.module.css";
 import { Bookmark } from "../decks/Bookmark";
+import { relative_time } from "../decks/time";
 const Statistics = lazy(() => import("../decks/Statistics"));
 export function Component() {
   const { deck_id = "" } = useParams(),
@@ -27,10 +28,11 @@ export function Component() {
       {deck ? (
         <>
           <header className={styles.header}>
-            <div>
-              <h1>{deck.name}</h1>
+            <div className={styles.detailIdentity}>
+              <h1 title={deck.name}>{deck.name}</h1>
               <p>
-                共 {deck.summary.counted_total} 张 · 收集率{" "}
+                共 {deck.summary.counted_total} 张 · 更新于{" "}
+                {relative_time(deck.updated_at)} · 收集率{" "}
                 {Math.round(deck.summary.collection_rate * 100)}%
               </p>
             </div>

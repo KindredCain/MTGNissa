@@ -84,6 +84,8 @@ function SetCards({
           <CardGrid cards={cards.slice(0, visible)} />
         )}
         <LoadMore
+          loaded_count={Math.min(visible, cards.length)}
+          end_label="已显示全部卡牌"
           has_more={visible < cards.length}
           loading={false}
           load={() => setVisible((current) => current + 30)}
@@ -106,14 +108,14 @@ function Tokens({ set_code }: { set_code: string }) {
   return (
     <>
       <PageHeader title="全部卡牌" description="浏览万智牌系列" tabs />
-      <main className={pageStyles.content}>
-        <div className={pageStyles.breadcrumb}>
+      <main className={`${pageStyles.content} ${styles.resultsMain}`}>
+        <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
           <Link to="/sets">全部卡牌</Link>›
           <span>{list.data?.set.display_name ?? set_code}</span>
         </div>
-        <Toolbar count={`${list.data?.total ?? 0} 张卡牌`}>
-          <span>Token</span>
-        </Toolbar>
+        <div className={`${styles.resultCount} ${styles.tokenCount}`}>
+          {list.data?.total ?? 0} 张卡牌
+        </div>
         {list.isPending ? (
           <Skeleton cards />
         ) : (
@@ -124,6 +126,8 @@ function Tokens({ set_code }: { set_code: string }) {
           </div>
         )}
         <LoadMore
+          loaded_count={Math.min(visible, list.data?.items.length ?? 0)}
+          end_label="已显示全部 Token"
           has_more={visible < (list.data?.items.length ?? 0)}
           loading={false}
           load={() => setVisible((current) => current + 30)}

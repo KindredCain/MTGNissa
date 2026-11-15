@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   type ReactNode,
+  type Ref,
 } from "react";
 import { ApiError } from "../api/client";
 import styles from "./ui.module.css";
@@ -31,19 +32,25 @@ export function useToast() {
 export function Modal({
   open,
   title,
+  title_meta,
   children,
   close,
   className,
   close_label = "关闭",
   dismiss = false,
+  layer = "default",
+  content_ref,
 }: {
   open: boolean;
   title: string;
+  title_meta?: ReactNode;
   children: ReactNode;
   close?: () => void;
   className?: string;
   close_label?: string;
   dismiss?: boolean;
+  layer?: "default" | "error";
+  content_ref?: Ref<HTMLDivElement>;
 }) {
   const viewport = useVisualViewport();
   return (
@@ -55,7 +62,7 @@ export function Modal({
     >
       <Dialog.Portal>
         <Dialog.Overlay
-          className={styles.overlay}
+          className={`${styles.overlay} ${layer === "error" ? styles.errorOverlay : ""}`}
           style={{
             left: viewport.left,
             top: viewport.top,
@@ -66,8 +73,9 @@ export function Modal({
           }}
         />
         <Dialog.Content
+          ref={content_ref}
           aria-describedby={undefined}
-          className={`${styles.modal} ${className ?? ""}`}
+          className={`${styles.modal} ${layer === "error" ? styles.errorModal : ""} ${className ?? ""}`}
           style={{
             left: viewport.left + viewport.width / 2,
             top: viewport.top + viewport.height / 2,
@@ -81,6 +89,9 @@ export function Modal({
         >
           <div className={styles.modalTitle} data-modal-title>
             <Dialog.Title>{title}</Dialog.Title>
+            {title_meta && (
+              <span className={styles.modalMeta}>{title_meta}</span>
+            )}
             {close && <button onClick={close}>{close_label}</button>}
           </div>
           {children}
@@ -110,7 +121,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={setToast}>
       {children}
-      <Modal open={errors.length > 0} title="操作未完成">
+      <Modal open={errors.length > 0} title="操作未完成" layer="error">
         <div className={styles.errorBody}>{errors[0]}</div>
         <div className={styles.modalFooter}>
           <button onClick={() => setErrors((current) => current.slice(1))}>

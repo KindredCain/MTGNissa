@@ -85,13 +85,19 @@ export default function Statistics({
             <Dialog.Title className={styles.title}>卡组统计</Dialog.Title>
             <p className={styles.subtitle}>统计主牌 · 备牌、备选不计入</p>
             <div className={styles.overview}>
-              <div>
-                <span>平均法术力值</span>
-                <strong>{summary.average.toFixed(2)}</strong>
+              <div className={styles.keyMetrics}>
+                <div>
+                  <span>平均法术力值</span>
+                  <strong>{summary.average.toFixed(2)}</strong>
+                </div>
+                <div>
+                  <span>地牌张数</span>
+                  <strong>{summary.lands}</strong>
+                </div>
               </div>
-              <div>
-                <span>地牌张数</span>
-                <strong>{summary.lands}</strong>
+              <div className={styles.manaOverview}>
+                <ColorDistribution label="费用颜色" values={summary.cost} />
+                <ColorDistribution label="产费颜色" values={summary.produced} />
               </div>
             </div>
             <div className={styles.colors}>
@@ -261,6 +267,7 @@ export default function Statistics({
               <Chart
                 labels={distribution_groups.map((group) => group.name)}
                 values={distribution_groups.map((group) => group.quantity)}
+                quantity_distribution
                 color={
                   distribution === "color"
                     ? distribution_groups.map((group) => group.color)
@@ -272,6 +279,40 @@ export default function Statistics({
         </Dialog.Overlay>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+function ColorDistribution({
+  label,
+  values,
+}: {
+  label: string;
+  values: number[];
+}) {
+  const total = values.reduce((sum, value) => sum + value, 0),
+    names = ["白", "蓝", "黑", "红", "绿", "无色"],
+    describe = (value: number, index: number) =>
+      `${names[index]} ${value} 点（${((value / total) * 100).toFixed(1)}%）`;
+  return (
+    <div className={styles.colorDistribution}>
+      <span>{label}</span>
+      <div
+        className={styles.colorTrack}
+        role="img"
+        aria-label={`${label}：${total > 0 ? values.map(describe).join("，") : "共 0 点"}`}
+      >
+        {total > 0 &&
+          values.map(
+            (value, index) =>
+              value > 0 && (
+                <i
+                  key={colors[index]}
+                  title={describe(value, index)}
+                  style={{ flexGrow: value, background: palette[index] }}
+                />
+              ),
+          )}
+      </div>
+    </div>
   );
 }
 function NumberStepper({
@@ -323,11 +364,13 @@ function Chart({
   values,
   color = "#FA890D",
   small = false,
+  quantity_distribution = false,
 }: {
   labels: string[];
   values: number[];
   color?: string | string[];
   small?: boolean;
+  quantity_distribution?: boolean;
 }) {
   const element = useRef<HTMLDivElement>(null),
     chart = useRef<echarts.EChartsType | null>(null);
@@ -344,12 +387,22 @@ function Chart({
     };
   }, []);
   useEffect(() => {
+    const label_width = quantity_distribution
+      ? Math.max(
+          12,
+          ((chart.current?.getWidth() ?? 1000) - 48) /
+            Math.max(1, labels.length) -
+            8,
+        )
+      : small
+        ? 12
+        : 50;
     chart.current?.setOption(
       {
         animation: false,
         grid: {
           top: small ? 20 : 28,
-          bottom: small ? 20 : 55,
+          bottom: small ? 20 : quantity_distribution ? 68 : 55,
           left: small ? 20 : 36,
           right: 12,
         },
@@ -361,8 +414,11 @@ function Chart({
             color: "#a8b8ad",
             fontSize: small ? 8 : 10,
             interval: 0,
-            width: small ? 12 : 50,
-            overflow: "truncate",
+            width: label_width,
+            overflow: quantity_distribution ? "break" : "truncate",
+            lineOverflow: "truncate",
+            height: quantity_distribution ? 36 : undefined,
+            lineHeight: quantity_distribution ? 12 : undefined,
             rotate: 0,
           },
           axisLine: { lineStyle: { color: "#3c5547" } },
@@ -380,7 +436,8 @@ function Chart({
               value,
               itemStyle: { color: Array.isArray(color) ? color[index] : color },
             })),
-            barMaxWidth: small ? 12 : 52,
+            barMaxWidth: quantity_distribution ? undefined : small ? 12 : 52,
+            barWidth: quantity_distribution ? "70%" : undefined,
             label: {
               show: true,
               position: "top",
@@ -392,7 +449,7 @@ function Chart({
       },
       true,
     );
-  }, [labels, values, color, small]);
+  }, [labels, values, color, small, quantity_distribution]);
   return (
     <div
       ref={element}

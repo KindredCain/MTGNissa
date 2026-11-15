@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import * as Popover from "@radix-ui/react-popover";
-import { api } from "../api/client";
+import { api, create_idempotent_post } from "../api/client";
 import { Modal, notify_error, useToast } from "../ui/feedback";
 import styles from "./decks.module.css";
 export function useDeckActions(deck_id: string) {
+  const [post_intent] = useState(create_idempotent_post);
   const client = useQueryClient(),
     navigate = useNavigate(),
     toast = useToast();
@@ -24,10 +25,10 @@ export function useDeckActions(deck_id: string) {
         toast("卡组代码已复制");
       }
       if (kind === "copy") {
-        const copy = await api.post(
+        const copy = await post_intent(
           "/api/v1/decks/{deck_id}/copies",
           undefined,
-          { path: { deck_id }, idempotency_key: crypto.randomUUID() },
+          { path: { deck_id } },
         );
         await client.invalidateQueries({ queryKey: ["decks", "list"] });
         navigate(`/decks/${encodeURIComponent(copy.deck_id)}/edit`);
@@ -82,7 +83,21 @@ export function DeckMenu({ deck_id }: { deck_id: string }) {
   return (
     <div onClick={(event) => event.stopPropagation()}>
       <Popover.Root open={open} onOpenChange={setOpen}>
-        <Popover.Trigger aria-label="更多卡组操作">···</Popover.Trigger>
+        <Popover.Trigger aria-label="更多卡组操作">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="5" r="1" />
+            <circle cx="12" cy="12" r="1" />
+            <circle cx="12" cy="19" r="1" />
+          </svg>
+        </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content className={styles.menu} align="end">
             <button

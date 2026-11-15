@@ -117,6 +117,12 @@
   padding: 24px;
   box-shadow: 0 16px 60px #0003;
 }
+.overlay.errorOverlay {
+  z-index: 110;
+}
+.modal.errorModal {
+  z-index: 111;
+}
 .modalTitle {
   display: flex;
   align-items: center;
@@ -130,6 +136,18 @@
 }
 .modalTitle > button {
   margin-bottom: 20px;
+}
+.modalMeta {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.sortDivider {
+  width: 1px;
+  height: 22px;
+  flex-shrink: 0;
+  background: #c6d0c8;
 }
 .errorBody {
   overflow: auto;

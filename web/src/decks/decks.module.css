@@ -4,12 +4,36 @@
   gap: 24px 16px;
 }
 .deckCard {
+  position: relative;
   width: 328px;
   height: 292px;
   background: white;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 1px 4px #18201d10;
+}
+.deckLink {
+  display: block;
+  min-width: 0;
+  text-decoration: none;
+}
+.deckLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+.deckLink:focus-visible {
+  outline: none;
+}
+.deckLink:focus-visible::after {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.deckMenu {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 3;
 }
 .cover {
   display: block;
@@ -51,22 +75,26 @@
 }
 .colorBand {
   display: flex;
-  height: 5px;
+  height: 18px;
+  padding: 3px 12px;
+  gap: 2px;
   background: white;
 }
 .colorBand span {
-  height: 5px;
+  height: 12px;
 }
 .deckInfo {
-  padding: 10px 14px 12px;
+  height: 94px;
+  padding: 8px 13px;
 }
 .deckName {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  height: 26px;
 }
-.deckName > a {
+.deckTitle {
   color: var(--ink);
   font-size: 16px;
   font-weight: 600;
@@ -74,10 +102,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.deckName button {
+.deckMenu button {
   border: 0;
-  padding: 0 4px;
-  background: none;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: #f1f4f1;
+  color: #52605a;
+  border-radius: 6px;
+  width: 28px;
+  height: 26px;
 }
 .deckCounts {
   display: flex;
@@ -87,6 +121,7 @@
   font-size: 10px;
   margin-top: 7px;
   white-space: nowrap;
+  line-height: 16px;
 }
 .deckCounts > span:first-child {
   overflow: hidden;
@@ -98,9 +133,11 @@
   font-size: 11px;
   height: 22px;
   align-items: end;
+  margin-top: 7px;
 }
-.deckFooter > a {
+.deckDetailLink {
   margin-left: auto;
+  color: var(--green);
 }
 .shortage {
   color: #c66b62;
@@ -165,8 +202,18 @@
   color: #a5b4ab;
   margin: 0;
 }
+.detailIdentity {
+  flex: 1;
+  min-width: 0;
+}
+.detailIdentity h1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .headerActions {
   display: flex;
+  flex-shrink: 0;
   gap: 8px;
   margin-left: auto;
 }
@@ -284,10 +331,12 @@
   border-radius: 6px;
 }
 .cardButton {
+  position: relative;
+  overflow: hidden;
   background: none;
   border: 0;
   padding: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   width: 150px;
   display: block;
   user-select: none;
@@ -299,14 +348,15 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 28px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   clip-path: polygon(0 0, 100% 0, 0 100%);
-  background: #ecb142;
-  color: #18251d;
+  background: #426b59;
+  color: #eff5f2;
   font-size: 10px;
-  font-weight: 700;
-  padding: 1px 0 0 4px;
+  font-weight: 900;
+  line-height: 14px;
+  padding: 3px 0 0 6px;
   pointer-events: none;
 }
 .cardButton.selected {
@@ -381,40 +431,122 @@
   font-size: 15px;
   padding-top: 8px;
 }
+.exceptionInfo {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
 .bubble {
   position: fixed;
-  z-index: 80;
+  z-index: 102;
   display: flex;
-  gap: 14px;
+  align-items: flex-start;
+  gap: 10px;
   width: 440px;
-  padding: 14px;
+  max-height: var(--bubble-max-height);
+  padding: 7px;
   background: #f1f2ec;
   color: #18201d;
   box-shadow: 0 8px 26px #0004;
   border: 1px solid #d7dbd6;
   border-radius: 8px;
-  pointer-events: none;
+  pointer-events: auto;
 }
 .bubble h3 {
-  font-size: 14px;
-  margin: 0 0 8px;
-  font-weight: 500;
+  font-size: 16px;
+  line-height: 22px;
+  margin: 0 0 10px;
+  font-weight: 700;
 }
 .bubble p {
-  font-size: 11px;
+  font-size: 12px;
   white-space: pre-wrap;
   line-height: 1.6;
-  margin: 6px 0 0;
+  margin: 0;
+}
+.bubble small {
+  display: block;
+  color: #7a8580;
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+.bubble > div:last-child > div + div {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid #d7dbd6;
 }
 .bubble > div:last-child {
   min-width: 0;
   flex: 1;
   overflow-wrap: anywhere;
-  max-height: 440px;
-  overflow: hidden;
+}
+.bubbleText {
+  max-height: calc(var(--bubble-max-height) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
 }
 .bubble .deckImage {
   flex-shrink: 0;
+}
+.textPreview {
+  position: fixed;
+  z-index: 80;
+  width: 300px;
+  max-height: var(--preview-max-height);
+  padding: 16px;
+  background: white;
+  color: #18201d;
+  border: 1px solid #d7dbd6;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px #0002;
+  pointer-events: auto;
+  overflow-wrap: anywhere;
+}
+.textPreview::before {
+  content: "";
+  position: absolute;
+  top: var(--arrow-top);
+  left: -5px;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-left: 1px solid #d7dbd6;
+  border-bottom: 1px solid #d7dbd6;
+  transform: translateY(-50%) rotate(45deg);
+}
+.textPreview[data-side="left"]::before {
+  left: auto;
+  right: -5px;
+  transform: translateY(-50%) rotate(225deg);
+}
+.textPreview h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.textPreview small {
+  display: block;
+  color: #7a8580;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+.textPreview p {
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.previewText {
+  max-height: calc(var(--preview-max-height) - 34px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+.previewText > div + div {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #edf0e9;
 }
 .import {
   margin-bottom: 28px;
@@ -505,50 +637,73 @@
 .addModal {
   width: 940px;
   height: 702px;
-  padding: 20px;
+  padding: 0;
   background: #f1f2ec;
 }
 .addModal :global([data-modal-title]) {
-  height: 40px;
+  height: 64px;
+  padding: 0 20px;
 }
 .addModal :global([data-modal-title]) h2 {
   margin: 0;
+  font-size: 20px;
 }
 .addModal :global([data-modal-title]) > button {
   margin: 0;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
 }
 .addTools {
-  height: 42px;
+  height: 58px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   position: relative;
-  padding-bottom: 6px;
+  padding: 8px 20px 12px;
   flex-shrink: 0;
 }
 .addTools input {
-  width: 310px;
-  height: 36px;
+  width: 100%;
+  height: 38px;
+  padding-left: 35px;
+}
+.addSearchField {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.addSearchIcon {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
+  color: #7a8580;
+}
+.addTools > button {
+  width: 72px;
+  height: 38px;
+  padding: 0;
+  flex-shrink: 0;
 }
 .addTools span {
-  margin-left: auto;
-  font-size: 12px;
+  flex: 0 0 60px;
+  font-size: 11px;
   color: var(--muted);
 }
 .suggestions {
   position: absolute;
   left: 0;
-  top: 38px;
-  width: 400px;
+  top: 40px;
+  width: 100%;
   display: grid;
   z-index: 5;
   border: 1px solid var(--border);
   background: white;
   border-radius: 8px;
-  padding: 6px;
+  padding: 0;
 }
 .suggestions button {
   text-align: left;
@@ -556,6 +711,8 @@
   border: 0;
   border-radius: 4px;
   font-size: 12px;
+  height: 34px;
+  padding: 0 12px;
 }
 .results {
   overflow: auto;
@@ -569,7 +726,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 20px;
   border-bottom: 1px solid #edf0e9;
   font-size: 13px;
 }

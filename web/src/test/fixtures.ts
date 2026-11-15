@@ -33,6 +33,29 @@ export function card(
     ...overrides,
   };
 }
+export function card_face(
+  index = 1,
+  overrides: Partial<DTO<"CardFaceResponse">> = {},
+): DTO<"CardFaceResponse"> {
+  const c = card(index);
+  return {
+    face_index: -1,
+    name: c.name,
+    display_name: c.display_name,
+    mana_cost: c.mana_cost,
+    type_line: "Legendary Creature",
+    display_type_line: "传奇生物",
+    oracle_text: "Rules",
+    display_oracle_text: "测试规则文字。",
+    flavor_text: null,
+    display_flavor_text: null,
+    power: "2",
+    toughness: "2",
+    loyalty: null,
+    image_url: c.images.front_url,
+    ...overrides,
+  };
+}
 export function context(
   index = 1,
   overrides: Partial<DTO<"DeckContextResponse">> = {},
@@ -43,8 +66,7 @@ export function context(
     oracle_id: c.oracle_id!,
     card: c,
     type_group: "creature",
-    translated_type_line: "传奇生物",
-    translated_oracle_text: "测试规则文字。",
+    faces: [card_face(index)],
     owned_quantity: 2,
     other_decks_quantity: 0,
     other_decks_count: 0,

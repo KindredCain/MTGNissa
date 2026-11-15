@@ -704,12 +704,12 @@ export interface components {
         | "planeswalker"
         | "land"
         | "other";
-      translated_type_line: string;
-      translated_oracle_text: string | null;
       owned_quantity: number;
       other_decks_quantity: number;
       other_decks_count: number;
       statistics: components["schemas"]["DeckStatisticsResponse"];
+      /** @description All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry. */
+      faces: components["schemas"]["CardFaceResponse"][];
     };
     DeckEditContextResponse: {
       /** Format: uuid */
@@ -729,12 +729,12 @@ export interface components {
         | "planeswalker"
         | "land"
         | "other";
-      translated_type_line: string;
-      translated_oracle_text: string | null;
       owned_quantity: number;
       other_decks_quantity: number;
       other_decks_count: number;
       statistics: components["schemas"]["DeckStatisticsResponse"];
+      /** @description All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry. */
+      faces: components["schemas"]["CardFaceResponse"][];
     };
     DeckContextsResponse: {
       /** @description Exactly one item per requested UUID, preserving request order, including requested_printing_uuid for correlation. Multiple requests may resolve to the same final representative; the final printing UUIDs are not required to be unique. */
@@ -765,8 +765,6 @@ export interface components {
         | "planeswalker"
         | "land"
         | "other";
-      translated_type_line: string;
-      translated_oracle_text: string | null;
       owned_quantity: number;
       other_decks_quantity: number;
       other_decks_count: number;
@@ -775,6 +773,8 @@ export interface components {
       all_decks_quantity: number;
       using_decks: number;
       exception: components["schemas"]["DeckExceptionResponse"] | null;
+      /** @description All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry. */
+      faces: components["schemas"]["CardFaceResponse"][];
     };
     DeckSectionResponse: {
       /** @enum {string} */
@@ -841,8 +841,8 @@ export interface components {
     };
     DeckCandidateResponse: {
       card: components["schemas"]["CardSummaryResponse"];
-      display_type_line: string;
-      display_oracle_text: string | null;
+      /** @description All faces of the selected printing in face_index order, using the same schema as card detail. Single-face cards contain one entry. */
+      faces: components["schemas"]["CardFaceResponse"][];
     };
     DeckCandidatePageResponse: {
       items: components["schemas"]["DeckCandidateResponse"][];
@@ -908,7 +908,6 @@ export interface components {
       finish: ("normal" | "foil") | null;
       /** @description For add_card/remove_card snapshots this is +1/-1 respectively. For wishlist snapshots it is null. Historical snapshots are read-only. */
       quantity_delta: (-1 | 1) | null;
-      images: components["schemas"]["CardImagesResponse"];
     };
     OperationDeckResponse: {
       deck_id: string;

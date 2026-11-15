@@ -65,7 +65,20 @@ export function Layout() {
             aria-label="查看搜索语法帮助"
             className={styles.help}
           >
-            ⓘ
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4" />
+              <path d="M12 16h.01" />
+            </svg>
           </a>
           <span>{app.data?.display_name}</span>
         </div>

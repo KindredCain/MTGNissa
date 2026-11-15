@@ -12,6 +12,7 @@ import {
   MultiSelect,
   SearchInput,
   Select,
+  SortDivider,
   Skeleton,
   Toolbar,
   useURLState,
@@ -93,6 +94,7 @@ export function Component() {
             }
             onChange={(value) => update({ set_type: value })}
           />
+          <SortDivider />
           <Select
             label="系列排序"
             value={query.sort}
@@ -183,6 +185,8 @@ export function Component() {
           </table>
         )}
         <LoadMore
+          loaded_count={items.length}
+          end_label="已加载全部系列"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}

@@ -260,8 +260,7 @@ export async function mock_api(page: Page) {
         items: [
           {
             card: card(2),
-            display_type_line: "生物",
-            display_oracle_text: "测试规则文字。",
+            faces: context(2).faces,
           },
         ],
         total: 1,
@@ -347,7 +346,6 @@ export async function mock_api(page: Page) {
               language_display_name: "英文",
               finish: "normal",
               quantity_delta: 1,
-              images: card().images,
             },
           },
         ],

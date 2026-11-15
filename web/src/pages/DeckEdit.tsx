@@ -1,4 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useBlocker,
@@ -18,7 +25,7 @@ import {
   section_types,
   type Deck,
 } from "../decks/model";
-import { get_contexts } from "../decks/contexts";
+import { EditingSession, get_contexts } from "../decks/contexts";
 import { Modal } from "../ui/feedback";
 import { Skeleton } from "../ui/controls";
 import styles from "../decks/decks.module.css";
@@ -45,7 +52,8 @@ export function Component() {
         }),
       refetchOnMount: "always",
     });
-  return query.data && !query.isFetching ? (
+  // Wait for the entry refresh, then keep the editor mounted during refetches.
+  return query.data && (query.isFetchedAfterMount || !query.isFetching) ? (
     <Editor key={deck_id} initial={query.data} />
   ) : (
     <main className={styles.dark}>
@@ -53,8 +61,11 @@ export function Component() {
     </main>
   );
 }
-function Editor({ initial }: { initial: Deck }) {
+function Editor({ initial: loaded }: { initial: Deck }) {
+  // The page owns one editing snapshot until it is saved or discarded.
+  const [initial] = useState(loaded);
   const [editor] = useState(() => create_editor(initial)),
+    [session] = useState(() => new EditingSession()),
     state = useStore(editor),
     [source, setSource] = useState(initial.source_text),
     [expanded, setExpanded] = useState(true),
@@ -77,19 +88,25 @@ function Editor({ initial }: { initial: Deck }) {
       event.returnValue = "";
     }
   });
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // Contexts belong to this editing session; seed saved cards from fresh detail.
+    session.activate();
     for (const section of initial.sections)
       for (const card of section.cards) {
         client.setQueryData(
-          ["deck_context", initial.deck_id, "printing", card.printing_uuid],
+          session.key(initial.deck_id, "printing", card.printing_uuid),
           card,
         );
         client.setQueryData(
-          ["deck_context", initial.deck_id, "oracle", card.oracle_id],
+          session.key(initial.deck_id, "oracle", card.oracle_id),
           card,
         );
       }
-  }, [client, initial]);
+    return () => {
+      session.close();
+      client.removeQueries({ queryKey: session.prefix(initial.deck_id) });
+    };
+  }, [client, initial, session]);
   useEffect(() => {
     if (!cover) return;
     const handler = (event: KeyboardEvent) => {
@@ -99,20 +116,22 @@ function Editor({ initial }: { initial: Deck }) {
     return () => document.removeEventListener("keydown", handler);
   }, [cover]);
   const save = useMutation({
-    mutationFn: async () => {
-      const name = name_schema.safeParse(state.deck.name);
-      if (!name.success)
-        throw new ApiError(
-          "validation_failed",
-          "卡组名称必须为 1–255 个字符，且不能包含换行。",
+    mutationFn: () =>
+      session.run(async () => {
+        const name = name_schema.safeParse(state.deck.name);
+        if (!name.success)
+          throw new ApiError(
+            "validation_failed",
+            "卡组名称必须为 1–255 个字符，且不能包含换行。",
+          );
+        return api.post(
+          "/api/v1/decks/{deck_id}/save",
+          { ...deck_save(state.deck), name: name.data },
+          { path: { deck_id: initial.deck_id } },
         );
-      return api.post(
-        "/api/v1/decks/{deck_id}/save",
-        { ...deck_save(state.deck), name: name.data },
-        { path: { deck_id: initial.deck_id } },
-      );
-    },
+      }),
     onSuccess: (deck) => {
+      if (!session.is_active) return;
       saving.current = true;
       state.saved();
       client.setQueryData(["decks", "detail", initial.deck_id], deck);
@@ -128,50 +147,54 @@ function Editor({ initial }: { initial: Deck }) {
     },
   });
   const parse = useMutation({
-    mutationFn: async () => {
-      if (
-        new TextEncoder().encode(source).length > 786432 ||
-        source.split(/\r\n|\r|\n/).length > 1000
-      )
-        throw new ApiError(
-          "validation_failed",
-          "卡组代码不能超过 768 KiB 或 1,000 行。",
+    mutationFn: () =>
+      session.run(async () => {
+        if (
+          new TextEncoder().encode(source).length > 786432 ||
+          source.split(/\r\n|\r|\n/).length > 1000
+        )
+          throw new ApiError(
+            "validation_failed",
+            "卡组代码不能超过 768 KiB 或 1,000 行。",
+          );
+        const parsed = await api.post(
+          "/api/v1/decks/{deck_id}/parse_code",
+          { source_text: source },
+          { path: { deck_id: initial.deck_id } },
         );
-      const parsed = await api.post(
-        "/api/v1/decks/{deck_id}/parse_code",
-        { source_text: source },
-        { path: { deck_id: initial.deck_id } },
-      );
-      const contexts = await get_contexts(
-        client,
-        initial.deck_id,
-        parsed.sections.flatMap((section) =>
-          section.cards.map((card) => card.printing_uuid),
-        ),
-      );
-      const sections = section_types.map((type) => ({
-        type,
-        quantity: 0,
-        cards: (
-          parsed.sections.find((section) => section.type === type)?.cards ?? []
-        ).map((card) => {
-          const context = contexts.get(card.printing_uuid);
-          if (!context)
-            throw new ApiError(
-              "invalid_response",
-              "卡牌上下文不完整，未修改当前卡组。",
-            );
-          if (type === "commander" && !context.statistics.can_be_commander)
-            throw new ApiError(
-              "validation_failed",
-              "指挥官必须为传奇生物、传奇鹏洛客或传奇载具。",
-            );
-          return context_card(context, card.quantity);
-        }),
-      }));
-      return { name: parsed.name, sections };
-    },
+        const contexts = await get_contexts(
+          client,
+          initial.deck_id,
+          session,
+          parsed.sections.flatMap((section) =>
+            section.cards.map((card) => card.printing_uuid),
+          ),
+        );
+        const sections = section_types.map((type) => ({
+          type,
+          quantity: 0,
+          cards: (
+            parsed.sections.find((section) => section.type === type)?.cards ??
+            []
+          ).map((card) => {
+            const context = contexts.get(card.printing_uuid);
+            if (!context)
+              throw new ApiError(
+                "invalid_response",
+                "卡牌上下文不完整，未修改当前卡组。",
+              );
+            if (type === "commander" && !context.statistics.can_be_commander)
+              throw new ApiError(
+                "validation_failed",
+                "指挥官必须为传奇生物、传奇鹏洛客或传奇载具。",
+              );
+            return context_card(context, card.quantity);
+          }),
+        }));
+        return { name: parsed.name, sections };
+      }),
     onSuccess: (result) => {
+      if (!session.is_active) return;
       editor.getState().replace(result.name, result.sections);
     },
   });
@@ -261,6 +284,7 @@ function Editor({ initial }: { initial: Deck }) {
       {add && (
         <AddCards
           deck_id={initial.deck_id}
+          session={session}
           editor={editor}
           close={() => setAdd(false)}
         />

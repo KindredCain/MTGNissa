@@ -34,7 +34,17 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
       </main>
     );
   const { card } = data,
-    face = data.faces[back ? 1 : 0] ?? data.faces[0];
+    face = data.faces[back ? 1 : 0] ?? data.faces[0],
+    text_faces = card.images.has_distinct_back
+      ? face
+        ? [face]
+        : []
+      : data.faces;
+  const demand = data.deck_usage.decks.reduce(
+      (sum, deck) => sum + deck.quantity,
+      0,
+    ),
+    shortage = Math.max(0, demand - data.logical_collection.total_quantity);
   return (
     <main className={pageStyles.content}>
       <div className={pageStyles.breadcrumb}>
@@ -108,17 +118,30 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
           </div>
           {tab === "text" && (
             <div className={styles.rules}>
-              <h3>{face?.display_type_line}</h3>
-              <p>{face?.display_oracle_text}</p>
-              {face?.display_flavor_text && (
-                <blockquote>{face.display_flavor_text}</blockquote>
-              )}
-              {face?.power !== null && face?.power !== undefined && (
-                <p className={styles.power}>
-                  {face.power} / {face.toughness}
-                </p>
-              )}
-              {face?.loyalty && <p>忠诚值：{face.loyalty}</p>}
+              {text_faces.map((text_face, index) => (
+                <article key={text_face.face_index} className={styles.ruleFace}>
+                  {index > 0 && (
+                    <>
+                      <div className={styles.title}>
+                        <h2>{text_face.display_name}</h2>
+                        <Mana cost={text_face.mana_cost} />
+                      </div>
+                      <p className={styles.english}>{text_face.name}</p>
+                    </>
+                  )}
+                  <h3>{text_face.display_type_line}</h3>
+                  <p>{text_face.display_oracle_text}</p>
+                  {text_face.display_flavor_text && (
+                    <blockquote>{text_face.display_flavor_text}</blockquote>
+                  )}
+                  {text_face.power !== null && (
+                    <p className={styles.power}>
+                      {text_face.power} / {text_face.toughness}
+                    </p>
+                  )}
+                  {text_face.loyalty && <p>忠诚值：{text_face.loyalty}</p>}
+                </article>
+              ))}
             </div>
           )}
           {tab === "rulings" && (
@@ -146,7 +169,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
           )}
         </section>
         <aside className={styles.aside}>
-          <section>
+          <section className={styles.collectionPanel}>
             <div className={styles.asideTitle}>
               <Link to="/collection">我的收藏 ↗</Link>
               <button
@@ -170,19 +193,32 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               disabled={actions.pending}
               onChange={(delta) => actions.act({ finish: "foil", delta })}
             />
+            <div className={styles.versionTotal}>
+              <span>当前版本拥有</span>
+              <strong
+                title={`普通 ${data.collection.normal_quantity}，闪卡 ${data.collection.foil_quantity}`}
+              >
+                {data.collection.normal_quantity}:
+                {data.collection.foil_quantity}*
+              </strong>
+            </div>
             <div className={styles.total}>
               该卡收藏数量{" "}
-              <strong>{data.logical_collection.total_quantity}</strong>
+              <strong>共 {data.logical_collection.total_quantity} 张</strong>
               <small>
                 普通 {data.logical_collection.normal_quantity} · 闪卡{" "}
                 {data.logical_collection.foil_quantity}
               </small>
             </div>
           </section>
-          <section>
+          <section className={styles.languagePanel}>
             <h3>
               当前系列语言 <small>{data.languages.length}</small>
             </h3>
+            <p className={styles.printing}>
+              {card.set.display_name} · {card.set.code} · #
+              {card.collector_number}
+            </p>
             <Select
               label="当前系列语言"
               value={card.printing_uuid}
@@ -195,7 +231,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               }
             />
           </section>
-          <section>
+          <section className={styles.printingPanel}>
             <h3>
               其他系列版本 <small>{data.other_versions.length}</small>
             </h3>
@@ -204,9 +240,15 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                 <article
                   key={`${version.set.code}:${version.collector_number}`}
                 >
-                  <div>
-                    {version.set.display_name} · {version.set.code} · #
-                    {version.collector_number}
+                  <div className={styles.versionHeader}>
+                    <span className={styles.versionIdentity}>
+                      <span title={version.set.display_name}>
+                        {version.set.display_name}
+                      </span>
+                      <span>
+                        · {version.set.code} · #{version.collector_number}
+                      </span>
+                    </span>
                     <small>
                       拥有 {version.normal_quantity + version.foil_quantity}
                     </small>
@@ -227,22 +269,26 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               ))}
             </div>
           </section>
+          <section className={styles.deckUsage}>
+            <h3>
+              卡组使用情况 <small>{data.deck_usage.total_decks}</small>
+            </h3>
+            <p className={styles.usageSummary}>
+              出现在 {data.deck_usage.total_decks} 个卡组 · 总需求 {demand} ·
+              跨卡组缺口 {shortage}
+            </p>
+            {data.deck_usage.decks.map((deck) => (
+              <Link
+                key={deck.deck_id}
+                to={`/decks/${encodeURIComponent(deck.deck_id)}`}
+              >
+                <span>{deck.name} ↗</span>
+                <span>{deck.quantity}</span>
+              </Link>
+            ))}
+          </section>
         </aside>
       </div>
-      <section className={styles.deckUsage}>
-        <h2>
-          卡组使用情况 <small>{data.deck_usage.total_decks}</small>
-        </h2>
-        {data.deck_usage.decks.map((deck) => (
-          <Link
-            key={deck.deck_id}
-            to={`/decks/${encodeURIComponent(deck.deck_id)}`}
-          >
-            <span>{deck.name}</span>
-            <span>{deck.quantity} 张</span>
-          </Link>
-        ))}
-      </section>
     </main>
   );
 }

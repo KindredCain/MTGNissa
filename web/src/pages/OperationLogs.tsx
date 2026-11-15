@@ -4,7 +4,6 @@ import { api, type DTO } from "../api/client";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { Modal, validation_error } from "../ui/feedback";
 import { Pagination, Skeleton, Toolbar, useURLState } from "../ui/controls";
-import { CardImage } from "../cards/CardImage";
 import styles from "./logs.module.css";
 const action_names: Record<DTO<"ActionType">, string> = {
   add_card: "增加卡牌",
@@ -16,20 +15,18 @@ const action_names: Record<DTO<"ActionType">, string> = {
   copy_deck: "复制卡组",
   modify_deck: "修改卡组",
 };
-function date_label(date: string) {
+function date_label(date: string, weekday = true) {
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
     month: "long",
     day: "numeric",
-    weekday: "long",
+    weekday: weekday ? "long" : undefined,
     timeZone: "UTC",
   }).format(new Date(`${date}T12:00:00Z`));
 }
 export function Component() {
   const { params, update } = useURLState(),
     client = useQueryClient(),
-    [start, setStart] = useState(params.get("start_date") ?? ""),
-    [end, setEnd] = useState(params.get("end_date") ?? ""),
     [pending, setPending] = useState(false),
     [detail, setDetail] = useState<DTO<"OperationSummaryResponse"> | null>(
       null,
@@ -79,31 +76,13 @@ export function Component() {
       <PageHeader title="操作日志" description="查看卡牌与卡组的操作记录" />
       <main className={pageStyles.content}>
         <Toolbar count={`共 ${list.data?.total_items ?? 0} 条汇总`}>
-          <form
-            className={styles.dates}
-            onSubmit={(event) => {
-              event.preventDefault();
-              void change(start, end, 1);
-            }}
-          >
-            <label>
-              开始日期
-              <input
-                type="date"
-                value={start}
-                onChange={(event) => setStart(event.target.value)}
-              />
-            </label>
-            <label>
-              结束日期
-              <input
-                type="date"
-                value={end}
-                onChange={(event) => setEnd(event.target.value)}
-              />
-            </label>
-            <button disabled={pending}>查询</button>
-          </form>
+          <DateFilter
+            key={JSON.stringify([query.start_date, query.end_date])}
+            start_date={query.start_date ?? ""}
+            end_date={query.end_date ?? ""}
+            pending={pending}
+            onSubmit={(start, end) => void change(start, end, 1)}
+          />
         </Toolbar>
         <table>
           <thead>
@@ -145,6 +124,47 @@ export function Component() {
     </>
   );
 }
+function DateFilter({
+  start_date,
+  end_date,
+  pending,
+  onSubmit,
+}: {
+  start_date: string;
+  end_date: string;
+  pending: boolean;
+  onSubmit: (start: string, end: string) => void;
+}) {
+  const [start, setStart] = useState(start_date),
+    [end, setEnd] = useState(end_date);
+  return (
+    <form
+      className={styles.dates}
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit(start, end);
+      }}
+    >
+      <label>
+        开始日期
+        <input
+          type="date"
+          value={start}
+          onChange={(event) => setStart(event.target.value)}
+        />
+      </label>
+      <label>
+        结束日期
+        <input
+          type="date"
+          value={end}
+          onChange={(event) => setEnd(event.target.value)}
+        />
+      </label>
+      <button disabled={pending}>查询</button>
+    </form>
+  );
+}
 function Detail({
   summary,
   close,
@@ -154,8 +174,7 @@ function Detail({
 }) {
   const client = useQueryClient(),
     [page, setPage] = useState(1),
-    [pending, setPending] = useState(false),
-    [preview, setPreview] = useState<DTO<"OperationCardResponse"> | null>(null);
+    [pending, setPending] = useState(false);
   const query = {
     operation_date: summary.operation_date,
     action_type: summary.action_type,
@@ -198,14 +217,12 @@ function Detail({
   return (
     <Modal
       open
-      title={`${date_label(summary.operation_date)} · ${action_names[summary.action_type]}`}
+      title={`${date_label(summary.operation_date, false)} · ${action_names[summary.action_type]}`}
+      title_meta={`共 ${list.data?.total_items ?? 0} 条操作`}
       className={styles.detail}
       close={pending || list.isPending ? undefined : close}
       close_label="×"
     >
-      <div className={styles.detailCount}>
-        共 {list.data?.total_items ?? 0} 次操作
-      </div>
       <div className={styles.tableArea}>
         <table>
           <thead>
@@ -229,24 +246,7 @@ function Detail({
                   }).format(new Date(item.occurred_at))}
                 </td>
                 <td>
-                  {item.kind === "card" ? (
-                    <button
-                      className={styles.snapshot}
-                      onPointerEnter={() => setPreview(item.card ?? null)}
-                      onPointerLeave={() => setPreview(null)}
-                      onFocus={() => setPreview(item.card ?? null)}
-                      onBlur={() => setPreview(null)}
-                      onClick={() =>
-                        setPreview((current) =>
-                          current ? null : (item.card ?? null),
-                        )
-                      }
-                    >
-                      {item.card.name}
-                    </button>
-                  ) : (
-                    item.deck.name
-                  )}
+                  {item.kind === "card" ? item.card.name : item.deck.name}
                 </td>
                 {item.kind === "card" && (
                   <td>
@@ -284,24 +284,6 @@ function Detail({
           void change(value);
         }}
       />
-      {preview && (
-        <div className={styles.preview}>
-          <SnapshotImage card={preview} />
-        </div>
-      )}
     </Modal>
-  );
-}
-function SnapshotImage({ card }: { card: DTO<"OperationCardResponse"> }) {
-  const [back, setBack] = useState(false);
-  return (
-    <>
-      <CardImage images={card.images} name={card.name} back={back} />
-      {card.images.has_distinct_back && (
-        <button onClick={() => setBack((value) => !value)}>
-          {back ? "查看正面" : "查看反面"}
-        </button>
-      )}
-    </>
   );
 }

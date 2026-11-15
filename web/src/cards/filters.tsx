@@ -1,4 +1,4 @@
-import { MultiSelect, Select } from "../ui/controls";
+import { MultiSelect, Select, SortDivider } from "../ui/controls";
 import {
   color_options,
   mana_options,
@@ -30,12 +30,15 @@ export function CardFilters({
         />
       ))}
       {sort && (
-        <Select
-          label="排序"
-          value={params.get("sort") ?? "collector_number"}
-          options={local_sort}
-          onChange={(value) => update({ sort: value })}
-        />
+        <>
+          <SortDivider />
+          <Select
+            label="排序"
+            value={params.get("sort") ?? "collector_number"}
+            options={local_sort}
+            onChange={(value) => update({ sort: value })}
+          />
+        </>
       )}
     </>
   );

@@ -128,3 +128,24 @@ export const api = {
     >;
   },
 };
+
+// Keep the key for a failed intent; a confirmed success or changed payload starts a new intent.
+export function create_idempotent_post() {
+  let pending: { fingerprint: string; key: string } | undefined;
+  return async <P extends PostPath>(
+    path: P,
+    body: Body<Operation<P, "post">> | undefined,
+    options: Omit<Options, "idempotency_key"> = {},
+  ): Promise<Payload<Operation<P, "post">>> => {
+    const fingerprint = JSON.stringify([path, options.path, body]);
+    if (!pending || pending.fingerprint !== fingerprint)
+      pending = { fingerprint, key: crypto.randomUUID() };
+    const intent = pending;
+    const data = await api.post(path, body, {
+      ...options,
+      idempotency_key: intent.key,
+    });
+    if (pending === intent) pending = undefined;
+    return data;
+  };
+}

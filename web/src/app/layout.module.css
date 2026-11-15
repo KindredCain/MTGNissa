@@ -60,6 +60,15 @@
   color: #9daaa4;
   border-radius: 50%;
   padding: 5px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.help:hover,
+.help:focus-visible {
+  background: #192722;
 }
 .pageHeader {
   height: 100px;
