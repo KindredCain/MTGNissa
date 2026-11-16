@@ -42,6 +42,7 @@ type Preview = {
   exception?: boolean;
   section?: SectionType;
 };
+type Selection = { id: string; fixed: boolean };
 export function Board({
   deck,
   editor,
@@ -53,8 +54,7 @@ export function Board({
   cover_mode?: boolean;
   on_cover?: () => void;
 }) {
-  const [pinned, setPinned] = useState<string | null>(null),
-    [hover, setHover] = useState<string | null>(null),
+  const [selection, setSelection] = useState<Selection | null>(null),
     [back_faces, setBackFaces] = useState<Record<string, boolean>>({}),
     [drag, setDrag] = useState<{
       card: DeckCard;
@@ -63,15 +63,101 @@ export function Board({
     } | null>(null);
   const navigate = useNavigate(),
     pressed = useRef(0),
-    pinned_preview = useRef<Preview | null>(null),
+    selection_ref = useRef<Selection | null>(null),
+    in_bubble = useRef(false),
+    dragging = useRef(false),
     suppress_click = useRef(false);
+  const {
+    value: exception_preview,
+    show: show_exception,
+    keep: keep_exception,
+    leave: leave_exception,
+    hide: hide_exception,
+  } = useHoverPreview<Preview>();
   const {
     value: preview,
     show: setPreview,
     keep: keep_preview,
     leave: hide_preview,
     hide: hide_bubble,
-  } = useHoverPreview<Preview>(() => pinned_preview.current);
+  } = useHoverPreview<Preview>(() => {
+    const current = selection_ref.current;
+    if (!current?.fixed) {
+      selection_ref.current = null;
+      setSelection(null);
+      editor?.getState().remove_zero();
+    }
+    return null;
+  });
+  function select(next: Selection | null) {
+    selection_ref.current = next;
+    setSelection(next);
+  }
+  function clear_display() {
+    in_bubble.current = false;
+    select(null);
+    setPreview(null);
+    hide_exception();
+    editor?.getState().remove_zero();
+  }
+  function enter(card: DeckCard, section: SectionType, rect: DOMRect) {
+    if (dragging.current || suppress_click.current || in_bubble.current) return;
+    const id = `${section}:${card.oracle_id}`,
+      previous = selection_ref.current,
+      next = { card, section, rect };
+    select({ id, fixed: previous?.id === id && previous.fixed });
+    hide_exception();
+    setPreview(next);
+    if (previous?.id !== id) editor?.getState().remove_zero();
+  }
+  useEffect(() => {
+    if (!editor) return;
+    function on_blank(event: PointerEvent) {
+      if (
+        !selection_ref.current ||
+        !(event.target instanceof Element) ||
+        document.querySelector('[role="dialog"]') ||
+        event.target.closest(
+          'button, a, input, textarea, select, label, [role="button"], [role="menu"], [data-deck-card], [data-deck-preview]',
+        )
+      )
+        return;
+      in_bubble.current = false;
+      selection_ref.current = null;
+      setSelection(null);
+      setPreview(null);
+      editor!.getState().remove_zero();
+    }
+    document.addEventListener("pointerdown", on_blank);
+    return () => document.removeEventListener("pointerdown", on_blank);
+  }, [editor, setPreview]);
+  useEffect(() => {
+    const current = selection_ref.current;
+    if (
+      current &&
+      !deck.sections.some((section) =>
+        section.cards.some(
+          (card) => `${section.type}:${card.oracle_id}` === current.id,
+        ),
+      )
+    ) {
+      in_bubble.current = false;
+      selection_ref.current = null;
+      setSelection(null);
+      setPreview(null);
+    }
+  }, [deck, setPreview]);
+  useEffect(() => {
+    if (
+      exception_preview &&
+      !deck.sections
+        .find((section) => section.type === exception_preview.section)
+        ?.cards.find(
+          (card) => card.oracle_id === exception_preview.card.oracle_id,
+        )?.exception
+    )
+      hide_exception();
+  }, [deck, exception_preview, hide_exception]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
@@ -89,21 +175,54 @@ export function Board({
     const data = event.active.data.current as
       { card: DeckCard; section: SectionType } | undefined;
     if (data) {
+      dragging.current = true;
       setDrag({
         ...data,
         quantity:
           performance.now() - pressed.current >= 350 ? data.card.quantity : 1,
       });
       setPreview(null);
+      hide_exception();
       suppress_click.current = true;
     }
   };
-  const finish = () => {
+  const finish = (moved: boolean) => {
+    dragging.current = false;
     setDrag(null);
+    const current = selection_ref.current,
+      remaining =
+        moved && drag
+          ? editor
+              ?.getState()
+              .deck.sections.find((section) => section.type === drag.section)
+              ?.cards.find((card) => card.oracle_id === drag.card.oracle_id)
+          : undefined;
+    const keep_fixed =
+      moved &&
+      current?.fixed &&
+      drag &&
+      current.id === `${drag.section}:${drag.card.oracle_id}` &&
+      remaining &&
+      remaining.quantity > 0;
+    if (moved && !keep_fixed) clear_display();
+    else if (selection_ref.current?.fixed) setPreview(null);
+    else hide_preview();
     setTimeout(() => {
       suppress_click.current = false;
     }, 0);
   };
+  const preview_card = preview
+    ? deck.sections
+        .find((section) => section.type === preview.section)
+        ?.cards.find((card) => card.oracle_id === preview.card.oracle_id)
+    : undefined;
+  const exception_card = exception_preview
+    ? deck.sections
+        .find((section) => section.type === exception_preview.section)
+        ?.cards.find(
+          (card) => card.oracle_id === exception_preview.card.oracle_id,
+        )
+    : undefined;
   return (
     <DndContext
       sensors={sensors}
@@ -114,9 +233,11 @@ export function Board({
           : hits;
       }}
       onDragStart={onDragStart}
-      onDragCancel={finish}
+      onDragCancel={() => finish(false)}
       onDragEnd={(event) => {
-        if (drag && event.over && editor)
+        let moved = false;
+        if (drag && event.over && editor) {
+          const before = editor.getState().deck;
           editor
             .getState()
             .move(
@@ -125,7 +246,9 @@ export function Board({
               drag.card.oracle_id,
               drag.quantity,
             );
-        finish();
+          moved = editor.getState().deck !== before;
+        }
+        finish(moved);
       }}
     >
       {(["mainboard", "sideboard", "maybeboard"] as const).map((kind) => {
@@ -218,7 +341,7 @@ export function Board({
                       <div className={styles.stack}>
                         {items.map((card) => {
                           const id = `${section}:${card.oracle_id}`,
-                            expanded = hover === id || pinned === id;
+                            expanded = selection?.id === id;
                           return (
                             <DraggableCard
                               key={card.oracle_id}
@@ -241,21 +364,17 @@ export function Board({
                               onPress={() => {
                                 pressed.current = performance.now();
                               }}
-                              onEnter={(rect) => {
-                                if (drag) return;
-                                setHover(id);
-                                setPreview({ card, rect, section });
-                              }}
+                              onEnter={(rect) => enter(card, section, rect)}
                               onLeave={() => {
-                                setHover(null);
-                                if (card.quantity === 0 && pinned === id) {
-                                  pinned_preview.current = null;
-                                  setPinned(null);
-                                }
+                                if (
+                                  dragging.current ||
+                                  in_bubble.current ||
+                                  selection_ref.current?.id !== id
+                                )
+                                  return;
                                 hide_preview();
-                                editor?.getState().remove_zero();
                               }}
-                              onClick={(rect) => {
+                              onClick={() => {
                                 if (suppress_click.current) return;
                                 if (cover_mode && editor) {
                                   editor.getState().cover(card.printing_uuid);
@@ -268,25 +387,30 @@ export function Board({
                                   );
                                   return;
                                 }
-                                setPinned(pinned === id ? null : id);
-                                pinned_preview.current =
-                                  pinned === id
-                                    ? null
-                                    : { card, rect, section };
-                                setPreview(
-                                  pinned === id
-                                    ? null
-                                    : { card, rect, section },
-                                );
+                                if (
+                                  selection_ref.current?.id === id &&
+                                  selection_ref.current.fixed
+                                ) {
+                                  clear_display();
+                                  return;
+                                }
+                                select({ id, fixed: true });
                               }}
-                              onException={(rect) =>
-                                setPreview({
+                              onException={(rect) => {
+                                if (
+                                  dragging.current ||
+                                  suppress_click.current ||
+                                  in_bubble.current
+                                )
+                                  return;
+                                show_exception({
                                   card,
                                   rect,
                                   section,
                                   exception: true,
-                                })
-                              }
+                                });
+                              }}
+                              onExceptionLeave={leave_exception}
                               editor={editor}
                               cover_mode={cover_mode}
                             />
@@ -302,14 +426,38 @@ export function Board({
         );
       })}
       {preview &&
+        preview_card &&
+        !exception_preview &&
         !drag &&
         createPortal(
           <PreviewBubble
-            preview={preview}
+            preview={{ ...preview, card: preview_card }}
             deck={deck}
-            onPointerEnter={keep_preview}
-            onPointerLeave={hide_bubble}
+            onPointerEnter={() => {
+              in_bubble.current = true;
+              keep_preview();
+            }}
+            onPointerLeave={() => {
+              in_bubble.current = false;
+              hide_bubble();
+              if (!selection_ref.current?.fixed) {
+                select(null);
+                editor?.getState().remove_zero();
+              }
+            }}
             back={!!back_faces[`${preview.section}:${preview.card.oracle_id}`]}
+          />,
+          document.body,
+        )}
+      {exception_preview &&
+        exception_card?.exception &&
+        !drag &&
+        createPortal(
+          <PreviewBubble
+            preview={{ ...exception_preview, card: exception_card }}
+            deck={deck}
+            onPointerEnter={keep_exception}
+            onPointerLeave={hide_exception}
           />,
           document.body,
         )}
@@ -382,6 +530,7 @@ function DraggableCard({
   onLeave,
   onClick,
   onException,
+  onExceptionLeave,
   editor,
   cover_mode,
 }: {
@@ -397,6 +546,7 @@ function DraggableCard({
   onLeave: () => void;
   onClick: (rect: DOMRect) => void;
   onException: (rect: DOMRect) => void;
+  onExceptionLeave: () => void;
   editor?: EditorStore;
   cover_mode: boolean;
 }) {
@@ -406,24 +556,42 @@ function DraggableCard({
     data: { card, section },
   });
   const ref = useRef<HTMLDivElement>(null),
+    pointer_inside = useRef(false),
     rect = () => ref.current!.getBoundingClientRect();
   const quick = (delta: number) =>
     editor?.getState().quantity(section, card.oracle_id, delta);
   return (
     <div
       ref={ref}
+      data-deck-card
       className={`${styles.slot} ${expanded ? styles.expanded : ""}`}
       style={{ zIndex: expanded ? 4 : undefined }}
-      onPointerEnter={() => onEnter(rect())}
-      onPointerLeave={onLeave}
-      onFocus={() => onEnter(rect())}
+      onPointerEnter={(event) => {
+        if ((event.target as Element).closest("[data-deck-exception]")) return;
+        pointer_inside.current = true;
+        onEnter(rect());
+      }}
+      onPointerLeave={() => {
+        if (!pointer_inside.current) return;
+        pointer_inside.current = false;
+        onLeave();
+      }}
+      onFocus={(event) => {
+        if (!event.target.closest("[data-deck-exception]")) onEnter(rect());
+      }}
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) onLeave();
+        if (
+          !event.target.closest("[data-deck-exception]") &&
+          !pointer_inside.current &&
+          !event.currentTarget.contains(event.relatedTarget)
+        )
+          onLeave();
       }}
     >
       <button
         ref={draggable.setNodeRef}
         {...draggable.attributes}
+        aria-disabled={undefined}
         {...draggable.listeners}
         className={`${styles.cardButton} ${selected ? styles.selected : ""}`}
         style={
@@ -490,6 +658,7 @@ function DraggableCard({
       )}
       {card.exception && (
         <button
+          data-deck-exception
           className={`${styles.exception} ${card.exception.type === "deck_usage" ? styles.usage : ""}`}
           aria-label={
             card.exception.type === "shortage" ? "数量不足" : "卡组占用"
@@ -497,9 +666,26 @@ function DraggableCard({
           onPointerDown={(event) => event.stopPropagation()}
           onPointerEnter={(event) => {
             event.stopPropagation();
+            pointer_inside.current = false;
+            onLeave();
             onException(rect());
           }}
-          onFocus={() => onException(rect())}
+          onPointerLeave={(event) => {
+            onExceptionLeave();
+            if (
+              event.relatedTarget instanceof Node &&
+              ref.current?.contains(event.relatedTarget)
+            ) {
+              pointer_inside.current = true;
+              onEnter(rect());
+            }
+          }}
+          onFocus={(event) => {
+            event.stopPropagation();
+            if (!pointer_inside.current) onLeave();
+            onException(rect());
+          }}
+          onBlur={onExceptionLeave}
           onClick={(event) => {
             event.stopPropagation();
             onException(rect());
@@ -562,6 +748,7 @@ export function PreviewBubble({
     return (
       <div
         className={styles.exceptionInfo}
+        data-deck-preview
         style={{ left, top, maxHeight: viewport.height - 16 }}
         tabIndex={0}
         onPointerEnter={onPointerEnter}
@@ -606,6 +793,7 @@ export function PreviewBubble({
     <div
       ref={element}
       role="tooltip"
+      data-deck-preview
       className={styles.bubble}
       style={
         {
@@ -697,6 +885,7 @@ function TextPreview({
     <div
       ref={element}
       role="tooltip"
+      data-deck-preview
       className={styles.textPreview}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}

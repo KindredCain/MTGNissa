@@ -6,7 +6,7 @@ import { PageHeader, pageStyles } from "../app/Layout";
 import { CardGrid } from "../cards/CardTile";
 import { CardImage } from "../cards/CardImage";
 import { CardFilters } from "../cards/filters";
-import { filter_cards } from "../cards/model";
+import { filter_cards, type Card } from "../cards/model";
 import {
   LoadMore,
   SearchInput,
@@ -30,14 +30,7 @@ export function Component() {
       queryFn: ({ signal }) => api.get("/api/v1/cards", query, { signal }),
     });
   });
-  return (
-    <SetCards
-      key={`${set_code}:${params.toString()}`}
-      set_code={set_code}
-      params={params}
-      update={update}
-    />
-  );
+  return <SetCards set_code={set_code} params={params} update={update} />;
 }
 function SetCards({
   set_code,
@@ -48,7 +41,6 @@ function SetCards({
   params: URLSearchParams;
   update: ReturnType<typeof useURLState>["update"];
 }) {
-  const [visible, setVisible] = useState(30);
   const query = {
     set_code,
     language: params.get("language") ?? "",
@@ -81,16 +73,27 @@ function SetCards({
         {list.isPending ? (
           <Skeleton cards />
         ) : (
-          <CardGrid cards={cards.slice(0, visible)} />
+          <SetCardResults
+            key={`${set_code}:${params.toString()}`}
+            cards={cards}
+          />
         )}
-        <LoadMore
-          loaded_count={Math.min(visible, cards.length)}
-          end_label="已显示全部卡牌"
-          has_more={visible < cards.length}
-          loading={false}
-          load={() => setVisible((current) => current + 30)}
-        />
       </main>
+    </>
+  );
+}
+function SetCardResults({ cards }: { cards: Card[] }) {
+  const [visible, setVisible] = useState(30);
+  return (
+    <>
+      <CardGrid cards={cards.slice(0, visible)} />
+      <LoadMore
+        loaded_count={Math.min(visible, cards.length)}
+        end_label="已显示全部卡牌"
+        has_more={visible < cards.length}
+        loading={false}
+        load={() => setVisible((current) => current + 30)}
+      />
     </>
   );
 }

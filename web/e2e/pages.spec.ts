@@ -1,9 +1,92 @@
 import { test, expect } from "@playwright/test";
 import { mock_api } from "./mock-api";
 import { context, detail, uuid } from "../src/test/fixtures";
+import { context_card } from "../src/decks/model";
+
+test("deck menus switch exclusively and close on repeated or outside clicks", async ({
+  page,
+}) => {
+  const state = await mock_api(page);
+  await page.route("**/api/v1/decks**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/v1/decks/2")
+      return route.fulfill({
+        json: {
+          status: 200,
+          data: { ...state.deck, deck_id: "2", name: "Deck B" },
+          error: null,
+          request_id: "test",
+        },
+      });
+    if (path !== "/api/v1/decks" || route.request().method() !== "GET")
+      return route.fallback();
+    const item = {
+      created_at: state.deck.created_at,
+      updated_at: state.deck.updated_at,
+      cover_card: null,
+      section_counts: {
+        commander: 0,
+        mainboard: 2,
+        sideboard: 0,
+        maybeboard: 0,
+      },
+      counted_total: state.deck.summary.counted_total,
+      color_distribution: { W: 0, U: 0, B: 0, R: 0, G: 2, C: 0 },
+      exception: null,
+    };
+    return route.fulfill({
+      json: {
+        status: 200,
+        data: {
+          items: [
+            { ...item, deck_id: "1", name: "Deck A" },
+            { ...item, deck_id: "2", name: "Deck B" },
+          ],
+          total: 2,
+          next_cursor: null,
+        },
+        error: null,
+        request_id: "test",
+      },
+    });
+  });
+  await page.goto("/decks");
+  const more = page.getByRole("button", { name: "更多卡组操作", exact: true }),
+    edit = page.getByRole("button", { name: "编辑卡组", exact: true });
+  await more.nth(0).click();
+  await expect(edit).toHaveCount(1);
+  await more.nth(1).click();
+  await expect(more.nth(0)).toHaveAttribute("aria-expanded", "false");
+  await expect(more.nth(1)).toHaveAttribute("aria-expanded", "true");
+  await expect(edit).toHaveCount(1);
+  await more.nth(1).click();
+  await expect(edit).toHaveCount(0);
+  await expect(page).toHaveURL("/decks");
+  await more.nth(0).click();
+  await page.mouse.click(1, 1);
+  await expect(edit).toHaveCount(0);
+  await expect(page).toHaveURL("/decks");
+  await more.nth(0).click();
+  await more.nth(1).click();
+  await page.getByRole("button", { name: "删除卡组", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL("/decks");
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  for (const index of [0, 1]) {
+    await more.nth(0).click();
+    await page
+      .locator("article")
+      .nth(index)
+      .click({ position: { x: 80, y: 50 } });
+    await expect(page).toHaveURL(`/decks/${index + 1}`);
+    await page.goto("/decks");
+  }
+});
+
 test("series navigation, local filters and desktop card columns", async ({
   page,
 }, info) => {
+  await page.clock.install();
   const state = await mock_api(page);
   await page.goto("/sets");
   await expect(page.getByRole("heading", { name: "全部卡牌" })).toBeVisible();
@@ -25,10 +108,18 @@ test("series navigation, local filters and desktop card columns", async ({
     expect(top[columns]).toBeGreaterThan(top[0]);
   }
   const requests = state.cards_requests;
+  await page.clock.fastForward(31_000);
   await page.getByRole("button", { name: "法术力", exact: true }).click();
   await page.getByRole("checkbox", { name: "1", exact: true }).click();
   await page.getByRole("heading", { name: "全部卡牌" }).click();
   await expect(page).toHaveURL(/mana_value=1/);
+  await expect(page.locator("article")).toHaveCount(6);
+  await page
+    .getByRole("combobox", { name: "排序" })
+    .selectOption("collector_number_desc");
+  await expect(
+    page.locator("article").first().getByRole("link"),
+  ).toHaveAttribute("aria-label", "查看测试卡牌 41");
   expect(state.cards_requests).toBe(requests);
   await page.screenshot({
     path: `test-results/${info.project.name}-cards.png`,
@@ -336,7 +427,7 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     if (route.endsWith("/edit")) {
       await target.click();
       await page.mouse.move(0, 0);
-      await expect(preview).toContainText("Back face rules");
+      await expect(preview).toHaveCount(0);
     } else {
       await page.mouse.move(0, 0);
     }
@@ -383,8 +474,14 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
       (_, index) => `Rule line ${index}`,
     ).join("\n");
     state.deck.sections[1]!.cards[0]!.faces[0]!.display_oracle_text = rules;
+    state.deck.sections[1]!.cards.push(context_card(context(2), 1));
     await page.goto(route);
-    await page.getByRole("button", { name: "测试卡牌 1，2 张" }).hover();
+    const target = page.getByRole("button", {
+        name: "测试卡牌 1，2 张",
+        exact: true,
+      }),
+      slot = target.locator("..");
+    await target.hover({ position: { x: 70, y: 12 } });
     const preview = page.locator('[role="tooltip"]');
     await expect(preview).toBeVisible();
     await expect(
@@ -407,6 +504,23 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     expect(geometry.height).toBeGreaterThan(200);
     expect(geometry.clipped).toBe(false);
     expect(geometry.background).toBe("rgb(255, 255, 255)");
+    await preview.getByLabel("卡牌说明").hover();
+    await page.waitForTimeout(200);
+    await expect(preview).toBeVisible();
+    await expect(slot).toHaveClass(/expanded/);
+    await page.mouse.move(1, 1);
+    expect(await preview.count()).toBe(0);
+    await expect(slot).not.toHaveClass(/expanded/);
+    await target.hover({ position: { x: 70, y: 12 } });
+    await expect(preview).toBeVisible();
+    await expect(slot).toHaveClass(/expanded/);
+    await page.mouse.move(1, 1);
+    await expect(preview).toHaveCount(0);
+    await expect(slot).not.toHaveClass(/expanded/);
+    if (!route.endsWith("/edit")) {
+      await target.click({ position: { x: 70, y: 12 } });
+      await expect(page).toHaveURL(`/cards/${uuid(1)}`);
+    }
   });
 }
 test("add-card previews read the front face from the new candidate contract", async ({

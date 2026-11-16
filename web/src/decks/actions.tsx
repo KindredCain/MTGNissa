@@ -81,7 +81,7 @@ export function DeckMenu({ deck_id }: { deck_id: string }) {
     navigate = useNavigate(),
     action = useDeckActions(deck_id);
   return (
-    <div onClick={(event) => event.stopPropagation()}>
+    <div>
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger aria-label="更多卡组操作">
           <svg

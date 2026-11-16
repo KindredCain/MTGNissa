@@ -1,6 +1,194 @@
 import { test, expect } from "@playwright/test";
 import { mock_api } from "./mock-api";
 import { context, uuid } from "../src/test/fixtures";
+import { context_card, with_summary } from "../src/decks/model";
+
+for (const route of ["/decks/1", "/decks/1/edit"]) {
+  for (const status of ["shortage", "deck_usage"] as const) {
+    test(`${status} hints do not change card expansion or fixation at ${route}`, async ({
+      page,
+    }) => {
+      const state = await mock_api(page);
+      state.deck.sections[1]!.cards = [
+        context_card(context(1), 2),
+        context_card(
+          context(2, {
+            type_group: "artifact",
+            owned_quantity: status === "shortage" ? 0 : 2,
+            other_decks_quantity: status === "shortage" ? 0 : 2,
+            other_decks_count: status === "shortage" ? 0 : 1,
+          }),
+          1,
+        ),
+        context_card(context(3), 1),
+        context_card(context(4, { type_group: "artifact" }), 1),
+      ];
+      state.deck = with_summary(state.deck);
+      await page.goto(route);
+      if (route.endsWith("/edit"))
+        await page
+          .getByRole("button", { name: "卡组代码", exact: false })
+          .click();
+      const first = page.getByRole("button", {
+          name: "测试卡牌 1，2 张",
+          exact: true,
+        }),
+        badge = page.getByRole("button", {
+          name: status === "shortage" ? "数量不足" : "卡组占用",
+          exact: true,
+        }),
+        hint = page
+          .locator("[data-deck-preview]")
+          .filter({ hasText: "当前卡组" }),
+        expanded = page.locator('[data-deck-card][class*="expanded"]');
+      await badge.hover();
+      await expect(hint).toBeVisible();
+      await expect(expanded).toHaveCount(0);
+      await expect(page.getByRole("tooltip")).toHaveCount(0);
+      await badge.focus();
+      await badge.click();
+      await expect(page).toHaveURL(route);
+      await expect(expanded).toHaveCount(0);
+      await hint.hover();
+      await page.waitForTimeout(200);
+      await expect(hint).toBeVisible();
+      await expect(expanded).toHaveCount(0);
+      await page.mouse.move(1, 1);
+      expect(await hint.count()).toBe(0);
+
+      await first.hover({ position: { x: 70, y: 12 } });
+      await expect(expanded).toHaveCount(1);
+      await badge.hover();
+      await expect(hint).toBeVisible();
+      await hint.hover();
+      await page.waitForTimeout(200);
+      await expect(expanded).toHaveCount(0);
+      await expect(hint).toBeVisible();
+      await page.mouse.move(1, 1);
+
+      if (route.endsWith("/edit")) {
+        await first.click({ position: { x: 70, y: 12 } });
+        await page.mouse.move(1, 1);
+        await expect(expanded).toHaveCount(1);
+        await badge.hover();
+        await badge.focus();
+        await badge.click();
+        await hint.hover();
+        await page.waitForTimeout(200);
+        await expect(expanded).toHaveCount(1);
+        await expect(
+          expanded.getByRole("button", {
+            name: "测试卡牌 1，2 张",
+            exact: true,
+          }),
+        ).toBeVisible();
+        await page.mouse.move(1, 1);
+        expect(await hint.count()).toBe(0);
+        await expect(expanded).toHaveCount(1);
+      }
+    });
+  }
+}
+
+test("editor keeps one expanded card and clears the previous fixed selection", async ({
+  page,
+}) => {
+  const state = await mock_api(page);
+  state.deck.sections[1]!.cards.push(
+    context_card(context(2, { type_group: "artifact" }), 1),
+    context_card(context(3), 1),
+  );
+  await page.goto("/decks/1/edit");
+  await page.getByRole("button", { name: "卡组代码", exact: false }).click();
+  const first = page.getByRole("button", {
+      name: "测试卡牌 1，2 张",
+      exact: true,
+    }),
+    second = page.getByRole("button", {
+      name: "测试卡牌 2，1 张",
+      exact: true,
+    }),
+    expanded = page.locator('[data-deck-card][class*="expanded"]'),
+    preview = page.getByRole("tooltip");
+  await first.click({ position: { x: 70, y: 12 } });
+  await first.click({ position: { x: 70, y: 12 } });
+  await expect(expanded).toHaveCount(0);
+  await expect(preview).toHaveCount(0);
+  await page.mouse.move(0, 0);
+  await first.click({ position: { x: 70, y: 12 } });
+  await page.mouse.move(0, 0);
+  await expect(expanded).toHaveCount(1);
+  await expect(preview).toHaveCount(0);
+  await first.hover({ position: { x: 70, y: 12 } });
+  await expect(preview).toContainText("测试卡牌 1");
+  await second.hover();
+  await expect(expanded).toHaveCount(1);
+  await expect(
+    expanded.getByRole("button", { name: "测试卡牌 2，1 张", exact: true }),
+  ).toBeVisible();
+  await expect(preview).toContainText("测试卡牌 2");
+  await preview.getByLabel("卡牌说明").hover();
+  await page.waitForTimeout(200);
+  await expect(expanded).toHaveCount(1);
+  await expect(preview).toContainText("测试卡牌 2");
+  await page.mouse.move(0, 0);
+  expect(await preview.count()).toBe(0);
+  await expect(expanded).toHaveCount(0);
+  await first.click({ position: { x: 70, y: 12 } });
+  await page.mouse.click(1, 1);
+  await expect(expanded).toHaveCount(0);
+  await expect(preview).toHaveCount(0);
+});
+
+for (const removal of ["leave", "blank", "other", "same"] as const) {
+  test(`zero-quantity cards remain until ${removal} ends their selection`, async ({
+    page,
+  }) => {
+    const state = await mock_api(page);
+    state.deck.sections[1]!.cards = [
+      context_card(context(1), 1),
+      context_card(context(2, { type_group: "artifact" }), 1),
+      context_card(context(3), 1),
+    ];
+    await page.goto("/decks/1/edit");
+    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
+    const first = page.getByRole("button", { name: /测试卡牌 1，\d 张/ }),
+      minus = page.getByRole("button", { name: "减少测试卡牌 1", exact: true }),
+      plus = page.getByRole("button", { name: "增加测试卡牌 1", exact: true });
+    await first.hover({ position: { x: 70, y: 12 } });
+    if (removal !== "leave") await first.click({ position: { x: 70, y: 12 } });
+    await minus.click();
+    await expect(first).toHaveAttribute("aria-label", "测试卡牌 1，0 张");
+    await expect(minus).toBeDisabled();
+    await plus.click();
+    await expect(first).toHaveAttribute("aria-label", "测试卡牌 1，1 张");
+    await minus.click();
+    if (removal !== "leave") {
+      await page.mouse.move(1, 1);
+      await page.waitForTimeout(200);
+      await expect(first).toBeVisible();
+      await expect(page.getByRole("tooltip")).toHaveCount(0);
+    }
+    if (removal === "leave") await page.mouse.move(1, 1);
+    else if (removal === "blank") await page.mouse.click(1, 1);
+    else if (removal === "same")
+      await first.click({ position: { x: 70, y: 12 } });
+    else
+      await page
+        .getByRole("button", { name: "测试卡牌 2，1 张", exact: true })
+        .hover();
+    await expect(first).toHaveCount(0);
+    if (removal === "same") await page.mouse.move(1, 1);
+    if (removal === "other") {
+      await expect(page.getByRole("tooltip")).toContainText("测试卡牌 2");
+      await page.mouse.move(1, 1);
+    }
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
+    await expect(
+      page.locator('[data-deck-card][class*="expanded"]'),
+    ).toHaveCount(0);
+  });
+}
 
 for (const outcome of ["success", "failure"] as const) {
   test(`a closed editing session ignores a late context ${outcome}`, async ({
@@ -242,12 +430,30 @@ test("failed filters preserve the current results and submitted URL", async ({
 test("quick drag moves one copy and held drag moves the whole source stack", async ({
   page,
 }) => {
-  await mock_api(page);
-  for (const held of [false, true]) {
+  const state = await mock_api(page);
+  for (const { fixed, held, quantity } of [
+    { fixed: false, held: false, quantity: 2 },
+    { fixed: false, held: true, quantity: 2 },
+    { fixed: true, held: false, quantity: 2 },
+    { fixed: true, held: true, quantity: 2 },
+    { fixed: true, held: false, quantity: 1 },
+  ]) {
+    state.deck.sections[1]!.cards[0]!.quantity = quantity;
     await page.goto("/decks/1/edit");
     await page.getByRole("button", { name: "卡组代码", exact: false }).click();
-    const source = page.getByRole("button", { name: "测试卡牌 1，2 张" });
+    const source = page.getByRole("button", {
+      name: `测试卡牌 1，${quantity} 张`,
+    });
     await expect(source).toBeVisible();
+    await page.evaluate(() => document.body.scrollTo({ top: 180 }));
+    await source.hover({ position: { x: 70, y: 12 } });
+    if (fixed) {
+      await source.click({ position: { x: 70, y: 12 } });
+      await page.mouse.move(1, 1);
+    }
+    await expect(
+      page.locator('[data-deck-card][class*="expanded"]'),
+    ).toHaveCount(1);
     const region = page.locator("section").filter({
       has: page.getByRole("heading", { name: "备牌", exact: true }),
     });
@@ -257,11 +463,36 @@ test("quick drag moves one copy and held drag moves the whole source stack", asy
     await page.mouse.down();
     if (held) await page.waitForTimeout(400);
     await page.mouse.move(source_box.x + 81, source_box.y + 90);
-    await page.mouse.move(target.x + 420, target.y + 100, { steps: 8 });
+    await page.mouse.move(target.x + 420, target.y + 24, { steps: 8 });
     await page.mouse.up();
     await expect(
-      region.getByRole("button", { name: `测试卡牌 1，${held ? 2 : 1} 张` }),
+      region.getByRole("button", {
+        name: `测试卡牌 1，${held ? quantity : 1} 张`,
+      }),
     ).toBeVisible();
+    await expect(
+      page.locator('[data-deck-card][class*="expanded"]'),
+    ).toHaveCount(fixed && !held && quantity > 1 ? 1 : 0);
+    await page.mouse.move(1, 1);
+    await page.waitForTimeout(200);
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
+    if (fixed && !held && quantity > 1) {
+      const remaining = page
+        .locator('[data-deck-card][class*="expanded"]')
+        .getByRole("button", { name: "测试卡牌 1，1 张", exact: true });
+      await expect(remaining).toBeVisible();
+      await remaining.hover({ position: { x: 70, y: 12 } });
+      await expect(page.getByRole("tooltip")).toContainText("测试卡牌 1");
+      await page.getByRole("tooltip").getByLabel("卡牌说明").hover();
+      await page.waitForTimeout(200);
+      await expect(page.getByRole("tooltip")).toContainText("测试卡牌 1");
+      await page.mouse.move(1, 1);
+      expect(await page.getByRole("tooltip").count()).toBe(0);
+      await expect(
+        page.locator('[data-deck-card][class*="expanded"]'),
+      ).toHaveCount(1);
+      await expect(remaining).toBeVisible();
+    }
     expect(
       await page
         .getByRole("textbox", { name: "卡组代码", exact: true })
