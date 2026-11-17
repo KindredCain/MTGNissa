@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -42642,104 +42642,22 @@
           "width": "fill_container"
         },
         {
-          "id": "uf7RU",
+          "id": "Q8XSn",
           "type": "ref",
-          "ref": "O33Zi",
-          "name": "Deck Detail Header",
-          "width": "fill_container",
+          "ref": "jwTtk",
+          "name": "Deck Edit Header",
+          "width": 1440,
+          "height": 90,
           "descendants": {
-            "r8fQv": {
-              "type": "frame",
-              "id": "q5RZAA",
-              "name": "Editable Deck Name Input",
-              "width": 360,
-              "height": 38,
-              "fill": "#FFFFFF0A",
-              "cornerRadius": 7,
-              "stroke": "#F4A62188",
-              "strokeWidth": 1,
-              "gap": 8,
-              "padding": [
-                0,
-                11
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "BSj1X",
-                  "name": "Editable Deck Name Value",
-                  "fill": "#FFFFFF",
-                  "content": "时空突袭",
-                  "fontFamily": "Noto Sans SC",
-                  "fontSize": 22,
-                  "fontWeight": "700"
-                },
-                {
-                  "type": "icon",
-                  "id": "wcdWi",
-                  "name": "Edit Deck Name Icon",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "pencil-line",
-                  "library": "lucide",
-                  "fill": "#F4A621"
-                }
-              ]
-            },
-            "ScjK8": {
-              "content": "共 115 张 · 收集率 88%"
-            },
-            "rOwTP": {
-              "fill": "#F4A621",
-              "stroke": "#F4A621",
-              "context": "打开增加卡牌悬浮窗；不提交当前卡组修改。"
-            },
-            "mmS1J": {
-              "name": "Add Card Button Icon",
-              "icon": "plus",
-              "fill": "#18201D"
-            },
-            "U6rFZ": {
-              "name": "Add Card Button Label",
-              "content": "增加卡牌",
-              "fill": "#18201D"
-            },
-            "gfhXF": {
-              "enabled": true,
-              "name": "Choose Deck Cover Button — Active Same-page Mode",
-              "context": "当前处于同页封面选择模式；下一次点击任一分区卡图时把该卡的 scryfall_id 记录为 cover_scryfall_id 并退出模式。再次点击本按钮或按 Esc 取消。",
+            "hMSZ6": {
               "fill": "#183B2D",
-              "stroke": "#F4A621"
+              "name": "Choose Deck Cover Button — Active Same-page Mode"
             },
-            "qJfiZ": {
-              "name": "Choose Deck Cover Button Icon",
-              "icon": "images",
+            "A60Tj": {
               "fill": "#F4A621"
             },
-            "KuzXc": {
-              "name": "Choose Deck Cover Button Label",
-              "content": "选择封面",
+            "kSm5d": {
               "fill": "#F4A621"
-            },
-            "Zgi8i": {
-              "enabled": true,
-              "name": "Save Deck Button",
-              "context": "提交当前卡组名称、cover_scryfall_id 和四个真实分区；封面与分区卡牌均提交 scryfall_id，由后端解析 oracle_id；保存成功后进入当前卡组详情页。"
-            },
-            "Swabt": {
-              "name": "Save Deck Button Icon",
-              "icon": "save"
-            },
-            "UNCDC": {
-              "name": "Save Deck Button Label",
-              "content": "保存卡组"
-            },
-            "SWBnd": {
-              "enabled": false
-            },
-            "wmKF2": {
-              "enabled": false
             }
           }
         },
@@ -48147,106 +48065,12 @@
           "width": "fill_container"
         },
         {
-          "id": "w9ogPU",
+          "id": "AQGbM",
           "type": "ref",
-          "ref": "O33Zi",
-          "name": "Deck Detail Header",
-          "width": "fill_container",
-          "descendants": {
-            "r8fQv": {
-              "type": "frame",
-              "id": "yDSse",
-              "name": "Editable Deck Name Input",
-              "width": 360,
-              "height": 38,
-              "fill": "#FFFFFF0A",
-              "cornerRadius": 7,
-              "stroke": "#F4A62188",
-              "strokeWidth": 1,
-              "gap": 8,
-              "padding": [
-                0,
-                11
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "R7MXDZ",
-                  "name": "Editable Deck Name Value",
-                  "fill": "#FFFFFF",
-                  "content": "时空突袭",
-                  "fontFamily": "Noto Sans SC",
-                  "fontSize": 22,
-                  "fontWeight": "700"
-                },
-                {
-                  "type": "icon",
-                  "id": "rl6LN",
-                  "name": "Edit Deck Name Icon",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "pencil-line",
-                  "library": "lucide",
-                  "fill": "#F4A621"
-                }
-              ]
-            },
-            "ScjK8": {
-              "content": "共 115 张 · 收集率 88%"
-            },
-            "rOwTP": {
-              "fill": "#F4A621",
-              "stroke": "#F4A621",
-              "context": "打开增加卡牌悬浮窗；不提交当前卡组修改。"
-            },
-            "mmS1J": {
-              "name": "Add Card Button Icon",
-              "icon": "plus",
-              "fill": "#18201D"
-            },
-            "U6rFZ": {
-              "name": "Add Card Button Label",
-              "content": "增加卡牌",
-              "fill": "#18201D"
-            },
-            "gfhXF": {
-              "enabled": true,
-              "name": "Choose Deck Cover Button",
-              "context": "进入封面选择模式；下一次点击任一分区卡图时把该卡的 scryfall_id 记录为 cover_scryfall_id。再次点击本按钮或按 Esc 取消。空卡组时禁用。",
-              "fill": "#F4A621",
-              "stroke": "#F4A621"
-            },
-            "qJfiZ": {
-              "name": "Choose Deck Cover Button Icon",
-              "icon": "images",
-              "fill": "#18201D"
-            },
-            "KuzXc": {
-              "name": "Choose Deck Cover Button Label",
-              "content": "选择封面",
-              "fill": "#18201D"
-            },
-            "Zgi8i": {
-              "enabled": true,
-              "name": "Save Deck Button",
-              "context": "提交当前卡组名称、cover_scryfall_id 和四个真实分区；封面与分区卡牌均提交 scryfall_id，由后端解析 oracle_id；保存成功后进入当前卡组详情页。"
-            },
-            "Swabt": {
-              "name": "Save Deck Button Icon",
-              "icon": "save"
-            },
-            "UNCDC": {
-              "name": "Save Deck Button Label",
-              "content": "保存卡组"
-            },
-            "SWBnd": {
-              "enabled": false
-            },
-            "wmKF2": {
-              "enabled": false
-            }
-          }
+          "ref": "jwTtk",
+          "name": "Deck Edit Header",
+          "width": 1440,
+          "height": 90
         },
         {
           "type": "frame",
@@ -75040,106 +74864,12 @@
           "width": "fill_container"
         },
         {
-          "id": "NKhqs",
+          "id": "WjZal",
           "type": "ref",
-          "ref": "O33Zi",
-          "name": "Deck Detail Header",
-          "width": "fill_container",
-          "descendants": {
-            "r8fQv": {
-              "type": "frame",
-              "id": "c9kBvm",
-              "name": "Editable Deck Name Input",
-              "width": 360,
-              "height": 38,
-              "fill": "#FFFFFF0A",
-              "cornerRadius": 7,
-              "stroke": "#F4A62188",
-              "strokeWidth": 1,
-              "gap": 8,
-              "padding": [
-                0,
-                11
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "mgPlh",
-                  "name": "Editable Deck Name Value",
-                  "fill": "#FFFFFF",
-                  "content": "时空突袭",
-                  "fontFamily": "Noto Sans SC",
-                  "fontSize": 22,
-                  "fontWeight": "700"
-                },
-                {
-                  "type": "icon",
-                  "id": "DwMkE",
-                  "name": "Edit Deck Name Icon",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "pencil-line",
-                  "library": "lucide",
-                  "fill": "#F4A621"
-                }
-              ]
-            },
-            "ScjK8": {
-              "content": "共 115 张 · 收集率 88%"
-            },
-            "rOwTP": {
-              "fill": "#F4A621",
-              "stroke": "#F4A621",
-              "context": "打开增加卡牌悬浮窗；不提交当前卡组修改。"
-            },
-            "mmS1J": {
-              "name": "Add Card Button Icon",
-              "icon": "plus",
-              "fill": "#18201D"
-            },
-            "U6rFZ": {
-              "name": "Add Card Button Label",
-              "content": "增加卡牌",
-              "fill": "#18201D"
-            },
-            "gfhXF": {
-              "enabled": true,
-              "name": "Choose Deck Cover Button",
-              "context": "进入封面选择模式；下一次点击任一分区卡图时把该卡的 scryfall_id 记录为 cover_scryfall_id。再次点击本按钮或按 Esc 取消。空卡组时禁用。",
-              "fill": "#F4A621",
-              "stroke": "#F4A621"
-            },
-            "qJfiZ": {
-              "name": "Choose Deck Cover Button Icon",
-              "icon": "images",
-              "fill": "#18201D"
-            },
-            "KuzXc": {
-              "name": "Choose Deck Cover Button Label",
-              "content": "选择封面",
-              "fill": "#18201D"
-            },
-            "Zgi8i": {
-              "enabled": true,
-              "name": "Save Deck Button",
-              "context": "提交当前卡组名称、cover_scryfall_id 和四个真实分区；封面与分区卡牌均提交 scryfall_id，由后端解析 oracle_id；保存成功后进入当前卡组详情页。"
-            },
-            "Swabt": {
-              "name": "Save Deck Button Icon",
-              "icon": "save"
-            },
-            "UNCDC": {
-              "name": "Save Deck Button Label",
-              "content": "保存卡组"
-            },
-            "SWBnd": {
-              "enabled": false
-            },
-            "wmKF2": {
-              "enabled": false
-            }
-          }
+          "ref": "jwTtk",
+          "name": "Deck Edit Header",
+          "width": 1440,
+          "height": 90
         },
         {
           "type": "frame",
@@ -80885,106 +80615,12 @@
           "width": "fill_container"
         },
         {
-          "id": "kyFF7",
+          "id": "D2ggzp",
           "type": "ref",
-          "ref": "O33Zi",
-          "name": "Deck Detail Header",
-          "width": "fill_container",
-          "descendants": {
-            "r8fQv": {
-              "type": "frame",
-              "id": "FKlxU",
-              "name": "Editable Deck Name Input",
-              "width": 360,
-              "height": 38,
-              "fill": "#FFFFFF0A",
-              "cornerRadius": 7,
-              "stroke": "#F4A62188",
-              "strokeWidth": 1,
-              "gap": 8,
-              "padding": [
-                0,
-                11
-              ],
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "bAyrG",
-                  "name": "Editable Deck Name Value",
-                  "fill": "#FFFFFF",
-                  "content": "时空突袭",
-                  "fontFamily": "Noto Sans SC",
-                  "fontSize": 22,
-                  "fontWeight": "700"
-                },
-                {
-                  "type": "icon",
-                  "id": "r5OLjI",
-                  "name": "Edit Deck Name Icon",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "pencil-line",
-                  "library": "lucide",
-                  "fill": "#F4A621"
-                }
-              ]
-            },
-            "ScjK8": {
-              "content": "共 115 张 · 收集率 88%"
-            },
-            "rOwTP": {
-              "fill": "#F4A621",
-              "stroke": "#F4A621",
-              "context": "打开增加卡牌悬浮窗；不提交当前卡组修改。"
-            },
-            "mmS1J": {
-              "name": "Add Card Button Icon",
-              "icon": "plus",
-              "fill": "#18201D"
-            },
-            "U6rFZ": {
-              "name": "Add Card Button Label",
-              "content": "增加卡牌",
-              "fill": "#18201D"
-            },
-            "gfhXF": {
-              "enabled": true,
-              "name": "Choose Deck Cover Button",
-              "context": "进入封面选择模式；下一次点击任一分区卡图时把该卡的 scryfall_id 记录为 cover_scryfall_id。再次点击本按钮或按 Esc 取消。空卡组时禁用。",
-              "fill": "#F4A621",
-              "stroke": "#F4A621"
-            },
-            "qJfiZ": {
-              "name": "Choose Deck Cover Button Icon",
-              "icon": "images",
-              "fill": "#18201D"
-            },
-            "KuzXc": {
-              "name": "Choose Deck Cover Button Label",
-              "content": "选择封面",
-              "fill": "#18201D"
-            },
-            "Zgi8i": {
-              "enabled": true,
-              "name": "Save Deck Button",
-              "context": "提交当前卡组名称、cover_scryfall_id 和四个真实分区；封面与分区卡牌均提交 scryfall_id，由后端解析 oracle_id；保存成功后进入当前卡组详情页。"
-            },
-            "Swabt": {
-              "name": "Save Deck Button Icon",
-              "icon": "save"
-            },
-            "UNCDC": {
-              "name": "Save Deck Button Label",
-              "content": "保存卡组"
-            },
-            "SWBnd": {
-              "enabled": false
-            },
-            "wmKF2": {
-              "enabled": false
-            }
-          }
+          "ref": "jwTtk",
+          "name": "Deck Edit Header",
+          "width": 1440,
+          "height": 90
         },
         {
           "type": "frame",
@@ -88169,6 +87805,221 @@
                       "fontWeight": "normal"
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "jwTtk",
+      "x": 1547,
+      "y": -1683,
+      "name": "Component / Deck Edit Header",
+      "context": "编辑页标头只提供增加卡牌、选择封面和保存卡组。",
+      "reusable": true,
+      "width": 1440,
+      "height": 90,
+      "fill": "#00000000",
+      "padding": [
+        12,
+        38
+      ],
+      "justifyContent": "space_between",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "TQpQK",
+          "name": "Deck Detail Identity",
+          "layout": "vertical",
+          "gap": 5,
+          "children": [
+            {
+              "type": "frame",
+              "id": "jVzhb",
+              "name": "Deck Detail Title Row",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "liBh4",
+                  "name": "Editable Deck Name Input",
+                  "width": 360,
+                  "height": 38,
+                  "fill": "#FFFFFF0A",
+                  "cornerRadius": 7,
+                  "stroke": "#F4A62188",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    11
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "uvAmH",
+                      "name": "Editable Deck Name Value",
+                      "fill": "#FFFFFF",
+                      "content": "时空突袭",
+                      "fontFamily": "Noto Sans SC",
+                      "fontSize": 22,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "lQDo0",
+                      "name": "Edit Deck Name Icon",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "pencil-line",
+                      "library": "lucide",
+                      "fill": "#F4A621"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "tpp6o",
+              "name": "Deck Detail Meta",
+              "fill": "#A9B8B1",
+              "content": "共 115 张 · 收集率 88%",
+              "fontFamily": "Noto Sans SC",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "iyR6s",
+          "name": "Deck Detail Actions",
+          "gap": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "H78Cx",
+              "name": "Edit Deck Button",
+              "context": "打开增加卡牌悬浮窗；不提交当前卡组修改。",
+              "height": 36,
+              "fill": "#F4A621",
+              "cornerRadius": 7,
+              "stroke": "#F4A621",
+              "strokeWidth": 1,
+              "gap": 7,
+              "padding": [
+                0,
+                13
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "TiLuv",
+                  "name": "Add Card Button Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "plus",
+                  "library": "lucide",
+                  "fill": "#18201D"
+                },
+                {
+                  "type": "text",
+                  "id": "G1mwS",
+                  "name": "Add Card Button Label",
+                  "fill": "#18201D",
+                  "content": "增加卡牌",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "650"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hMSZ6",
+              "name": "Choose Deck Cover Button",
+              "context": "在当前编辑页选择封面，确认或取消后退出选择模式。",
+              "height": 36,
+              "fill": "#F4A621",
+              "cornerRadius": 7,
+              "stroke": "#F4A621",
+              "strokeWidth": 1,
+              "gap": 7,
+              "padding": [
+                0,
+                13
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "A60Tj",
+                  "name": "Choose Deck Cover Button Icon",
+                  "context": "在当前编辑页选择封面，确认或取消后退出选择模式。",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "images",
+                  "library": "lucide",
+                  "fill": "#18201D"
+                },
+                {
+                  "type": "text",
+                  "id": "kSm5d",
+                  "name": "Choose Deck Cover Button Label",
+                  "context": "在当前编辑页选择封面，确认或取消后退出选择模式。",
+                  "fill": "#18201D",
+                  "content": "选择封面",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "650"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "acLWL",
+              "name": "Save Deck Button",
+              "context": "保存当前编辑内容，成功后进入卡组详情。",
+              "height": 36,
+              "fill": "#F4A621",
+              "cornerRadius": 7,
+              "stroke": "#F4A621",
+              "strokeWidth": 1,
+              "gap": 7,
+              "padding": [
+                0,
+                13
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Ksd8n",
+                  "name": "Save Deck Button Icon",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "save",
+                  "library": "lucide",
+                  "fill": "#18201D"
+                },
+                {
+                  "type": "text",
+                  "id": "SkSFO",
+                  "name": "Save Deck Button Label",
+                  "fill": "#18201D",
+                  "content": "保存卡组",
+                  "fontFamily": "Noto Sans SC",
+                  "fontSize": 12,
+                  "fontWeight": "650"
                 }
               ]
             }
