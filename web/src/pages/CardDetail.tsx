@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "react-router";
+import { useLayoutEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { api } from "../api/client";
 import { pageStyles } from "../app/Layout";
 import { CardImage } from "../cards/CardImage";
@@ -17,7 +17,35 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
   const [back, setBack] = useState(false),
     [tab, setTab] = useState("text");
   const navigate = useNavigate(),
+    client = useQueryClient(),
+    location = useLocation(),
+    active_location = useRef<typeof location | null>(location),
+    revision = useRef(0),
     actions = useCardActions(printing_uuid);
+  useLayoutEffect(() => {
+    active_location.current = location;
+    return () => {
+      active_location.current = null;
+    };
+  }, [location]);
+  async function switch_printing(next_uuid: string) {
+    const intent = ++revision.current;
+    if (next_uuid === printing_uuid) return;
+    try {
+      await client.fetchQuery({
+        queryKey: ["card", next_uuid],
+        queryFn: ({ signal }) =>
+          api.get("/api/v1/cards/{printing_uuid}", undefined, {
+            path: { printing_uuid: next_uuid },
+            signal,
+          }),
+      });
+      if (intent === revision.current && active_location.current === location)
+        navigate(`/cards/${encodeURIComponent(next_uuid)}`);
+    } catch {
+      /* QueryCache reports the failure; keep the current printing visible. */
+    }
+  }
   const query = useQuery({
     queryKey: ["card", printing_uuid],
     queryFn: ({ signal }) =>
@@ -226,9 +254,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                 value: language.printing_uuid,
                 label: language.language.display_name,
               }))}
-              onChange={(value) =>
-                navigate(`/cards/${encodeURIComponent(value)}`)
-              }
+              onChange={(value) => void switch_printing(value)}
             />
           </section>
           <section className={styles.printingPanel}>
@@ -258,6 +284,18 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                       <Link
                         key={language.printing_uuid}
                         to={`/cards/${encodeURIComponent(language.printing_uuid)}`}
+                        onClick={(event) => {
+                          if (
+                            event.button !== 0 ||
+                            event.ctrlKey ||
+                            event.metaKey ||
+                            event.shiftKey ||
+                            event.altKey
+                          )
+                            return;
+                          event.preventDefault();
+                          void switch_printing(language.printing_uuid);
+                        }}
                       >
                         {language.language.display_name}{" "}
                         {language.normal_quantity + language.foil_quantity ||

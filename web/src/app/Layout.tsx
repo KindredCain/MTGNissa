@@ -1,28 +1,14 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
-import { search_options } from "../api/lists";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { SearchInput } from "../ui/controls";
 import styles from "./layout.module.css";
 export function Layout() {
-  const client = useQueryClient(),
-    search_revision = useRef(0);
   const navigate = useNavigate(),
     location = useLocation();
-  useEffect(() => {
-    search_revision.current++;
-  }, [location.key]);
-  async function search(value: string) {
+  function search(value: string) {
     if (!value) return;
-    const revision = ++search_revision.current;
-    try {
-      await client.fetchInfiniteQuery(search_options(value));
-      if (revision === search_revision.current)
-        navigate(`/search?q=${encodeURIComponent(value)}`);
-    } catch {
-      /* QueryCache reports the error and the current page is preserved. */
-    }
+    navigate(`/search?q=${encodeURIComponent(value)}`);
   }
   const app = useQuery({
     queryKey: ["app"],
@@ -53,9 +39,7 @@ export function Layout() {
                 ? (new URLSearchParams(location.search).get("q") ?? "")
                 : ""
             }
-            onSubmit={(value) => {
-              void search(value);
-            }}
+            onSubmit={search}
             placeholder="按卡名或语法搜索"
           />
           <a

@@ -3,8 +3,8 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
-import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
 import { api, create_idempotent_post } from "../api/client";
 import { decks_options } from "../api/lists";
 import { PageHeader, pageStyles } from "../app/Layout";
@@ -23,7 +23,8 @@ import {
 import styles from "../decks/decks.module.css";
 export function Component() {
   const [post_intent] = useState(create_idempotent_post);
-  const client = useQueryClient();
+  const client = useQueryClient(),
+    location = useLocation();
   const { params, update } = useURLState((next) =>
       client.fetchInfiniteQuery(decks_options(next)),
     ),
@@ -44,6 +45,13 @@ export function Component() {
       ),
     getNextPageParam: (last) => last.next_cursor ?? undefined,
   });
+  useEffect(() => {
+    // A navigation to this same route can leave the existing list mounted.
+    void client.refetchQueries(
+      { queryKey: ["decks", "list"], type: "active", stale: true },
+      { cancelRefetch: false },
+    );
+  }, [client, location.key]);
   const create = useMutation({
     mutationFn: () => post_intent("/api/v1/decks", { name: "新建卡组" }),
     onSuccess: (deck) => {

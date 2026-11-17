@@ -30,7 +30,10 @@ export function useDeckActions(deck_id: string) {
           undefined,
           { path: { deck_id } },
         );
-        await client.invalidateQueries({ queryKey: ["decks", "list"] });
+        void client.invalidateQueries({
+          queryKey: ["decks", "list"],
+          refetchType: "none",
+        });
         navigate(`/decks/${encodeURIComponent(copy.deck_id)}/edit`);
       }
       if (kind === "delete") {
@@ -38,7 +41,10 @@ export function useDeckActions(deck_id: string) {
           path: { deck_id },
         });
         client.removeQueries({ queryKey: ["decks", "detail", deck_id] });
-        await client.invalidateQueries({ queryKey: ["decks"] });
+        void client.invalidateQueries({
+          queryKey: ["decks"],
+          refetchType: "none",
+        });
         navigate("/decks");
       }
       if (kind !== "code")

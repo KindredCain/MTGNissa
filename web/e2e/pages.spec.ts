@@ -3,6 +3,216 @@ import { mock_api } from "./mock-api";
 import { context, detail, uuid } from "../src/test/fixtures";
 import { context_card } from "../src/decks/model";
 
+test("global search navigates before loading from any page", async ({
+  page,
+}) => {
+  await mock_api(page);
+  await page.goto("/sets");
+  for (const q of ["first", "second"]) {
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(`**/api/v1/search?q=${q}`, async (route) => {
+      await pending;
+      await route.fulfill({
+        status: 503,
+        json: {
+          status: 503,
+          data: null,
+          error: { code: "dependency_unavailable", message: "Search failed" },
+          request_id: "test",
+        },
+      });
+    });
+    const search = page.getByRole("textbox", { name: "按卡名或语法搜索" });
+    await search.fill(q);
+    await search.press("Enter");
+    try {
+      await expect(page).toHaveURL(`/search?q=${q}`);
+    } finally {
+      release();
+    }
+    await expect(
+      page.getByRole("dialog", { name: "操作未完成" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "关闭", exact: true }).click();
+    await expect(page).toHaveURL(`/search?q=${q}`);
+  }
+});
+
+for (const entry of ["language", "set"] as const) {
+  for (const outcome of ["success", "failure", "leave"] as const) {
+    test(`card ${entry} switch waits for data on ${outcome}`, async ({
+      page,
+    }) => {
+      await mock_api(page);
+      const initial = detail(),
+        language = {
+          ...initial.languages[0]!,
+          printing_uuid: uuid(2),
+          language: { code: "ja", display_name: "日文", sort_order: 2 },
+          normal_quantity: 0,
+        };
+      initial.languages.push(language);
+      initial.other_versions = [
+        {
+          set: { ...initial.card.set, code: "TST", display_name: "其他系列" },
+          collector_number: "2",
+          released_at: initial.card.released_at,
+          normal_quantity: 0,
+          foil_quantity: 0,
+          languages: [language],
+        },
+      ];
+      await page.route(`**/api/v1/cards/${uuid(1)}`, (route) =>
+        route.fulfill({
+          json: { status: 200, data: initial, error: null, request_id: "test" },
+        }),
+      );
+      let release!: () => void;
+      let started!: () => void;
+      const pending = new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+        requested = new Promise<void>((resolve) => {
+          started = resolve;
+        });
+      await page.route(`**/api/v1/cards/${uuid(2)}`, async (route) => {
+        started();
+        await pending;
+        const next = detail();
+        next.card.printing_uuid = uuid(2);
+        next.faces[0]!.display_name = "目标版本";
+        await route.fulfill({
+          status: outcome === "failure" ? 503 : 200,
+          json:
+            outcome === "failure"
+              ? {
+                  status: 503,
+                  data: null,
+                  error: {
+                    code: "dependency_unavailable",
+                    message: "Version failed",
+                  },
+                  request_id: "test",
+                }
+              : { status: 200, data: next, error: null, request_id: "test" },
+        });
+      });
+      await page.goto(`/cards/${uuid(1)}`);
+      if (entry === "language")
+        await page
+          .getByRole("combobox", { name: "当前系列语言" })
+          .selectOption(uuid(2));
+      else await page.getByRole("link", { name: "日文", exact: true }).click();
+      try {
+        await requested;
+        await expect(page).toHaveURL(`/cards/${uuid(1)}`);
+        await expect(
+          page.getByRole("heading", { name: "卡牌正面", exact: true }),
+        ).toBeVisible();
+        if (outcome === "leave") {
+          await page
+            .getByRole("link", { name: "操作日志", exact: true })
+            .click();
+          await expect(page).toHaveURL("/operation_logs");
+        }
+      } finally {
+        release();
+      }
+      if (outcome === "success") {
+        await expect(page).toHaveURL(`/cards/${uuid(2)}`);
+        await expect(
+          page.getByRole("heading", { name: "目标版本", exact: true }),
+        ).toBeVisible();
+      } else if (outcome === "failure") {
+        await expect(
+          page.getByRole("dialog", { name: "操作未完成" }),
+        ).toBeVisible();
+        await page.getByRole("button", { name: "关闭", exact: true }).click();
+        await expect(page).toHaveURL(`/cards/${uuid(1)}`);
+        await expect(
+          page.getByRole("heading", { name: "卡牌正面", exact: true }),
+        ).toBeVisible();
+      } else {
+        await expect(
+          page.getByRole("heading", { name: "操作日志", exact: true }),
+        ).toBeVisible();
+        await expect(page).toHaveURL("/operation_logs");
+      }
+    });
+  }
+}
+
+for (const origin of ["/decks", "/decks/1"]) {
+  test(`deleting from ${origin} navigates before loading the list`, async ({
+    page,
+  }) => {
+    await mock_api(page);
+    let deleted = false,
+      release!: () => void,
+      started!: () => void;
+    const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+      requested = new Promise<void>((resolve) => {
+        started = resolve;
+      });
+    const request_locations: { pathname: string; key: string }[] = [];
+    await page.route("**/api/v1/decks**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === "/api/v1/decks/1/delete") deleted = true;
+      if (
+        path !== "/api/v1/decks" ||
+        route.request().method() !== "GET" ||
+        !deleted
+      )
+        return route.fallback();
+      request_locations.push(
+        await page.evaluate(() => ({
+          pathname: window.location.pathname,
+          key: window.history.state.key,
+        })),
+      );
+      started();
+      await pending;
+      await route.fulfill({
+        json: {
+          status: 200,
+          data: { items: [], total: 0, next_cursor: null },
+          error: null,
+          request_id: "test",
+        },
+      });
+    });
+    await page.goto(origin);
+    const original_key = await page.evaluate(() => window.history.state.key);
+    if (origin === "/decks")
+      await page
+        .getByRole("button", { name: "更多卡组操作", exact: true })
+        .click();
+    await page.getByRole("button", { name: "删除卡组", exact: true }).click();
+    await page
+      .getByRole("dialog", { name: "删除卡组", exact: true })
+      .getByRole("button", { name: "删除卡组", exact: true })
+      .click();
+    try {
+      await requested;
+      await expect(page).toHaveURL("/decks");
+      expect(request_locations.length).toBeGreaterThan(0);
+      for (const request_location of request_locations) {
+        expect(request_location.pathname).toBe("/decks");
+        expect(request_location.key).not.toBe(original_key);
+      }
+    } finally {
+      release();
+    }
+    await expect(page.getByText("共 0 个卡组", { exact: true })).toBeVisible();
+    await expect(page.locator("article")).toHaveCount(0);
+  });
+}
+
 test("deck menus switch exclusively and close on repeated or outside clicks", async ({
   page,
 }) => {
