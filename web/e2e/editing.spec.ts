@@ -112,9 +112,14 @@ test("editor keeps one expanded card and clears the previous fixed selection", a
     preview = page.getByRole("tooltip");
   await first.click({ position: { x: 70, y: 12 } });
   await first.click({ position: { x: 70, y: 12 } });
+  await expect(expanded).toHaveCount(1);
+  await expect(
+    expanded.getByRole("button", { name: "测试卡牌 1，2 张", exact: true }),
+  ).toBeVisible();
+  await expect(preview).toContainText("测试卡牌 1");
+  await page.mouse.move(0, 0);
   await expect(expanded).toHaveCount(0);
   await expect(preview).toHaveCount(0);
-  await page.mouse.move(0, 0);
   await first.click({ position: { x: 70, y: 12 } });
   await page.mouse.move(0, 0);
   await expect(expanded).toHaveCount(1);
@@ -171,14 +176,19 @@ for (const removal of ["leave", "blank", "other", "same"] as const) {
     }
     if (removal === "leave") await page.mouse.move(1, 1);
     else if (removal === "blank") await page.mouse.click(1, 1);
-    else if (removal === "same")
+    else if (removal === "same") {
       await first.click({ position: { x: 70, y: 12 } });
+      await expect(first).toBeVisible();
+      await expect(
+        page.locator('[data-deck-card][class*="expanded"]'),
+      ).toHaveCount(1);
+      await page.mouse.move(1, 1);
+    }
     else
       await page
         .getByRole("button", { name: "测试卡牌 2，1 张", exact: true })
         .hover();
     await expect(first).toHaveCount(0);
-    if (removal === "same") await page.mouse.move(1, 1);
     if (removal === "other") {
       await expect(page.getByRole("tooltip")).toContainText("测试卡牌 2");
       await page.mouse.move(1, 1);

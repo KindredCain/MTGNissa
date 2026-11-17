@@ -391,7 +391,7 @@ export function Board({
                                   selection_ref.current?.id === id &&
                                   selection_ref.current.fixed
                                 ) {
-                                  clear_display();
+                                  select({ id, fixed: false });
                                   return;
                                 }
                                 select({ id, fixed: true });
