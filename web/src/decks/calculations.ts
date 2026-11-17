@@ -1,3 +1,4 @@
+import { color_names } from "../cards/model";
 import {
   colors,
   palette,
@@ -15,7 +16,6 @@ export type Group = {
   cards: DeckCard[];
   quantity: number;
 };
-const color_names = ["白", "蓝", "黑", "红", "绿", "无色"];
 export function cost_points(cost: string | null) {
   const result = Object.fromEntries(
     colors.map((color) => [color, 0]),
@@ -38,7 +38,7 @@ export function group_cards(cards: DeckCard[], by: Grouping): Group[] {
   }
   if (by === "color" || by === "produced")
     colors.forEach((color, index) =>
-      ensure(color, color_names[index], palette[index]),
+      ensure(color, color_names[color], palette[index]),
     );
   if (by === "produced") ensure("none", "不产费");
   if (by === "mana")

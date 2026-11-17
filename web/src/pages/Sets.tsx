@@ -59,14 +59,16 @@ export function Component() {
   const items = list.data?.pages.flatMap((page) => page.items) ?? [];
   return (
     <>
-      <PageHeader title="全部卡牌" description="浏览万智牌系列" tabs />
+      <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={pageStyles.content}>
         <div className={pageStyles.breadcrumb}>
           <Link to="/sets">卡牌中心</Link>
           <span>›</span>
           <span>全部卡牌</span>
         </div>
-        <Toolbar count={`共 ${list.data?.pages[0].total ?? 0} 个系列`}>
+        <Toolbar
+          count={`已加载 ${items.filter((item) => item.depth === 0).length} 个父系列 · ${items.length} 行`}
+        >
           <SearchInput
             value={query.q ?? ""}
             placeholder="按系列名称或缩写搜索"
@@ -74,6 +76,7 @@ export function Component() {
           />
           <MultiSelect
             label="语言"
+            all_label="全部语言"
             value={query.language}
             options={
               options.data?.languages.map((item) => ({
@@ -97,12 +100,13 @@ export function Component() {
           <SortDivider />
           <Select
             label="系列排序"
+            prefix="排序："
             value={query.sort}
             options={sorts.map((value, index) => ({
               value,
               label: [
-                "发行时间：新到旧",
-                "发行时间：旧到新",
+                "发行日期 ↓",
+                "发行日期 ↑",
                 "名称：A–Z",
                 "名称：Z–A",
                 "缩写：A–Z",
@@ -122,7 +126,7 @@ export function Component() {
               <tr>
                 <th>系列</th>
                 <th>类型</th>
-                <th>牌数</th>
+                <th>卡牌</th>
                 <th>发行日期</th>
                 <th>可用语言</th>
               </tr>
@@ -147,9 +151,7 @@ export function Component() {
                       ) : (
                         item.display_name
                       )}
-                      <small>
-                        {item.name} · {item.code}
-                      </small>
+                      <small>{item.code}</small>
                     </td>
                     <td>
                       <span className={styles.code}>{item.set_type}</span>
@@ -187,6 +189,7 @@ export function Component() {
         <LoadMore
           loaded_count={items.length}
           end_label="已加载全部系列"
+          more_label="向下滚动时自动加载更多系列"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}

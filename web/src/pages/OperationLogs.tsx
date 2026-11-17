@@ -73,7 +73,10 @@ export function Component() {
   }
   return (
     <>
-      <PageHeader title="操作日志" description="查看卡牌与卡组的操作记录" />
+      <PageHeader
+        title="操作日志"
+        description="查看收藏、愿望单与卡组的变更记录"
+      />
       <main className={pageStyles.content}>
         <Toolbar count={`共 ${list.data?.total_items ?? 0} 条汇总`}>
           <DateFilter
@@ -104,13 +107,14 @@ export function Component() {
                     {action_names[item.action_type]}
                   </button>
                 </td>
-                <td>{item.count}</td>
+                <td>{item.count} 条</td>
               </tr>
             ))}
           </tbody>
         </table>
         {list.isPending && <Skeleton />}
         <Pagination
+          summary
           page={page}
           pages={list.data?.total_pages ?? 0}
           total={list.data?.total_items ?? 0}
@@ -250,7 +254,7 @@ function Detail({
                 </td>
                 {item.kind === "card" && (
                   <td>
-                    {item.card.set_code} · #{item.card.collector_number} ·{" "}
+                    {item.card.set_code} · {item.card.collector_number} ·{" "}
                     {item.card.language_display_name}
                     {quantity_log
                       ? ` · ${item.card.finish === "foil" ? "闪卡" : "普通"}`

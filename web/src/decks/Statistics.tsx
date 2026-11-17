@@ -6,6 +6,7 @@ import { GridComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { Select } from "../ui/controls";
 import { Mana } from "../cards/Mana";
+import { color_names } from "../cards/model";
 import { colors, palette, type Deck } from "./model";
 import {
   curve,
@@ -91,7 +92,7 @@ export default function Statistics({
                   <strong>{summary.average.toFixed(2)}</strong>
                 </div>
                 <div>
-                  <span>地牌张数</span>
+                  <span>地牌</span>
                   <strong>{summary.lands}</strong>
                 </div>
               </div>
@@ -157,13 +158,22 @@ export default function Statistics({
                   }}
                 />
               </div>
+              {curves === "tag" && (
+                <div className={styles.groupNotes}>
+                  <span>按牌张数量排序 · 默认显示前 12 个</span>
+                  <span>同一张牌可计入多个标签</span>
+                </div>
+              )}
               <div className={styles.curves}>
                 {(curves === "tag" && !all_curves
                   ? curve_groups.slice(0, 12)
                   : curve_groups
                 ).map((group) => (
                   <div key={group.key}>
-                    <h4 title={group.name}>{group.name}</h4>
+                    <div className={styles.curveTitle}>
+                      <h4 title={group.name}>{group.name}</h4>
+                      <small>{group.quantity}张</small>
+                    </div>
                     <Chart
                       labels={["0", "1", "2", "3", "4", "5", "6", "7", "8+"]}
                       values={curve(group.cards)}
@@ -175,7 +185,9 @@ export default function Statistics({
               </div>
               {curves === "tag" && curve_groups.length > 12 && (
                 <button onClick={() => setAllCurves((value) => !value)}>
-                  {all_curves ? "收起" : "显示全部"}
+                  {all_curves
+                    ? "收起"
+                    : `显示全部（共 ${curve_groups.length} 个）`}
                 </button>
               )}
             </section>
@@ -248,7 +260,9 @@ export default function Statistics({
               </table>
               {prob === "tag" && prob_groups.length > 12 && (
                 <button onClick={() => setAllProb((value) => !value)}>
-                  {all_prob ? "收起" : "显示全部"}
+                  {all_prob
+                    ? "收起"
+                    : `显示全部（共 ${prob_groups.length} 个）`}
                 </button>
               )}
             </section>
@@ -289,9 +303,8 @@ function ColorDistribution({
   values: number[];
 }) {
   const total = values.reduce((sum, value) => sum + value, 0),
-    names = ["白", "蓝", "黑", "红", "绿", "无色"],
     describe = (value: number, index: number) =>
-      `${names[index]} ${value} 点（${((value / total) * 100).toFixed(1)}%）`;
+      `${color_names[colors[index]]} ${value} 点（${((value / total) * 100).toFixed(1)}%）`;
   return (
     <div className={styles.colorDistribution}>
       <span>{label}</span>

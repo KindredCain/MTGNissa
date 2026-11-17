@@ -766,7 +766,7 @@ export function PreviewBubble({
               : card.all_decks_quantity,
           ],
           [
-            "使用卡组数",
+            "使用卡组",
             deck
               ? card.other_decks_count + (current > 0 ? 1 : 0)
               : card.using_decks,
@@ -774,7 +774,9 @@ export function PreviewBubble({
         ].map(([name, value]) => (
           <div key={name}>
             {name}
-            <strong>{value}</strong>
+            <strong>
+              {value} {name === "使用卡组" ? "个" : "张"}
+            </strong>
           </div>
         ))}
       </div>

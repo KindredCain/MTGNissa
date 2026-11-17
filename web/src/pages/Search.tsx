@@ -22,7 +22,7 @@ export function Component() {
   });
   return (
     <>
-      <PageHeader title="全部卡牌" description="浏览与搜索万智牌" tabs />
+      <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={`${pageStyles.content} ${styles.resultsMain}`}>
         <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
           <Link to="/sets">卡牌中心</Link>›<Link to="/sets">全部卡牌</Link>›
@@ -52,6 +52,7 @@ export function Component() {
             list.data?.pages.flatMap((page) => page.items).length ?? 0
           }
           end_label="已加载全部搜索结果"
+          more_label="向下滚动时自动加载更多搜索结果"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}

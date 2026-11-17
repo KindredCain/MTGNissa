@@ -173,6 +173,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.curveTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 6px;
+}
+.curveTitle h4 {
+  min-width: 0;
+}
+.curveTitle small {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #a8b8ad;
+}
+.groupNotes {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #9db2a4;
+  font-size: 11px;
+}
 .probability th {
   background: #203b2b;
   color: #c6d6cb;

@@ -42,7 +42,7 @@ function usePersonalFilters(kind: "collection" | "wishlist") {
     else await client.fetchInfiniteQuery(wishlist_options(next));
   });
   const query = personal_params(params);
-  return { params, update, query };
+  return { kind, params, update, query };
 }
 function Filters({
   options,
@@ -51,12 +51,14 @@ function Filters({
   options: DTO<"CollectionOptionsResponse"> | undefined;
   filters: ReturnType<typeof usePersonalFilters>;
 }) {
-  const { params, update, query } = filters;
+  const { kind, params, update, query } = filters;
   return (
     <>
       <SearchInput
         value={query.q ?? ""}
-        placeholder="按卡牌名称搜索"
+        placeholder={
+          kind === "collection" ? "按卡名搜索我的卡牌" : "按卡名搜索愿望单"
+        }
         onSubmit={(value) => update({ q: value })}
       />
       <MultiSelect
@@ -85,6 +87,7 @@ function Filters({
       <SortDivider />
       <Select
         label="排序"
+        prefix="排序："
         value={query.sort}
         options={list_sort}
         onChange={(value) =>
@@ -133,11 +136,7 @@ function Collection() {
   const groups = group_items(data);
   return (
     <>
-      <PageHeader
-        title="我的卡牌"
-        description={`共 ${summary?.total_quantity ?? 0} 张牌 · ${summary?.distinct_cards ?? 0} 种卡牌`}
-        tabs
-      />
+      <PageHeader title="我的卡牌" description="管理拥有的卡牌收藏" tabs />
       <main className={pageStyles.content}>
         <nav className={pageStyles.breadcrumb} aria-label="面包屑">
           <Link to="/sets">卡牌中心</Link>
@@ -173,8 +172,8 @@ function Collection() {
                 />
               </label>
               <span>
-                共 {summary?.total_quantity ?? 0} 张，
-                {summary?.distinct_cards ?? 0} 种
+                共 {(summary?.total_quantity ?? 0).toLocaleString("zh-CN")} 张，
+                {(summary?.distinct_cards ?? 0).toLocaleString("zh-CN")} 种
               </span>
             </span>
           }
@@ -201,6 +200,7 @@ function Collection() {
         <LoadMore
           loaded_count={data.length}
           end_label="已加载全部卡牌"
+          more_label="向下滚动时显示更多收藏卡牌"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}
@@ -277,7 +277,7 @@ function Wishlist() {
   const data = list.data?.pages.flatMap((page) => page.items) ?? [];
   return (
     <>
-      <PageHeader title="愿望单" description="记录想要收藏的卡牌" tabs />
+      <PageHeader title="愿望单" description="管理我的愿望单" tabs />
       <main className={pageStyles.content}>
         <nav className={pageStyles.breadcrumb} aria-label="面包屑">
           <Link to="/sets">卡牌中心</Link>
@@ -286,7 +286,7 @@ function Wishlist() {
             愿望单
           </Link>
         </nav>
-        <Toolbar count={`${list.data?.pages[0].total ?? 0} 张卡牌`}>
+        <Toolbar>
           <Filters options={options.data} filters={filters} />
         </Toolbar>
         {list.isPending ? (
@@ -305,6 +305,7 @@ function Wishlist() {
         <LoadMore
           loaded_count={data.length}
           end_label="已加载全部愿望单卡牌"
+          more_label="向下滚动时显示更多愿望单卡牌"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}
@@ -337,8 +338,10 @@ function PersonalGroup({
           aria-controls={content_id}
           onClick={() => setExpanded((value) => !value)}
         >
-          <span>
-            {set.display_name} <small>{set.code}</small>
+          <span className={styles.groupIdentity}>
+            <small>{set.code}</small>
+            <span>{set.display_name}</span>
+            {set.released_at && <small>{set.released_at}</small>}
           </span>
           <span className={styles.groupDivider} aria-hidden="true" />
           {summary && (

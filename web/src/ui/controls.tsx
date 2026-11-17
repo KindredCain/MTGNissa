@@ -103,12 +103,14 @@ function SearchField({
 }
 export function Select({
   label,
+  prefix = "",
   value,
   options,
   onChange,
   disabled = false,
 }: {
   label: string;
+  prefix?: string;
   value: string;
   options: Option[];
   onChange: (value: string) => void;
@@ -125,6 +127,7 @@ export function Select({
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
+            {prefix}
             {option.label}
           </option>
         ))}
@@ -134,11 +137,13 @@ export function Select({
 }
 export function MultiSelect({
   label,
+  all_label = "全部",
   value,
   options,
   onChange,
 }: {
   label: string;
+  all_label?: string;
   value: string[];
   options: Option[];
   onChange: (value: string[]) => void;
@@ -161,7 +166,7 @@ export function MultiSelect({
       <Popover.Trigger className={styles.filter} aria-label={label}>
         {label}：
         {!value.length || value.length === options.length
-          ? "全部"
+          ? all_label
           : value.length === 1
             ? options.find((option) => option.value === value[0])?.label
             : `已选 ${value.length} 项`}
@@ -233,6 +238,7 @@ export function LoadMore({
   failed = false,
   loaded_count = 0,
   end_label = "已加载全部结果",
+  more_label = "向下滚动时自动加载更多卡牌",
 }: {
   has_more: boolean;
   loading: boolean;
@@ -241,6 +247,7 @@ export function LoadMore({
   failed?: boolean;
   loaded_count?: number;
   end_label?: string;
+  more_label?: string;
 }) {
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -259,7 +266,7 @@ export function LoadMore({
       {failed ? null : loading ? (
         "加载中…"
       ) : has_more ? (
-        <button onClick={load}>加载更多</button>
+        <span>{more_label}</span>
       ) : loaded_count > 0 ? (
         <span role="status">{end_label}</span>
       ) : null}
@@ -318,20 +325,22 @@ export function Pagination({
   total,
   onChange,
   disabled,
+  summary = false,
 }: {
   page: number;
   pages: number;
   total: number;
   onChange: (value: number) => void;
   disabled?: boolean;
+  summary?: boolean;
 }) {
   const start = Math.max(1, Math.min(page - 2, pages - 4));
   return (
     <div className={styles.pagination} data-pagination>
       <span>
         {total
-          ? `第 ${(page - 1) * 10 + 1}–${Math.min(page * 10, total)} 条，共 ${total} 条`
-          : "共 0 条"}
+          ? `第 ${(page - 1) * 10 + 1}–${Math.min(page * 10, total)} 条，共 ${total} 条${summary ? "汇总" : ""}`
+          : `共 0 条${summary ? "汇总" : ""}`}
       </span>
       <nav aria-label="分页">
         <button

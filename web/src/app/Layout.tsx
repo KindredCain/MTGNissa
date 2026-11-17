@@ -40,7 +40,7 @@ export function Layout() {
                 : ""
             }
             onSubmit={search}
-            placeholder="按卡名或语法搜索"
+            placeholder="搜索卡牌或输入语法…"
           />
           <a
             href="https://scryfall.com/docs/syntax"

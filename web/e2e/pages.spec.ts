@@ -25,7 +25,7 @@ test("global search navigates before loading from any page", async ({
         },
       });
     });
-    const search = page.getByRole("textbox", { name: "按卡名或语法搜索" });
+    const search = page.getByRole("textbox", { name: "搜索卡牌或输入语法…" });
     await search.fill(q);
     await search.press("Enter");
     try {
@@ -33,9 +33,7 @@ test("global search navigates before loading from any page", async ({
     } finally {
       release();
     }
-    await expect(
-      page.getByRole("dialog", { name: "操作未完成" }),
-    ).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "操作失败" })).toBeVisible();
     await page.getByRole("button", { name: "关闭", exact: true }).click();
     await expect(page).toHaveURL(`/search?q=${q}`);
   }
@@ -128,7 +126,7 @@ for (const entry of ["language", "set"] as const) {
         ).toBeVisible();
       } else if (outcome === "failure") {
         await expect(
-          page.getByRole("dialog", { name: "操作未完成" }),
+          page.getByRole("dialog", { name: "操作失败" }),
         ).toBeVisible();
         await page.getByRole("button", { name: "关闭", exact: true }).click();
         await expect(page).toHaveURL(`/cards/${uuid(1)}`);
@@ -194,7 +192,7 @@ for (const origin of ["/decks", "/decks/1"]) {
         .click();
     await page.getByRole("button", { name: "删除卡组", exact: true }).click();
     await page
-      .getByRole("dialog", { name: "删除卡组", exact: true })
+      .getByRole("dialog", { name: "删除卡组？", exact: true })
       .getByRole("button", { name: "删除卡组", exact: true })
       .click();
     try {
@@ -345,12 +343,12 @@ test("card details flip face without refetching and preserve tag queries", async
   await expect(page.getByRole("heading", { name: "卡牌背面" })).toBeVisible();
   const usage = page.locator("aside > section").last();
   await expect(
-    usage.getByRole("heading", { name: "卡组使用情况 1" }),
+    usage.getByRole("heading", { name: "卡组使用情况", exact: true }),
   ).toBeVisible();
   await expect(
     usage.getByRole("link", { name: "测试卡组 ↗ 2" }),
   ).toHaveAttribute("href", "/decks/1");
-  await page.getByRole("button", { name: "功能标签 1" }).click();
+  await page.getByRole("button", { name: "功能标签", exact: true }).click();
   await page.getByRole("link", { name: 'otag:"mana rock"' }).click();
   await expect(page).toHaveURL(/\/search\?q=/);
   expect(new URL(page.url()).searchParams.get("q")).toBe('otag:"mana rock"');
@@ -477,7 +475,7 @@ for (const view of ["merge", "search"] as const) {
         name: "合并不同语言",
         exact: true,
       }),
-      search = page.getByRole("textbox", { name: "按卡牌名称搜索" });
+      search = page.getByRole("textbox", { name: "按卡名搜索我的卡牌" });
     if (view === "merge") {
       await merge.click();
       await expect(merge).not.toBeChecked();
@@ -514,7 +512,7 @@ for (const kind of ["collection", "wishlist"] as const) {
         list_requests++;
     });
     await page.goto(`/${kind}`);
-    const header = page.getByRole("button", { name: /^卡拉德许 KLD/ }),
+    const header = page.getByRole("button", { name: /^KLD 卡拉德许/ }),
       card = page.locator("article").first();
     await expect(card).toBeVisible();
     await expect(header).toHaveAttribute("aria-expanded", "true");
@@ -588,7 +586,7 @@ test("deck editor imports atomically, preserves names and warns before leaving",
     page.getByRole("textbox", { name: "卡组名称", exact: true }),
   ).toHaveValue("未保存名称");
   await page.getByRole("link", { name: "操作日志", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("放弃尚未保存");
+  await expect(page.getByRole("dialog")).toContainText("离开卡组编辑？");
   await page.getByRole("button", { name: "继续编辑" }).click();
   await page.getByRole("button", { name: "保存卡组", exact: true }).click();
   await expect(page).toHaveURL("/decks/1");

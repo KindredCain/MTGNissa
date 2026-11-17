@@ -34,6 +34,7 @@ export function CardFilters({
           <SortDivider />
           <Select
             label="排序"
+            prefix="排序："
             value={params.get("sort") ?? "collector_number"}
             options={local_sort}
             onChange={(value) => update({ sort: value })}

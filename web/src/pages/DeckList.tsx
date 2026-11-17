@@ -10,7 +10,7 @@ import { decks_options } from "../api/lists";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardImage } from "../cards/CardImage";
 import { DeckMenu } from "../decks/actions";
-import { colors, palette, section_names } from "../decks/model";
+import { colors, palette, section_names, section_types } from "../decks/model";
 import { relative_time } from "../decks/time";
 import {
   LoadMore,
@@ -86,6 +86,7 @@ export function Component() {
           />
           <Select
             label="卡组排序"
+            prefix="排序："
             value={query.sort}
             options={[
               { value: "updated_desc", label: "最近更新" },
@@ -151,11 +152,10 @@ export function Component() {
                       </div>
                       <div className={styles.deckCounts}>
                         <span>
-                          {Object.entries(deck.section_counts)
-                            .filter(([, count]) => count > 0)
+                          {section_types
                             .map(
-                              ([type, count]) =>
-                                `${section_names[type as keyof typeof section_names]} ${count}`,
+                              (type) =>
+                                `${section_names[type]} ${deck.section_counts[type]}`,
                             )
                             .join(" · ")}
                         </span>
@@ -176,7 +176,7 @@ export function Component() {
                           </span>
                         )}
                         <span className={styles.deckDetailLink}>
-                          查看卡组 →
+                          查看卡组 ↗
                         </span>
                       </div>
                     </div>
@@ -190,6 +190,7 @@ export function Component() {
             list.data?.pages.flatMap((page) => page.items).length ?? 0
           }
           end_label="已加载全部卡组"
+          more_label="向下滚动时自动加载更多卡组"
           failed={list.isFetchNextPageError}
           has_more={!!list.hasNextPage}
           loading={list.isFetchingNextPage}

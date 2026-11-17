@@ -68,8 +68,9 @@ export function DeleteConfirmation({
   confirm: () => void;
 }) {
   return (
-    <Modal open={open} title="删除卡组">
-      <p>确定删除这个卡组吗？删除后无法恢复。</p>
+    <Modal open={open} title="删除卡组？">
+      <p>删除后无法恢复。</p>
+      <p>该卡组记录将被永久删除。</p>
       <div className={styles.confirmActions}>
         <button disabled={pending} onClick={cancel}>
           取消

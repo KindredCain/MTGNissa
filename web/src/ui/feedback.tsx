@@ -121,7 +121,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={setToast}>
       {children}
-      <Modal open={errors.length > 0} title="操作未完成" layer="error">
+      <Modal open={errors.length > 0} title="操作失败" layer="error">
         <div className={styles.errorBody}>{errors[0]}</div>
         <div className={styles.modalFooter}>
           <button onClick={() => setErrors((current) => current.slice(1))}>

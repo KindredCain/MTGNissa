@@ -107,21 +107,18 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
           <p className={styles.english}>{face?.name ?? card.name}</p>
           <div className={styles.metadata}>
             <span>
-              {card.set.display_name}
-              <small>
-                {card.set.code} · #{card.collector_number}
-              </small>
+              <small>系列</small>
+              {card.set.display_name} · {card.set.code}
             </span>
             <span>
+              <small>收藏编号</small>#{card.collector_number}
+            </span>
+            <span>
+              <small>稀有度</small>
               {
                 rarity_options.find((option) => option.value === card.rarity)
                   ?.label
               }
-              <small>稀有度</small>
-            </span>
-            <span>
-              {card.cmc}
-              <small>法术力</small>
             </span>
           </div>
           <div className={styles.tabs}>
@@ -129,19 +126,19 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               aria-pressed={tab === "text"}
               onClick={() => setTab("text")}
             >
-              卡牌信息
+              卡牌详情
             </button>
             <button
               aria-pressed={tab === "rulings"}
               onClick={() => setTab("rulings")}
             >
-              官方释疑 {data.rulings.length}
+              官方释疑
             </button>
             <button
               aria-pressed={tab === "tags"}
               onClick={() => setTab("tags")}
             >
-              功能标签 {data.oracle_tags.length}
+              功能标签
             </button>
           </div>
           {tab === "text" && (
@@ -157,7 +154,9 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                       <p className={styles.english}>{text_face.name}</p>
                     </>
                   )}
-                  <h3>{text_face.display_type_line}</h3>
+                  <h3>类别</h3>
+                  <p>{text_face.display_type_line}</p>
+                  <h3>规则文字</h3>
                   <p>{text_face.display_oracle_text}</p>
                   {text_face.display_flavor_text && (
                     <blockquote>{text_face.display_flavor_text}</blockquote>
@@ -174,6 +173,10 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
           )}
           {tab === "rulings" && (
             <div className={styles.rulings}>
+              <div className={styles.contentHeader}>
+                <h2>官方释疑</h2>
+                <span>{data.rulings.length} 条</span>
+              </div>
               {data.rulings.map((ruling, index) => (
                 <article key={index}>
                   <time>{ruling.published_at}</time>
@@ -183,16 +186,26 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             </div>
           )}
           {tab === "tags" && (
-            <div className={styles.tags}>
-              {data.oracle_tags.map((tag) => (
-                <Link
-                  key={tag.tag_id}
-                  to={`/search?q=${encodeURIComponent(tag.query)}`}
-                >
-                  {tag.query}
-                  <span>↗</span>
-                </Link>
-              ))}
+            <div>
+              <div className={styles.contentHeader}>
+                <h2>功能标签</h2>
+                <span>{data.oracle_tags.length} 个标签</span>
+              </div>
+              <div className={styles.tags}>
+                {data.oracle_tags.map((tag) => (
+                  <Link
+                    key={tag.tag_id}
+                    to={`/search?q=${encodeURIComponent(tag.query)}`}
+                  >
+                    {tag.query}
+                    <span>↗</span>
+                  </Link>
+                ))}
+              </div>
+              <p className={styles.tagNote}>
+                标签来自 Scryfall Tagger
+                社区数据；点击具体标签进入对应语法搜索结果。
+              </p>
             </div>
           )}
         </section>
@@ -202,11 +215,12 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               <Link to="/collection">我的收藏 ↗</Link>
               <button
                 disabled={actions.pending}
+                aria-pressed={data.wishlist.included}
                 onClick={() =>
                   actions.act({ included: !data.wishlist.included })
                 }
               >
-                {data.wishlist.included ? "★ 已收藏" : "☆ 愿望单"}
+                {data.wishlist.included ? "★" : "☆"} 愿望单
               </button>
             </div>
             <Stepper
@@ -234,32 +248,33 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               该卡收藏数量{" "}
               <strong>共 {data.logical_collection.total_quantity} 张</strong>
               <small>
-                普通 {data.logical_collection.normal_quantity} · 闪卡{" "}
+                普通 {data.logical_collection.normal_quantity} · 闪{" "}
                 {data.logical_collection.foil_quantity}
               </small>
             </div>
           </section>
           <section className={styles.languagePanel}>
-            <h3>
-              当前系列语言 <small>{data.languages.length}</small>
-            </h3>
+            <h3>当前系列语言</h3>
             <p className={styles.printing}>
               {card.set.display_name} · {card.set.code} · #
               {card.collector_number}
             </p>
-            <Select
-              label="当前系列语言"
-              value={card.printing_uuid}
-              options={data.languages.map((language) => ({
-                value: language.printing_uuid,
-                label: language.language.display_name,
-              }))}
-              onChange={(value) => void switch_printing(value)}
-            />
+            <div className={styles.languageSelect}>
+              <Select
+                label="当前系列语言"
+                value={card.printing_uuid}
+                options={data.languages.map((language) => ({
+                  value: language.printing_uuid,
+                  label: language.language.display_name,
+                }))}
+                onChange={(value) => void switch_printing(value)}
+              />
+              <small>{data.languages.length} 种可选</small>
+            </div>
           </section>
           <section className={styles.printingPanel}>
             <h3>
-              其他系列版本 <small>{data.other_versions.length}</small>
+              其他系列版本 <small>共 {data.other_versions.length} 个版本</small>
             </h3>
             <div className={styles.versions}>
               {data.other_versions.map((version) => (
@@ -297,9 +312,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                           void switch_printing(language.printing_uuid);
                         }}
                       >
-                        {language.language.display_name}{" "}
-                        {language.normal_quantity + language.foil_quantity ||
-                          ""}
+                        {language.language.display_name}
                       </Link>
                     ))}
                   </div>
@@ -308,9 +321,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             </div>
           </section>
           <section className={styles.deckUsage}>
-            <h3>
-              卡组使用情况 <small>{data.deck_usage.total_decks}</small>
-            </h3>
+            <h3>卡组使用情况</h3>
             <p className={styles.usageSummary}>
               出现在 {data.deck_usage.total_decks} 个卡组 · 总需求 {demand} ·
               跨卡组缺口 {shortage}

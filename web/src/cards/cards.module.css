@@ -233,8 +233,20 @@
   color: var(--muted);
   font-size: 11px;
 }
-.groupToggle > span:first-child small {
-  margin-left: 8px;
+.groupIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.groupIdentity > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.groupIdentity small {
+  flex-shrink: 0;
 }
 .groupDivider {
   height: 1px;

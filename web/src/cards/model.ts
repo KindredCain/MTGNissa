@@ -1,14 +1,22 @@
 import type { DTO } from "../api/client";
 import type { Option } from "../ui/controls";
 export type Card = DTO<"CardSummaryResponse">;
+export const color_names = {
+  W: "白色",
+  U: "蓝色",
+  B: "黑色",
+  R: "红色",
+  G: "绿色",
+  C: "无色",
+} as const;
 export const color_options: Option[] = [
-  { value: "W", label: "白" },
-  { value: "U", label: "蓝" },
-  { value: "B", label: "黑" },
-  { value: "R", label: "红" },
-  { value: "G", label: "绿" },
+  { value: "W", label: color_names.W },
+  { value: "U", label: color_names.U },
+  { value: "B", label: color_names.B },
+  { value: "R", label: color_names.R },
+  { value: "G", label: color_names.G },
   { value: "multicolor", label: "多色" },
-  { value: "colorless", label: "无色" },
+  { value: "colorless", label: color_names.C },
 ];
 export const mana_options: Option[] = Array.from({ length: 9 }, (_, index) => ({
   value: index === 8 ? "8_plus" : String(index),
@@ -26,13 +34,13 @@ export const rarity_options: Option[] = [
   label: ["铁", "银", "金", "秘稀", "特殊", "额外"][index],
 }));
 export const list_sort: Option[] = [
-  { value: "set", label: "按系列" },
-  { value: "color", label: "按颜色" },
-  { value: "mana_value", label: "按法术力" },
-  { value: "name", label: "按名称" },
+  { value: "set", label: "系列" },
+  { value: "color", label: "颜色" },
+  { value: "mana_value", label: "法术力" },
+  { value: "name", label: "名称" },
 ];
 export const local_sort: Option[] = [
-  { value: "collector_number", label: "收藏编号：升序" },
+  { value: "collector_number", label: "收藏编号" },
   { value: "collector_number_desc", label: "收藏编号：降序" },
   { value: "mana_value", label: "法术力：从低到高" },
   { value: "mana_value_desc", label: "法术力：从高到低" },

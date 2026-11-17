@@ -289,8 +289,9 @@ function Editor({ initial: loaded }: { initial: Deck }) {
           close={() => setAdd(false)}
         />
       )}
-      <Modal open={blocker.state === "blocked"} title="放弃尚未保存的修改？">
-        <p>当前卡组还有未保存的修改。</p>
+      <Modal open={blocker.state === "blocked"} title="离开卡组编辑？">
+        <p>当前修改尚未保存，离开后将全部丢失。</p>
+        <p>卡组编辑页不保留草稿或临时保存内容。</p>
         <div className={styles.confirmActions}>
           <button onClick={() => blocker.reset?.()}>继续编辑</button>
           <button className={styles.danger} onClick={() => blocker.proceed?.()}>

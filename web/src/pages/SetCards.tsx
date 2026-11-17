@@ -53,7 +53,7 @@ function SetCards({
   const cards = filter_cards(list.data?.items ?? [], params);
   return (
     <>
-      <PageHeader title="全部卡牌" description="浏览万智牌系列" tabs />
+      <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={pageStyles.content}>
         <div className={pageStyles.breadcrumb}>
           <Link to="/sets">卡牌中心</Link>›<Link to="/sets">全部卡牌</Link>›
@@ -65,7 +65,7 @@ function SetCards({
         <Toolbar count={`${cards.length} 张卡牌`}>
           <SearchInput
             value={query.q ?? ""}
-            placeholder="按当前系列卡名搜索"
+            placeholder="按卡名关键字搜索"
             onSubmit={(value) => update({ q: value })}
           />
           <CardFilters params={params} update={update} />
@@ -110,7 +110,7 @@ function Tokens({ set_code }: { set_code: string }) {
   });
   return (
     <>
-      <PageHeader title="全部卡牌" description="浏览万智牌系列" tabs />
+      <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={`${pageStyles.content} ${styles.resultsMain}`}>
         <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
           <Link to="/sets">全部卡牌</Link>›

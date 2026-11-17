@@ -11,5 +11,7 @@ export function relative_time(value: string) {
         ? `${Math.floor(minutes / 60)} 小时前`
         : minutes < 2880
           ? "昨天"
-          : `${Math.floor(minutes / 1440)} 天前`;
+          : minutes < 14 * 1440
+            ? `${Math.floor(minutes / 1440)} 天前`
+            : `${Math.floor(minutes / (7 * 1440))} 周前`;
 }
