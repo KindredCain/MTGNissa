@@ -51,6 +51,10 @@ export function Component() {
         queryKey: ["decks", "list"],
         refetchType: "none",
       });
+      void client.invalidateQueries({
+        queryKey: ["operation_logs"],
+        refetchType: "none",
+      });
       navigate(`/decks/${encodeURIComponent(deck.deck_id)}/edit`);
     },
   });
