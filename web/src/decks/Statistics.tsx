@@ -40,15 +40,28 @@ export default function Statistics({
     [distribution, setDistribution] = useState<Grouping>("type"),
     [all_curves, setAllCurves] = useState(false),
     [all_prob, setAllProb] = useState(false),
-    [at_least, setAtLeast] = useState(1),
-    [draws, setDraws] = useState(7);
+    [requested_at_least, setAtLeast] = useState(1),
+    [requested_draws, setDraws] = useState(7);
   const summary = overview(deck),
+    probability_cards = deck.sections
+      .filter((section) => section.type === "mainboard")
+      .flatMap((section) => section.cards),
+    probability_total = probability_cards.reduce(
+      (sum, card) => sum + card.quantity,
+      0,
+    ),
     nonlands = summary.cards.filter((card) => !card.statistics.is_land),
     curve_groups = group_cards(nonlands, curves),
-    prob_groups = group_cards(summary.cards, prob),
+    prob_groups = group_cards(probability_cards, prob).filter(
+      (group) => prob !== "mana" || group.quantity > 0,
+    ),
     distribution_groups = group_cards(summary.cards, distribution).slice(0, 24);
   const cost_total = summary.cost.reduce((a, b) => a + b, 0),
-    produced_total = summary.produced.reduce((a, b) => a + b, 0);
+    produced_total = summary.produced.reduce((a, b) => a + b, 0),
+    draws = probability_total
+      ? Math.max(1, Math.min(requested_draws, probability_total))
+      : 0,
+    at_least = draws ? Math.max(1, Math.min(requested_at_least, draws)) : 0;
   return (
     <Dialog.Root
       open
@@ -199,16 +212,18 @@ export default function Statistics({
                   <NumberStepper
                     label="至少张数"
                     value={at_least}
-                    min={1}
-                    max={Math.max(1, summary.quantity)}
+                    min={probability_total ? 1 : 0}
+                    max={draws}
+                    disabled={!probability_total}
                     change={setAtLeast}
                   />{" "}
                   张 抽{" "}
                   <NumberStepper
                     label="抽牌张数"
                     value={draws}
-                    min={0}
-                    max={summary.quantity}
+                    min={at_least}
+                    max={probability_total}
+                    disabled={!probability_total}
                     change={setDraws}
                   />{" "}
                   张
@@ -245,12 +260,14 @@ export default function Statistics({
                       <td>{group.quantity}</td>
                       <td>
                         {(
-                          probability(
-                            summary.quantity,
-                            group.quantity,
-                            draws,
-                            at_least,
-                          ) * 100
+                          (probability_total
+                            ? probability(
+                                probability_total,
+                                group.quantity,
+                                draws,
+                                at_least,
+                              )
+                            : 0) * 100
                         ).toFixed(2)}
                         %
                       </td>
@@ -333,19 +350,32 @@ function NumberStepper({
   value,
   min,
   max,
+  disabled = false,
   change,
 }: {
   label: string;
   value: number;
   min: number;
   max: number;
+  disabled?: boolean;
   change: (value: number) => void;
 }) {
+  const [input, setInput] = useState<string | null>(null);
+  function commit() {
+    const number = input === null ? value : Number(input);
+    change(
+      Math.max(
+        min,
+        Math.min(max, Number.isFinite(number) ? Math.trunc(number) : min),
+      ),
+    );
+    setInput(null);
+  }
   return (
     <div className={styles.stepper}>
       <button
         aria-label={`减少${label}`}
-        disabled={value <= min}
+        disabled={disabled || value <= min}
         onClick={() => change(Math.max(min, value - 1))}
       >
         −
@@ -355,16 +385,30 @@ function NumberStepper({
         type="number"
         min={min}
         max={max}
-        value={value}
+        step={1}
+        disabled={disabled}
+        value={disabled ? value : (input ?? value)}
+        onFocus={() => setInput(String(value))}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
         onChange={(event) => {
-          const number = Number(event.target.value);
-          if (Number.isInteger(number) && number >= min && number <= max)
+          const raw = event.target.value;
+          setInput(raw);
+          const number = Number(raw);
+          if (
+            raw !== "" &&
+            Number.isInteger(number) &&
+            number >= min &&
+            number <= max
+          )
             change(number);
         }}
       />
       <button
         aria-label={`增加${label}`}
-        disabled={value >= max}
+        disabled={disabled || value >= max}
         onClick={() => change(Math.min(max, value + 1))}
       >
         ＋

@@ -145,6 +145,122 @@ test("editor keeps one expanded card and clears the previous fixed selection", a
   await expect(preview).toHaveCount(0);
 });
 
+for (const path of ["/decks/1", "/decks/1/edit"]) {
+  test(`draw probability excludes commanders at ${path}`, async ({ page }) => {
+    const state = await mock_api(page);
+    state.deck.sections[0]!.cards = [
+      context_card(
+        context(2, {
+          statistics: { ...context(2).statistics, type_groups: ["creature"] },
+        }),
+        3,
+      ),
+    ];
+    state.deck.sections[1]!.cards = [
+      context_card(
+        context(1, {
+          statistics: { ...context(1).statistics, type_groups: ["artifact"] },
+        }),
+        7,
+      ),
+    ];
+    state.deck = with_summary(state.deck);
+    await page.goto(path);
+    await page.getByRole("button", { name: "卡组统计", exact: true }).click();
+    const probability = page.locator("section").filter({
+      has: page.getByRole("heading", { name: "抽到概率", exact: true }),
+    });
+    await expect(probability.getByRole("row")).toHaveCount(2);
+    await expect(probability.getByRole("row").last()).toHaveText(
+      "神器7100.00%",
+    );
+    await expect(
+      probability.getByRole("spinbutton", { name: "抽牌张数", exact: true }),
+    ).toHaveAttribute("max", "7");
+    await expect(
+      probability.getByRole("spinbutton", { name: "至少张数", exact: true }),
+    ).toHaveAttribute("max", "7");
+  });
+}
+
+for (const quantity of [0, 3, 10]) {
+  test(`draw input bounds and blur normalization for ${quantity} mainboard cards`, async ({
+    page,
+  }) => {
+    const state = await mock_api(page);
+    state.deck.sections[0]!.cards = [context_card(context(2), 2)];
+    state.deck.sections[1]!.cards = quantity
+      ? [context_card(context(1), quantity)]
+      : [];
+    state.deck = with_summary(state.deck);
+    await page.goto("/decks/1/edit");
+    await page.getByRole("button", { name: "卡组统计", exact: true }).click();
+    const area = page
+      .locator("section")
+      .filter({
+        has: page.getByRole("heading", { name: "抽到概率", exact: true }),
+      });
+    const least = area.getByRole("spinbutton", {
+      name: "至少张数",
+      exact: true,
+    });
+    const draws = area.getByRole("spinbutton", {
+      name: "抽牌张数",
+      exact: true,
+    });
+    await expect(least).toHaveValue(quantity ? "1" : "0");
+    await expect(draws).toHaveValue(String(Math.min(7, quantity)));
+    if (!quantity) {
+      await expect(least).toBeDisabled();
+      await expect(draws).toBeDisabled();
+      for (const button of await area.getByRole("button").all())
+        await expect(button).toBeDisabled();
+      await area
+        .getByRole("combobox", { name: "概率分组" })
+        .selectOption("produced");
+      await expect(area.locator("tbody tr td:last-child")).toHaveText(
+        Array(7).fill("0.00%"),
+      );
+      return;
+    }
+    await least.fill("2");
+    await draws.focus();
+    await expect(draws).toHaveAttribute("min", "2");
+    await draws.fill("1");
+    await draws.blur();
+    await expect(draws).toHaveValue("2");
+    await expect(least).toHaveAttribute("max", "2");
+    await least.fill("99");
+    await least.blur();
+    await expect(least).toHaveValue("2");
+    await draws.fill("999");
+    await draws.blur();
+    await expect(draws).toHaveValue(String(quantity));
+    await expect(
+      area.getByRole("button", { name: "增加抽牌张数", exact: true }),
+    ).toBeDisabled();
+    await least.fill("1.9");
+    await least.blur();
+    await expect(least).toHaveValue("1");
+    await draws.fill("");
+    await expect(draws).toHaveValue("");
+    await draws.blur();
+    await expect(draws).toHaveValue("1");
+    await least.fill("");
+    await least.blur();
+    await expect(least).toHaveValue("1");
+    await least.fill("-5");
+    await least.blur();
+    await expect(least).toHaveValue("1");
+    await expect(
+      area.getByRole("button", { name: "减少抽牌张数", exact: true }),
+    ).toBeDisabled();
+    await expect(
+      area.getByRole("button", { name: "增加至少张数", exact: true }),
+    ).toBeDisabled();
+  });
+}
+
 for (const removal of ["leave", "blank", "other", "same"] as const) {
   test(`zero-quantity cards remain until ${removal} ends their selection`, async ({
     page,
