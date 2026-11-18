@@ -461,7 +461,6 @@ export interface components {
     };
     CardLanguageResponse: {
       code: string;
-      display_name: string;
       sort_order: number;
     };
     CardImagesResponse: {
@@ -903,7 +902,6 @@ export interface components {
       set_code: string;
       collector_number: string;
       language: string;
-      language_display_name: string;
       /** @description Collection snapshots use normal or foil. Wishlist snapshots use null. */
       finish: ("normal" | "foil") | null;
       /** @description For add_card/remove_card snapshots this is +1/-1 respectively. For wishlist snapshots it is null. Historical snapshots are read-only. */
@@ -940,7 +938,6 @@ export interface components {
     };
     SetOptionLanguageResponse: {
       code: string;
-      display_name: string;
       sort_order: number;
     };
     SetListResponse: {
@@ -963,7 +960,6 @@ export interface components {
     };
     SetLanguageResponse: {
       code: string;
-      display_name: string;
       sort_order: number;
       available: boolean;
     };

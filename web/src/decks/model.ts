@@ -8,23 +8,16 @@ export const section_types: SectionType[] = [
   "sideboard",
   "maybeboard",
 ];
-export const section_names: Record<SectionType, string> = {
-  commander: "指挥官",
-  mainboard: "主牌",
-  sideboard: "备牌",
-  maybeboard: "备选",
-};
-export const type_names: Record<DTO<"TypeGroup">, string> = {
-  artifact: "神器",
-  creature: "生物",
-  enchantment: "结界",
-  instant: "瞬间",
-  sorcery: "法术",
-  planeswalker: "鹏洛客",
-  land: "地",
-  other: "其他",
-};
-export const type_order = Object.keys(type_names) as DTO<"TypeGroup">[];
+export const type_order: DTO<"TypeGroup">[] = [
+  "artifact",
+  "creature",
+  "enchantment",
+  "instant",
+  "sorcery",
+  "planeswalker",
+  "land",
+  "other",
+];
 export const colors = ["W", "U", "B", "R", "G", "C"] as const;
 export const palette = [
   "#FBF6D3",

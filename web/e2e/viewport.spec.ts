@@ -4,7 +4,7 @@ test("error modal stays inside the active viewport", async ({ page }) => {
   const state = await mock_api(page);
   state.fail_adjustment = true;
   await page.goto("/collection?merge_languages=false");
-  await page.getByRole("button", { name: "增加普通卡" }).click();
+  await page.getByRole("button", { name: "增加普通", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   const geometry = await page.evaluate(() => {
     const modal = document.querySelector("[role=dialog]")!,

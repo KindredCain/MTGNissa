@@ -6,7 +6,7 @@ import { GridComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { Select } from "../ui/controls";
 import { Mana } from "../cards/Mana";
-import { color_names } from "../cards/model";
+import { color_names } from "../shared/display-names";
 import { colors, palette, type Deck } from "./model";
 import {
   curve,

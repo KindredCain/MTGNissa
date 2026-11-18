@@ -2753,16 +2753,12 @@
           "code": {
             "type": "string"
           },
-          "display_name": {
-            "type": "string"
-          },
           "sort_order": {
             "type": "integer"
           }
         },
         "required": [
           "code",
-          "display_name",
           "sort_order"
         ]
       },
@@ -4743,9 +4739,6 @@
           "language": {
             "type": "string"
           },
-          "language_display_name": {
-            "type": "string"
-          },
           "finish": {
             "anyOf": [
               {
@@ -4783,7 +4776,6 @@
           "set_code",
           "collector_number",
           "language",
-          "language_display_name",
           "finish",
           "quantity_delta"
         ]
@@ -4938,16 +4930,12 @@
           "code": {
             "type": "string"
           },
-          "display_name": {
-            "type": "string"
-          },
           "sort_order": {
             "type": "integer"
           }
         },
         "required": [
           "code",
-          "display_name",
           "sort_order"
         ]
       },
@@ -5066,9 +5054,6 @@
           "code": {
             "type": "string"
           },
-          "display_name": {
-            "type": "string"
-          },
           "sort_order": {
             "type": "integer"
           },
@@ -5078,7 +5063,6 @@
         },
         "required": [
           "code",
-          "display_name",
           "sort_order",
           "available"
         ]

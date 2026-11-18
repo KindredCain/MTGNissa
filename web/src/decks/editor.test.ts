@@ -91,6 +91,28 @@ describe("unsaved deck editing", () => {
   });
 });
 describe("statistics", () => {
+  it("keeps type groups in business order when input cards arrive in a different order", () => {
+    const cards = (["land", "creature", "artifact"] as const).map(
+      (type, index) =>
+        context_card(
+          context(index + 1, {
+            statistics: { ...context().statistics, type_groups: [type] },
+          }),
+          index + 1,
+        ),
+    );
+    expect(
+      group_cards(cards, "type").map(({ key, name, quantity }) => ({
+        key,
+        name,
+        quantity,
+      })),
+    ).toEqual([
+      { key: "artifact", name: "神器", quantity: 3 },
+      { key: "creature", name: "生物", quantity: 2 },
+      { key: "land", name: "地", quantity: 1 },
+    ]);
+  });
   it("distinguishes explicit colorless cost from generic mana", () => {
     expect(cost_points("{3}{X}{W/U}{W/P}{2/W}{C}")).toEqual({
       W: 3,

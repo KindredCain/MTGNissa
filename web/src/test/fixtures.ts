@@ -18,7 +18,7 @@ export function card(
       released_at: "2016-09-30",
     },
     collector_number: String(index),
-    language: { code: "en", display_name: "英文", sort_order: 1 },
+    language: { code: "en", sort_order: 1 },
     released_at: "2016-09-30",
     cmc: index % 8,
     mana_cost: "{1}{G}",
@@ -165,7 +165,7 @@ export function detail(): DTO<"CardDetailResponse"> {
 }
 export const options: DTO<"CollectionOptionsResponse"> = {
   sets: [{ code: "KLD", display_name: "卡拉德许" }],
-  languages: [{ code: "en", display_name: "英文", sort_order: 1 }],
+  languages: [{ code: "en", sort_order: 1 }],
   colors: ["W", "U", "B", "R", "G", "multicolor", "colorless"],
   mana_values: ["0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
   rarities: ["common", "uncommon", "rare", "mythic", "special", "bonus"],
@@ -178,8 +178,8 @@ export const set_item: DTO<"SetListItemResponse"> = {
   card_count: 42,
   released_at: "2016-09-30",
   languages: [
-    { code: "en", display_name: "英文", sort_order: 1, available: true },
-    { code: "ja", display_name: "日文", sort_order: 2, available: false },
+    { code: "en", sort_order: 1, available: true },
+    { code: "ja", sort_order: 2, available: false },
   ],
   default_language: "en",
   parent_code: null,

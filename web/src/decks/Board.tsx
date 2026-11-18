@@ -21,9 +21,12 @@ import {
 import { useNavigate } from "react-router";
 import { CardImage } from "../cards/CardImage";
 import {
-  compare_cards,
+  exception_names,
   section_names,
   type_names,
+} from "../shared/display-names";
+import {
+  compare_cards,
   type_order,
   type Deck,
   type DeckCard,
@@ -288,12 +291,14 @@ export function Board({
               <h2>{section_names[kind]}</h2>
               {shortage.count > 0 && (
                 <span className={`${styles.badge} ${styles.shortage}`}>
-                  ⚠ 数量不足 {shortage.count}种·缺{shortage.missing}张
+                  ⚠ {exception_names.shortage} {shortage.count}种·缺
+                  {shortage.missing}张
                 </span>
               )}
               {usage.count > 0 && (
                 <span className={`${styles.badge} ${styles.usage}`}>
-                  ▱ 卡组占用 {usage.count}种·缺{usage.missing}张
+                  ▱ {exception_names.deck_usage} {usage.count}种·缺
+                  {usage.missing}张
                 </span>
               )}
               <small>共 {totals} 张牌</small>
@@ -331,7 +336,7 @@ export function Board({
                           <>
                             <span>
                               {type === "commander"
-                                ? "指挥官"
+                                ? section_names.commander
                                 : type_names[type as keyof typeof type_names]}
                             </span>
                             <span>
@@ -665,9 +670,7 @@ function DraggableCard({
         <button
           data-deck-exception
           className={`${styles.exception} ${card.exception.type === "deck_usage" ? styles.usage : ""}`}
-          aria-label={
-            card.exception.type === "shortage" ? "数量不足" : "卡组占用"
-          }
+          aria-label={exception_names[card.exception.type]}
           onPointerDown={(event) => event.stopPropagation()}
           onPointerEnter={(event) => {
             event.stopPropagation();

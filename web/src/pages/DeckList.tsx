@@ -10,7 +10,12 @@ import { decks_options } from "../api/lists";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardImage } from "../cards/CardImage";
 import { DeckMenu } from "../decks/actions";
-import { colors, palette, section_names, section_types } from "../decks/model";
+import { colors, palette, section_types } from "../decks/model";
+import {
+  deck_sort_names,
+  exception_names,
+  section_names,
+} from "../shared/display-names";
 import { relative_time } from "../decks/time";
 import {
   LoadMore,
@@ -89,10 +94,13 @@ export function Component() {
             prefix="排序："
             value={query.sort}
             options={[
-              { value: "updated_desc", label: "最近更新" },
-              { value: "created_desc", label: "创建时间" },
-              { value: "name_asc", label: "名称" },
-              { value: "card_count_desc", label: "卡牌总数" },
+              { value: "updated_desc", label: deck_sort_names.updated_desc },
+              { value: "created_desc", label: deck_sort_names.created_desc },
+              { value: "name_asc", label: deck_sort_names.name_asc },
+              {
+                value: "card_count_desc",
+                label: deck_sort_names.card_count_desc,
+              },
             ]}
             onChange={(value) => update({ sort: value })}
           />
@@ -170,9 +178,8 @@ export function Component() {
                                 : styles.usage
                             }
                           >
-                            {deck.exception.type === "shortage"
-                              ? "⚠ 数量不足"
-                              : "▱ 卡组占用"}
+                            {deck.exception.type === "shortage" ? "⚠" : "▱"}{" "}
+                            {exception_names[deck.exception.type]}
                           </span>
                         )}
                         <span className={styles.deckDetailLink}>

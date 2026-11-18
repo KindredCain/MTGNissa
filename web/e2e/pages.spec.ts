@@ -49,7 +49,7 @@ for (const entry of ["language", "set"] as const) {
         language = {
           ...initial.languages[0]!,
           printing_uuid: uuid(2),
-          language: { code: "ja", display_name: "日文", sort_order: 2 },
+          language: { code: "ja", sort_order: 2 },
           normal_quantity: 0,
         };
       initial.languages.push(language);
@@ -440,7 +440,7 @@ test("collection locks actions until confirmed and keeps failed quantities", asy
   const state = await mock_api(page);
   state.delay_adjustment = 500;
   await page.goto("/collection?merge_languages=false");
-  const increase = page.getByRole("button", { name: "增加普通卡" });
+  const increase = page.getByRole("button", { name: "增加普通", exact: true });
   await increase.click();
   await expect(increase).toBeDisabled();
   await expect(page.getByRole("button", { name: "增加闪卡" })).toBeDisabled();
@@ -453,7 +453,9 @@ test("collection locks actions until confirmed and keeps failed quantities", asy
   await page.getByRole("button", { name: "关闭", exact: true }).click();
   await expect(page.locator("output").first()).toHaveText("3");
   await page.goto("/collection");
-  await expect(page.getByRole("button", { name: "增加普通卡" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "增加普通", exact: true }),
+  ).toHaveCount(0);
 });
 for (const view of ["merge", "search"] as const) {
   test(`collection refreshes cached ${view} views without reloading the edited list`, async ({
@@ -485,7 +487,7 @@ for (const view of ["merge", "search"] as const) {
       await expect(page).toHaveURL(/merge_languages=false$/);
     }
     const before_adjustment = collection_requests;
-    await page.getByRole("button", { name: "增加普通卡", exact: true }).click();
+    await page.getByRole("button", { name: "增加普通", exact: true }).click();
     await expect(page.locator("output").first()).toHaveText("3");
     expect(collection_requests).toBe(before_adjustment);
     if (view === "merge") {
@@ -971,6 +973,7 @@ test("logs use read-only snapshots and retain summary when closing details", asy
   await page.goto("/operation_logs");
   await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("历史卡牌名称");
+  await expect(page.getByRole("dialog")).toContainText("英文");
   await expect(page.getByRole("dialog")).toContainText("12:00:00");
   await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(0);
   await page.getByRole("button", { name: "×", exact: true }).click();

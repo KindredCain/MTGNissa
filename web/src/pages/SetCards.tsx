@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { api } from "../api/client";
+import { language_name } from "../shared/display-names";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardGrid } from "../cards/CardTile";
 import { CardImage } from "../cards/CardImage";
@@ -59,7 +60,7 @@ function SetCards({
           <Link to="/sets">卡牌中心</Link>›<Link to="/sets">全部卡牌</Link>›
           <span>
             {list.data?.set.display_name ?? set_code}（
-            {list.data?.language.display_name ?? query.language}）
+            {language_name(list.data?.language.code ?? query.language)}）
           </span>
         </div>
         <Toolbar count={`${cards.length} 张卡牌`}>

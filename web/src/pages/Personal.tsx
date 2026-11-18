@@ -12,10 +12,15 @@ import {
   type WishlistItemView,
 } from "../api/lists";
 import { api, type DTO } from "../api/client";
+import {
+  finish_names,
+  language_name,
+  personal_sort_names,
+} from "../shared/display-names";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardTile } from "../cards/CardTile";
 import { CardFilters } from "../cards/filters";
-import { list_sort } from "../cards/model";
+import { personal_sorts } from "../cards/model";
 import { useCardActions } from "../cards/mutations";
 import {
   LoadMore,
@@ -78,7 +83,7 @@ function Filters({
         options={
           options?.languages.map((item) => ({
             value: item.code,
-            label: item.display_name,
+            label: language_name(item.code),
           })) ?? []
         }
         onChange={(value) => update({ language: value })}
@@ -89,7 +94,10 @@ function Filters({
         label="排序"
         prefix="排序："
         value={query.sort}
-        options={list_sort}
+        options={personal_sorts.map((value) => ({
+          value,
+          label: personal_sort_names[kind][value],
+        }))}
         onChange={(value) =>
           update({
             sort: value,
@@ -221,14 +229,13 @@ function OwnedTile({ item }: { item: DTO<"CollectionItemResponse"> }) {
         {(["normal", "foil"] as const).map((finish) => {
           const value =
               finish === "normal" ? item.normal_quantity : item.foil_quantity,
-            label = finish === "normal" ? "普通" : "闪卡",
-            action_label = finish === "normal" ? "普通卡" : "闪卡";
+            label = finish_names[finish];
           return (
             <div key={finish} className={styles.quantityStep}>
               {!merged && (
                 <button
                   type="button"
-                  aria-label={`减少${action_label}`}
+                  aria-label={`减少${label}`}
                   disabled={actions.pending || value === 0}
                   onClick={() => actions.act({ finish, delta: -1 })}
                 >
@@ -241,7 +248,7 @@ function OwnedTile({ item }: { item: DTO<"CollectionItemResponse"> }) {
               {!merged && (
                 <button
                   type="button"
-                  aria-label={`增加${action_label}`}
+                  aria-label={`增加${label}`}
                   disabled={actions.pending}
                   onClick={() => actions.act({ finish, delta: 1 })}
                 >

@@ -1,20 +1,15 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type DTO } from "../api/client";
+import {
+  action_names,
+  finish_names,
+  language_name,
+} from "../shared/display-names";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { Modal, validation_error } from "../ui/feedback";
 import { Pagination, Skeleton, Toolbar, useURLState } from "../ui/controls";
 import styles from "./logs.module.css";
-const action_names: Record<DTO<"ActionType">, string> = {
-  add_card: "增加卡牌",
-  remove_card: "减少卡牌",
-  add_wishlist: "加入愿望单",
-  remove_wishlist: "移出愿望单",
-  create_deck: "创建卡组",
-  delete_deck: "删除卡组",
-  copy_deck: "复制卡组",
-  modify_deck: "修改卡组",
-};
 function date_label(date: string, weekday = true) {
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
@@ -255,9 +250,9 @@ function Detail({
                 {item.kind === "card" && (
                   <td>
                     {item.card.set_code} · {item.card.collector_number} ·{" "}
-                    {item.card.language_display_name}
-                    {quantity_log
-                      ? ` · ${item.card.finish === "foil" ? "闪卡" : "普通"}`
+                    {language_name(item.card.language)}
+                    {quantity_log && item.card.finish !== null
+                      ? ` · ${finish_names[item.card.finish]}`
                       : ""}
                   </td>
                 )}

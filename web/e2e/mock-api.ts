@@ -68,8 +68,8 @@ export async function mock_api(page: Page) {
     else if (endpoint === "/sets/options")
       data = {
         languages: [
-          { code: "en", display_name: "英文", sort_order: 1 },
-          { code: "ja", display_name: "日文", sort_order: 2 },
+          { code: "en", sort_order: 1 },
+          { code: "ja", sort_order: 2 },
         ],
         set_types: ["expansion", "core"],
       };
@@ -343,7 +343,6 @@ export async function mock_api(page: Page) {
               set_code: "KLD",
               collector_number: "1",
               language: "en",
-              language_display_name: "英文",
               finish: "normal",
               quantity_delta: 1,
             },

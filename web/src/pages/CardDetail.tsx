@@ -2,12 +2,16 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { api } from "../api/client";
+import {
+  finish_names,
+  language_name,
+  rarity_names,
+} from "../shared/display-names";
 import { pageStyles } from "../app/Layout";
 import { CardImage } from "../cards/CardImage";
 import { useCardActions } from "../cards/mutations";
 import { Mana } from "../cards/Mana";
 import { Select, Skeleton, Stepper } from "../ui/controls";
-import { rarity_options } from "../cards/model";
 import styles from "../cards/detail.module.css";
 export function Component() {
   const { printing_uuid = "" } = useParams();
@@ -79,7 +83,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
         <Link
           to={`/sets/${encodeURIComponent(card.set.code)}/cards?language=${encodeURIComponent(card.language.code)}`}
         >
-          {card.set.display_name}（{card.language.display_name}）
+          {card.set.display_name}（{language_name(card.language.code)}）
         </Link>
         ›{card.display_name}
       </div>
@@ -115,10 +119,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             </span>
             <span>
               <small>稀有度</small>
-              {
-                rarity_options.find((option) => option.value === card.rarity)
-                  ?.label
-              }
+              {rarity_names[card.rarity]}
             </span>
           </div>
           <div className={styles.tabs}>
@@ -224,13 +225,13 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               </button>
             </div>
             <Stepper
-              label="普通卡"
+              label={finish_names.normal}
               value={data.collection.normal_quantity}
               disabled={actions.pending}
               onChange={(delta) => actions.act({ finish: "normal", delta })}
             />
             <Stepper
-              label="闪卡"
+              label={finish_names.foil}
               value={data.collection.foil_quantity}
               disabled={actions.pending}
               onChange={(delta) => actions.act({ finish: "foil", delta })}
@@ -238,7 +239,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             <div className={styles.versionTotal}>
               <span>当前版本拥有</span>
               <strong
-                title={`普通 ${data.collection.normal_quantity}，闪卡 ${data.collection.foil_quantity}`}
+                title={`${finish_names.normal} ${data.collection.normal_quantity}，${finish_names.foil} ${data.collection.foil_quantity}`}
               >
                 {data.collection.normal_quantity}:
                 {data.collection.foil_quantity}*
@@ -248,8 +249,8 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               该卡收藏数量{" "}
               <strong>共 {data.logical_collection.total_quantity} 张</strong>
               <small>
-                普通 {data.logical_collection.normal_quantity} · 闪{" "}
-                {data.logical_collection.foil_quantity}
+                {finish_names.normal} {data.logical_collection.normal_quantity}{" "}
+                · {finish_names.foil} {data.logical_collection.foil_quantity}
               </small>
             </div>
           </section>
@@ -265,7 +266,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                 value={card.printing_uuid}
                 options={data.languages.map((language) => ({
                   value: language.printing_uuid,
-                  label: language.language.display_name,
+                  label: language_name(language.language.code),
                 }))}
                 onChange={(value) => void switch_printing(value)}
               />
@@ -312,7 +313,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                           void switch_printing(language.printing_uuid);
                         }}
                       >
-                        {language.language.display_name}
+                        {language_name(language.language.code)}
                       </Link>
                     ))}
                   </div>

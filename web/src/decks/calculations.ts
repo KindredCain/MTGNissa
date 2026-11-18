@@ -1,9 +1,8 @@
-import { color_names } from "../cards/model";
+import { color_names, type_names } from "../shared/display-names";
 import {
   colors,
   palette,
   counted_cards,
-  type_names,
   type_order,
   type Deck,
   type DeckCard,

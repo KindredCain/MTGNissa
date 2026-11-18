@@ -6,6 +6,7 @@ import {
 import { sets_options } from "../api/lists";
 import { Link, useNavigate } from "react-router";
 import { api } from "../api/client";
+import { language_name, set_sort_names } from "../shared/display-names";
 import { PageHeader, pageStyles } from "../app/Layout";
 import {
   LoadMore,
@@ -81,7 +82,7 @@ export function Component() {
             options={
               options.data?.languages.map((item) => ({
                 value: item.code,
-                label: item.display_name,
+                label: language_name(item.code),
               })) ?? []
             }
             onChange={(value) => update({ language: value })}
@@ -102,18 +103,9 @@ export function Component() {
             label="系列排序"
             prefix="排序："
             value={query.sort}
-            options={sorts.map((value, index) => ({
+            options={sorts.map((value) => ({
               value,
-              label: [
-                "发行日期 ↓",
-                "发行日期 ↑",
-                "名称：A–Z",
-                "名称：Z–A",
-                "缩写：A–Z",
-                "缩写：Z–A",
-                "牌数：多到少",
-                "牌数：少到多",
-              ][index],
+              label: set_sort_names[value],
             }))}
             onChange={(value) => update({ sort: value })}
           />
@@ -175,7 +167,7 @@ export function Component() {
                                 );
                             }}
                           >
-                            {language.display_name}
+                            {language_name(language.code)}
                           </button>
                         ))}
                       </div>
