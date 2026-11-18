@@ -16,9 +16,8 @@ type SetRef struct {
 
 // Language describes an actual printing language from the Card DB dictionary.
 type Language struct {
-	Code        string
-	DisplayName string
-	SortOrder   int
+	Code      string
+	SortOrder int
 }
 
 // CardImages contains resolved picture sources without changing printing identity.

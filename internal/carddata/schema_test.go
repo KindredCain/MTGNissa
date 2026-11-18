@@ -105,32 +105,22 @@ func TestBuiltInDictionaryStringsFitColumns(t *testing.T) {
 	}
 }
 
-func TestLanguageDictionaryDisplayNames(t *testing.T) {
+func TestLanguageDictionaryMetadata(t *testing.T) {
 	languages := dictionaryRows()[tableScryfallLanguage]
 	if len(languages) != 19 {
 		t.Fatalf("language row count = %d, want 19", len(languages))
 	}
-
-	wantNames := map[string]string{
-		"en":  "英文",
-		"ja":  "日文",
-		"zhs": "简中",
-		"zht": "繁中",
-	}
-	for _, language := range languages {
-		if len(language.values) != 4 {
-			t.Fatalf("language row = %#v, want code, name, display_name, sort_order", language.values)
+	for index, language := range languages {
+		if len(language.values) != 3 {
+			t.Fatalf("language row = %#v, want code, name, sort_order", language.values)
 		}
-		code, ok := language.values[0].(string)
-		if !ok {
-			t.Fatalf("language code = %#v, want string", language.values[0])
+		for _, value := range language.values[:2] {
+			if text, ok := value.(string); !ok || strings.TrimSpace(text) == "" {
+				t.Errorf("language identifier or name = %#v, want non-empty string", value)
+			}
 		}
-		displayName, ok := language.values[2].(string)
-		if !ok || strings.TrimSpace(displayName) == "" {
-			t.Errorf("language %q display_name = %#v, want non-empty string", code, language.values[2])
-		}
-		if want, exists := wantNames[code]; exists && displayName != want {
-			t.Errorf("language %q display_name = %q, want %q", code, displayName, want)
+		if order, ok := language.values[2].(int64); !ok || order != int64(index+1) {
+			t.Errorf("language %v sort_order = %#v, want %d", language.values[0], language.values[2], index+1)
 		}
 	}
 }

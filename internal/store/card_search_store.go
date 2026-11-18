@@ -35,7 +35,6 @@ type searchEntryRow struct {
 	MainUUID      string `db:"main_uuid"`
 	PrintingUUID  string `db:"printing_uuid"`
 	LanguageCode  string `db:"language_code"`
-	LanguageName  string `db:"language_name"`
 	LanguageOrder int    `db:"language_order"`
 }
 
@@ -201,9 +200,10 @@ func searchColorCondition(c model.SearchCondition) (exp.Expression, error) {
 	}
 	if c.Multicolor {
 		op := c.Operator
-		if op == "=" {
+		switch op {
+		case "=":
 			op = ">="
-		} else if op == "!=" {
+		case "!=":
 			op = "<"
 		}
 		return searchComparison(goqu.L("BIT_COUNT(?)", column), op, 2)
@@ -259,7 +259,7 @@ func readSearchSummaries(ctx context.Context, tx *sqlx.Tx, representatives []sea
 	entries := make(map[string]searchEntryRow)
 	for start := 0; start < len(ids); start += 500 {
 		statement, args, err := sqlx.In(`SELECT p.card_uuid AS main_uuid,p.uuid AS printing_uuid,
- l.code AS language_code,l.display_name AS language_name,l.sort_order AS language_order
+ l.code AS language_code,l.sort_order AS language_order
  FROM mtgnissa_card_printing p JOIN scryfall_language l ON l.code=p.language_code
  WHERE p.card_uuid IN (?)`, ids[start:min(start+500, len(ids))])
 		if err != nil {
@@ -308,7 +308,6 @@ func readSearchSummaries(ctx context.Context, tx *sqlx.Tx, representatives []sea
 			entry := entriesBySource[rows[i].SourceID]
 			rows[i].UUID = entry.PrintingUUID
 			rows[i].LanguageCode = entry.LanguageCode
-			rows[i].LanguageName = entry.LanguageName
 			rows[i].LanguageOrder = entry.LanguageOrder
 			rows[i].ImageID = rows[i].SourceID
 		}

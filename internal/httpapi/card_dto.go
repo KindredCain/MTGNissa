@@ -15,9 +15,8 @@ type cardSetResponse struct {
 }
 
 type cardLanguageResponse struct {
-	Code        string `json:"code"`
-	DisplayName string `json:"display_name"`
-	SortOrder   int    `json:"sort_order"`
+	Code      string `json:"code"`
+	SortOrder int    `json:"sort_order"`
 }
 
 type cardImagesResponse struct {
@@ -177,7 +176,7 @@ func newCardSet(s model.SetRef) cardSetResponse {
 }
 
 func newCardLanguage(l model.Language) cardLanguageResponse {
-	return cardLanguageResponse{Code: l.Code, DisplayName: l.DisplayName, SortOrder: l.SortOrder}
+	return cardLanguageResponse{Code: l.Code, SortOrder: l.SortOrder}
 }
 
 func newQuantity(q model.Quantity) quantityResponse {

@@ -38,14 +38,13 @@ type OperationSummaryPage struct {
 
 // OperationCardSnapshot preserves the card display state at mutation time.
 type OperationCardSnapshot struct {
-	PrintingUUID        string
-	Name                string
-	SetCode             string
-	CollectorNumber     string
-	Language            string
-	LanguageDisplayName string
-	Finish              *string
-	QuantityDelta       *int64
+	PrintingUUID    string
+	Name            string
+	SetCode         string
+	CollectorNumber string
+	Language        string
+	Finish          *string
+	QuantityDelta   *int64
 }
 
 // OperationDeckSnapshot preserves a deck identity and name even after deletion.

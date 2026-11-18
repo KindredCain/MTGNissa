@@ -103,7 +103,6 @@ type OperationCardDetail struct {
 	SetCode         string      `db:"set_code"`
 	CollectorNumber string      `db:"collector_number"`
 	Lang            string      `db:"lang"`
-	LangDisplayName string      `db:"lang_display_name"`
 	FinishKind      *FinishKind `db:"finish_kind"`
 	QuantityDelta   *int64      `db:"quantity_delta"`
 }

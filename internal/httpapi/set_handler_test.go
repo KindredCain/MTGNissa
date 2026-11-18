@@ -52,7 +52,7 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 			SetType:         "expansion",
 			CardCount:       405,
 			ReleasedAt:      &releasedAt,
-			Languages:       []model.SetLanguage{{Code: "en", DisplayName: "英文", SortOrder: 1, Available: true}, {Code: "ja", DisplayName: "日文", SortOrder: 2, Available: false}},
+			Languages:       []model.SetLanguage{{Code: "en", SortOrder: 1, Available: true}, {Code: "ja", SortOrder: 2, Available: false}},
 			DefaultLanguage: &defaultLanguage,
 		}, {Code: "TKHM", Name: "Kaldheim Tokens", SetType: "token", ParentCode: &parentCode, Depth: 1}},
 		Total:      1,
@@ -91,6 +91,18 @@ func TestGetSetsReturnsContractDTO(t *testing.T) {
 		t.Fatalf("decode response: %v", err)
 	}
 	item := envelope.Data.Items[0]
+	if len(item.Languages) != 2 {
+		t.Fatalf("languages = %#v", item.Languages)
+	}
+	for index, language := range item.Languages {
+		fields := language.(map[string]any)
+		if _, exists := fields["display_name"]; exists {
+			t.Fatalf("language contains a display name: %#v", fields)
+		}
+		if fields["code"] != []string{"en", "ja"}[index] || fields["sort_order"] != float64(index+1) || fields["available"] != (index == 0) {
+			t.Fatalf("language metadata = %#v", fields)
+		}
+	}
 	if item.DisplayName != "凯德海姆" || item.ReleasedAt == nil || *item.ReleasedAt != "2021-02-05" || item.DefaultLanguage == nil || *item.DefaultLanguage != "en" || item.ParentCode != nil || item.Depth != 0 {
 		t.Fatalf("item = %#v", item)
 	}

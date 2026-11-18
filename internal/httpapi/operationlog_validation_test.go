@@ -50,11 +50,11 @@ func TestOperationLogDTOAndRoutesWithoutRequests(t *testing.T) {
 		}
 	}
 	page := newOperationLogPage(model.OperationLogPage{Page: 2, Total: 11, Items: []model.OperationItem{
-		{ID: 9007199254740993, Action: "add_wishlist", OccurredAt: time.Date(2026, 11, 9, 0, 0, 0, 0, time.FixedZone("UTC+8", 8*60*60)), Card: &model.OperationCardSnapshot{PrintingUUID: "snapshot", Name: "historic name", LanguageDisplayName: "historical language"}},
+		{ID: 9007199254740993, Action: "add_wishlist", OccurredAt: time.Date(2026, 11, 9, 0, 0, 0, 0, time.FixedZone("UTC+8", 8*60*60)), Card: &model.OperationCardSnapshot{PrintingUUID: "snapshot", Name: "historic name", Language: "ja"}},
 		{ID: 2, Action: "delete_deck", Deck: &model.OperationDeckSnapshot{ID: 77, Name: "deleted deck"}},
 	}})
 	raw, err := json.Marshal(page)
-	for _, fragment := range []string{`"operation_id":"9007199254740993"`, `"occurred_at":"2026-11-08T16:00:00Z"`, `"finish":null`, `"quantity_delta":null`, `"deck_id":"77"`, `"total_pages":2`} {
+	for _, fragment := range []string{`"operation_id":"9007199254740993"`, `"occurred_at":"2026-11-08T16:00:00Z"`, `"language":"ja"`, `"finish":null`, `"quantity_delta":null`, `"deck_id":"77"`, `"total_pages":2`} {
 		if err != nil || !strings.Contains(string(raw), fragment) {
 			t.Fatalf("missing %s in %s error=%v", fragment, raw, err)
 		}
@@ -64,6 +64,9 @@ func TestOperationLogDTOAndRoutesWithoutRequests(t *testing.T) {
 	}
 	if strings.Contains(string(raw), `"images"`) {
 		t.Fatal("operation snapshots must not include card images")
+	}
+	if strings.Contains(string(raw), `"language_display_name"`) {
+		t.Fatal("operation snapshots must expose language codes without display names")
 	}
 	routes := make(map[string]bool)
 	for _, route := range New(Dependencies{}).Routes() {

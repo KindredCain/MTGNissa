@@ -43,7 +43,6 @@ type faceRow struct {
 	SetDisplayName  string     `db:"set_display_name"`
 	SetReleasedAt   *time.Time `db:"set_released_at"`
 	LanguageCode    string     `db:"language_code"`
-	LanguageName    string     `db:"language_name"`
 	LanguageOrder   int        `db:"language_order"`
 	TypeLine        *string    `db:"type_line"`
 	DisplayTypeLine *string    `db:"display_type_line"`
@@ -65,9 +64,8 @@ type setRow struct {
 }
 
 type languageRow struct {
-	Code        string `db:"code"`
-	DisplayName string `db:"display_name"`
-	SortOrder   int    `db:"sort_order"`
+	Code      string `db:"code"`
+	SortOrder int    `db:"sort_order"`
 }
 
 // Translation lookups are correlated by indexed card UUID. Do not join global
@@ -90,7 +88,7 @@ const printingSummaryColumns = `
  p.uuid AS printing_uuid,
  COALESCE(NULLIF(fp.scryfall_id, ''), c.scryfall_id) AS image_id,
 ` + cardSummaryColumns + `,
- l.code AS language_code, l.display_name AS language_name, l.sort_order AS language_order
+ l.code AS language_code, l.sort_order AS language_order
 `
 
 // The main-face printing owns the identity and language. Secondary language rows
@@ -125,7 +123,7 @@ const versionQuery = `SELECT p.uuid AS printing_uuid, NULLIF(c.oracle_id,'') AS 
  s.code AS set_code, s.name AS set_name,
  COALESCE((SELECT MIN(NULLIF(TRIM(st.name),'')) FROM set_translation st WHERE st.code=s.code),s.name) AS set_display_name,
  s.released_at AS set_released_at, c.collector_number, c.released_at,
- l.code AS language_code, l.display_name AS language_name, l.sort_order AS language_order
+ l.code AS language_code, l.sort_order AS language_order
  FROM mtgnissa_card_printing p JOIN mtgnissa_card c ON c.uuid=p.card_uuid
  JOIN mtgnissa_set s ON s.code=c.set_code JOIN scryfall_language l ON l.code=p.language_code
 `
@@ -179,7 +177,7 @@ func (s *CardStore) List(ctx context.Context, code, language, query string) (mod
 		return model.CardList{}, apperror.WithDetails(apperror.CodeValidationFailed, "use the tokens endpoint for token sets", []apperror.Detail{{Field: "set_code", Reason: "must_be_a_normal_set"}})
 	}
 	var lang languageRow
-	if err := tx.GetContext(ctx, &lang, "SELECT code, display_name, sort_order FROM scryfall_language WHERE code=?", language); err != nil {
+	if err := tx.GetContext(ctx, &lang, "SELECT code, sort_order FROM scryfall_language WHERE code=?", language); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return model.CardList{}, apperror.WithDetails(apperror.CodeValidationFailed, "unknown language", []apperror.Detail{{Field: "language", Reason: "unknown_language"}})
 		}
@@ -213,7 +211,7 @@ func (s *CardStore) List(ctx context.Context, code, language, query string) (mod
 	if err := tx.Commit(); err != nil {
 		return model.CardList{}, err
 	}
-	return model.CardList{Set: model.SetRef{Code: set.Code, Name: set.Name, DisplayName: set.DisplayName, ReleasedAt: set.ReleasedAt}, Language: model.Language{Code: lang.Code, DisplayName: lang.DisplayName, SortOrder: lang.SortOrder}, Items: items}, nil
+	return model.CardList{Set: model.SetRef{Code: set.Code, Name: set.Name, DisplayName: set.DisplayName, ReleasedAt: set.ReleasedAt}, Language: model.Language{Code: lang.Code, SortOrder: lang.SortOrder}, Items: items}, nil
 }
 
 func readPrinting(ctx context.Context, tx *sqlx.Tx, id string) ([]faceRow, error) {
@@ -336,7 +334,7 @@ func summarize(rows []faceRow) (model.CardSummary, []model.CardFace) {
 	}
 	return model.CardSummary{PrintingUUID: r.UUID, OracleID: r.OracleID, Name: r.Name, DisplayName: displayName,
 		Set:             model.SetRef{Code: r.SetCode, Name: r.SetName, DisplayName: r.SetDisplayName, ReleasedAt: r.SetReleasedAt},
-		CollectorNumber: r.Number, Language: model.Language{Code: r.LanguageCode, DisplayName: r.LanguageName, SortOrder: r.LanguageOrder},
+		CollectorNumber: r.Number, Language: model.Language{Code: r.LanguageCode, SortOrder: r.LanguageOrder},
 		ReleasedAt: r.ReleasedAt, CMC: r.CMC, ManaCost: r.ManaCost, Colors: colors, Rarity: r.Rarity, Layout: r.Layout, Images: images}, faces
 }
 
@@ -395,7 +393,7 @@ func (s *CardStore) personalOptions(ctx context.Context, codes, languageCodes []
 	}
 	for start := 0; start < len(languageCodes); start += 500 {
 		batch := languageCodes[start:min(start+500, len(languageCodes))]
-		query, args, err := sqlx.In("SELECT code,display_name,sort_order FROM scryfall_language WHERE code IN (?)", batch)
+		query, args, err := sqlx.In("SELECT code,sort_order FROM scryfall_language WHERE code IN (?)", batch)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -407,7 +405,7 @@ func (s *CardStore) personalOptions(ctx context.Context, codes, languageCodes []
 			return nil, nil, fmt.Errorf("personal language metadata is unavailable")
 		}
 		for _, row := range rows {
-			languages = append(languages, model.Language{Code: row.Code, DisplayName: row.DisplayName, SortOrder: row.SortOrder})
+			languages = append(languages, model.Language{Code: row.Code, SortOrder: row.SortOrder})
 		}
 	}
 	sort.Slice(sets, func(i, j int) bool {

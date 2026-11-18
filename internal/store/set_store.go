@@ -21,9 +21,8 @@ type SetStore struct {
 }
 
 type setLanguageRow struct {
-	Code        string `db:"code"`
-	DisplayName string `db:"display_name"`
-	SortOrder   int    `db:"sort_order"`
+	Code      string `db:"code"`
+	SortOrder int    `db:"sort_order"`
 }
 
 type setListRow struct {
@@ -100,7 +99,7 @@ func (s *SetStore) List(ctx context.Context, params model.SetParams, position *S
 
 func queryLanguages(ctx context.Context, tx *sqlx.Tx) ([]model.SetLanguage, error) {
 	const query = `
-		SELECT code, display_name, sort_order
+		SELECT code, sort_order
 		FROM scryfall_language
 		ORDER BY sort_order ASC, code ASC
 		LIMIT 11
@@ -112,7 +111,7 @@ func queryLanguages(ctx context.Context, tx *sqlx.Tx) ([]model.SetLanguage, erro
 	}
 	languages := make([]model.SetLanguage, 0, len(rows))
 	for _, row := range rows {
-		languages = append(languages, model.SetLanguage{Code: row.Code, DisplayName: row.DisplayName, SortOrder: row.SortOrder})
+		languages = append(languages, model.SetLanguage{Code: row.Code, SortOrder: row.SortOrder})
 	}
 	return languages, nil
 }

@@ -35,10 +35,9 @@ type SetParams struct {
 
 // SetLanguage describes one of the languages shown on every Set list row.
 type SetLanguage struct {
-	Code        string
-	DisplayName string
-	SortOrder   int
-	Available   bool
+	Code      string
+	SortOrder int
+	Available bool
 }
 
 // SetListItem contains one root or descendant Set and its language availability.

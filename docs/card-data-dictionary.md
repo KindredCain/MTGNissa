@@ -552,7 +552,7 @@
 
 列数：4。
 
-作用：定义语言代码与显示名称。
+作用：定义语言代码、英文名称与业务排序；展示名称由前端翻译资源按语言代码映射。
 
 关键约束：`code` 为主键；与 `mtgnissa_card_printing.language_code` 及系列语言列表使用同一代码体系。
 
@@ -560,7 +560,6 @@
 | --- | --- | --- | --- |
 | code | VARCHAR(8) | 语言代码。 | 项目内置字典 |
 | name | VARCHAR(64) | 英文语言名。 | 项目内置字典 |
-| display_name | VARCHAR(64) | 展示名称。 | 项目内置字典 |
 | sort_order | SMALLINT UNSIGNED | 排序值。 | 项目内置字典 |
 
 ### `scryfall_layout`

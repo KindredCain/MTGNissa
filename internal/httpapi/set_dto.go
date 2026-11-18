@@ -10,9 +10,8 @@ type setOptionsResponse struct {
 }
 
 type setOptionLanguageResponse struct {
-	Code        string `json:"code"`
-	DisplayName string `json:"display_name"`
-	SortOrder   int    `json:"sort_order"`
+	Code      string `json:"code"`
+	SortOrder int    `json:"sort_order"`
 }
 
 type setListResponse struct {
@@ -35,10 +34,9 @@ type setListItemResponse struct {
 }
 
 type setLanguageResponse struct {
-	Code        string `json:"code"`
-	DisplayName string `json:"display_name"`
-	SortOrder   int    `json:"sort_order"`
-	Available   bool   `json:"available"`
+	Code      string `json:"code"`
+	SortOrder int    `json:"sort_order"`
+	Available bool   `json:"available"`
 }
 
 func newSetOptionsResponse(options model.SetOptions) setOptionsResponse {
@@ -48,7 +46,7 @@ func newSetOptionsResponse(options model.SetOptions) setOptionsResponse {
 	}
 	for _, language := range options.Languages {
 		response.Languages = append(response.Languages, setOptionLanguageResponse{
-			Code: language.Code, DisplayName: language.DisplayName, SortOrder: language.SortOrder,
+			Code: language.Code, SortOrder: language.SortOrder,
 		})
 	}
 	return response
@@ -69,10 +67,9 @@ func newSetListResponse(page model.SetPage) setListResponse {
 		languages := make([]setLanguageResponse, 0, len(item.Languages))
 		for _, language := range item.Languages {
 			languages = append(languages, setLanguageResponse{
-				Code:        language.Code,
-				DisplayName: language.DisplayName,
-				SortOrder:   language.SortOrder,
-				Available:   language.Available,
+				Code:      language.Code,
+				SortOrder: language.SortOrder,
+				Available: language.Available,
 			})
 		}
 		response.Items = append(response.Items, setListItemResponse{

@@ -153,7 +153,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
     "released_at": "2016-09-30"
   },
   "collector_number": "163",
-  "language": {"code": "ja", "display_name": "日文", "sort_order": 7},
+  "language": {"code": "ja", "sort_order": 7},
   "released_at": "2016-09-30",
   "cmc": 5,
   "mana_cost": "{3}{G}{G}",
@@ -182,8 +182,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 
 | DTO | 字段 | 类型 | 可空 | 说明 |
 | --- | --- | --- | --- | --- |
-| `LanguageDTO` | `code` | string | 否 | 语言代码 |
-|  | `display_name` | string | 否 | 直接取 `scryfall_language.display_name`；前端原样展示 |
+| `LanguageDTO` | `code` | string | 否 | 语言代码；前端按当前界面语言映射展示名称 |
 |  | `sort_order` | integer | 否 | 字典顺序 |
 | `CardImageDTO` | `front_url` | string | 是 | 数据源没有卡图时为 `null`，客户端使用统一占位图 |
 |  | `back_url` | string | 是 | 没有独立背面时为 `null` |
@@ -288,7 +287,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 ```json
 {
   "languages": [
-    {"code": "en", "display_name": "英文", "sort_order": 1}
+    {"code": "en", "sort_order": 1}
   ],
   "set_types": ["commander", "core", "expansion"]
 }
@@ -325,7 +324,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
   "card_count": 405,
   "released_at": "2021-02-05",
   "languages": [
-    {"code": "en", "display_name": "英文", "sort_order": 1, "available": true}
+    {"code": "en", "sort_order": 1, "available": true}
   ],
   "default_language": "en",
   "parent_code": null,
@@ -359,7 +358,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
     "display_name": "卡拉德许",
     "released_at": "2016-09-30"
   },
-  "language": {"code": "en", "display_name": "英文", "sort_order": 1},
+  "language": {"code": "en", "sort_order": 1},
   "items": [],
   "total": 0
 }
@@ -387,7 +386,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
       "released_at": "2016-09-30"
     },
     "collector_number": "163",
-    "language": {"code": "ja", "display_name": "日文", "sort_order": 7},
+    "language": {"code": "ja", "sort_order": 7},
     "released_at": "2016-09-30",
     "cmc": 5,
     "mana_cost": "{3}{G}{G}",
@@ -427,7 +426,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
     {
       "printing_uuid": "00000000-0000-0000-0000-000000000002",
       "oracle_id": "00000000-0000-0000-0000-000000000010",
-      "language": {"code": "en", "display_name": "英文", "sort_order": 1},
+      "language": {"code": "en", "sort_order": 1},
       "normal_quantity": 0,
       "foil_quantity": 0
     }
@@ -443,7 +442,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
         {
           "printing_uuid": "00000000-0000-0000-0000-000000000003",
           "oracle_id": "00000000-0000-0000-0000-000000000010",
-          "language": {"code": "en", "display_name": "英文", "sort_order": 1},
+          "language": {"code": "en", "sort_order": 1},
           "normal_quantity": 0,
           "foil_quantity": 0
         }
@@ -617,7 +616,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 ```json
 {
   "sets": [{"code": "KHM", "display_name": "凯德海姆"}],
-  "languages": [{"code": "en", "display_name": "英文", "sort_order": 1}],
+  "languages": [{"code": "en", "sort_order": 1}],
   "colors": ["W", "U", "B", "R", "G", "multicolor", "colorless"],
   "mana_values": ["0", "1", "2", "3", "4", "5", "6", "7", "8_plus"],
   "rarities": ["common", "uncommon", "rare", "mythic", "special", "bonus"]
@@ -797,7 +796,7 @@ counted_total
             "display_name": "生机妮莎",
             "set": {"code":"KLD","name":"Kaladesh","display_name":"卡拉德许","released_at":"2016-09-30"},
             "collector_number": "163",
-            "language": {"code":"en","display_name":"英文","sort_order":1},
+            "language": {"code":"en","sort_order":1},
             "released_at": "2016-09-30",
             "cmc": 5,
             "mana_cost": "{3}{G}{G}",
@@ -982,7 +981,7 @@ counted_total
             "display_name":"阳光戒",
             "set":{"code":"CMM","name":"Commander Masters","display_name":"指挥官大师","released_at":"2023-08-04"},
             "collector_number":"396",
-            "language":{"code":"en","display_name":"英文","sort_order":1},
+            "language":{"code":"en","sort_order":1},
             "released_at":"2023-08-04",
             "cmc":1,
             "mana_cost":"{1}",
@@ -1056,7 +1055,7 @@ counted_total
         "display_name": "阳光戒",
         "set": {"code": "CMM", "name": "Commander Masters", "display_name": "指挥官大师", "released_at": "2023-08-04"},
         "collector_number": "396",
-        "language": {"code": "en", "display_name": "英文", "sort_order": 1},
+        "language": {"code": "en", "sort_order": 1},
         "released_at": "2023-08-04",
         "cmc": 1,
         "mana_cost": "{1}",
@@ -1167,7 +1166,6 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
         "set_code": "M11",
         "collector_number": "146",
         "language": "en",
-        "language_display_name": "英文",
         "finish": "normal",
         "quantity_delta": 1
       }
@@ -1180,7 +1178,7 @@ App DB 只保存 UTC `occurred_at`，不持久化 `operation_date`。每次日�
 }
 ```
 
-愿望单日志的 `finish` 和 `quantity_delta` 为 `null`。卡牌日志使用 `OperationCardSnapshotDTO`，完整字段为示例中 `card` 的全部键：`printing_uuid`、`name`、`set_code`、`collector_number`、`language`、`language_display_name` 均为非空字符串；普通收藏日志的 `finish` 为 `finish_kind`、`quantity_delta` 为 `1` 或 `-1`。`printing_uuid` 是操作时具体语言印刷版本的主牌面业务标识，用于识别操作版本，日志明细行保持只读，不因此新增卡牌详情跳转。`language_display_name` 直接记录操作时 `scryfall_language.display_name`，前端不维护语言映射。读取历史日志只使用快照，不重新查询 Card DB 来改变文字、语言或版本身份；日志不保存或返回卡图，原记录失效时历史日志仍可展示。卡组动作将 `kind` 设为 `deck`，以 `deck: {"deck_id":"12","name":"Superfriends"}` 代替 `card`；快照展示不依赖当前卡组仍存在。
+愿望单日志的 `finish` 和 `quantity_delta` 为 `null`。卡牌日志使用 `OperationCardSnapshotDTO`，完整字段为示例中 `card` 的全部键：`printing_uuid`、`name`、`set_code`、`collector_number`、`language` 均为非空字符串；普通收藏日志的 `finish` 为 `finish_kind`、`quantity_delta` 为 `1` 或 `-1`。`printing_uuid` 是操作时具体语言印刷版本的主牌面业务标识，用于识别操作版本，日志明细行保持只读，不因此新增卡牌详情跳转。`language` 保存操作时的语言代码，前端按当前界面语言映射展示名称，不保存或返回语言展示名快照。读取历史日志只使用快照，不重新查询 Card DB 来改变文字、语言或版本身份；日志不保存或返回卡图，原记录失效时历史日志仍可展示。卡组动作将 `kind` 设为 `deck`，以 `deck: {"deck_id":"12","name":"Superfriends"}` 代替 `card`；快照展示不依赖当前卡组仍存在。
 
 ## 10. 卡牌数据维护接口
 

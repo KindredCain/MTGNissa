@@ -42,7 +42,7 @@ func (s *CardStore) Detail(ctx context.Context, id string) (model.CardDetailData
 		data.Versions = append(data.Versions, model.CardVersionCandidate{
 			Set:             model.SetRef{Code: row.SetCode, Name: row.SetName, DisplayName: row.SetDisplayName, ReleasedAt: row.SetReleasedAt},
 			CollectorNumber: row.Number, ReleasedAt: row.ReleasedAt, PrintingUUID: row.UUID, OracleID: row.OracleID,
-			Language: model.Language{Code: row.LanguageCode, DisplayName: row.LanguageName, SortOrder: row.LanguageOrder},
+			Language: model.Language{Code: row.LanguageCode, SortOrder: row.LanguageOrder},
 		})
 	}
 	if card.OracleID != nil {

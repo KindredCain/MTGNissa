@@ -40,7 +40,7 @@ func (s *storeStub) Summaries(_ context.Context, ids []string) (map[string]model
 func TestPageKeepsSQLBoundaryAndUsesCardDBDisplayMetadata(t *testing.T) {
 	id := "00000000-0000-4000-8000-000000000001"
 	boundary := &store.PersonalPosition{UUID: id, Name: "saved name", SetCode: "OLD", SetDate: "2020-01-01", Number: "107a", Mana: 2.5, Color: 1}
-	card := model.CardSummary{PrintingUUID: id, Name: "Current Card DB Name", DisplayName: "Current Translation", CMC: 7, Set: model.SetRef{Code: "OLD", DisplayName: "Current Set"}, Language: model.Language{Code: "en", DisplayName: "Current Language"}}
+	card := model.CardSummary{PrintingUUID: id, Name: "Current Card DB Name", DisplayName: "Current Translation", CMC: 7, Set: model.SetRef{Code: "OLD", DisplayName: "Current Set"}, Language: model.Language{Code: "en"}}
 	for _, order := range []string{"set", "name", "color", "mana_value"} {
 		stub := &storeStub{page: model.WishlistPage{Total: 12, Items: []model.WishlistItem{{Card: model.CardSummary{PrintingUUID: id, Name: "must not display"}}}}, next: boundary, cards: map[string]model.CardSummary{id: card}}
 		service := Service{store: stub, pageSize: 2}
@@ -81,7 +81,7 @@ func TestPageKeepsSQLBoundaryAndUsesCardDBDisplayMetadata(t *testing.T) {
 	}
 }
 func TestOptionsKeepCardDBMetadataAndFixedDomains(t *testing.T) {
-	stub := &storeStub{sets: []model.SetRef{{Code: "SET", DisplayName: "Current Set"}}, languages: []model.Language{{Code: "ja", DisplayName: "Current Language", SortOrder: 7}}}
+	stub := &storeStub{sets: []model.SetRef{{Code: "SET", DisplayName: "Current Set"}}, languages: []model.Language{{Code: "ja", SortOrder: 7}}}
 	service := Service{store: stub}
 	options, err := service.Options(context.Background())
 	if err != nil || !reflect.DeepEqual(options.Sets, stub.sets) || !reflect.DeepEqual(options.Languages, stub.languages) || len(options.Colors) != 7 || len(options.ManaValues) != 9 || len(options.Rarities) != 6 || stub.calls != 0 {
