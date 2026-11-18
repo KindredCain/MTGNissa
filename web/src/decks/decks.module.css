@@ -730,6 +730,10 @@
   border-bottom: 1px solid #edf0e9;
   font-size: 13px;
 }
+.resultRow input:disabled,
+.resultRow button:disabled {
+  opacity: 0.3;
+}
 .resultRow > span {
   margin-right: auto;
   font-weight: 400;

@@ -183,8 +183,7 @@ for (const removal of ["leave", "blank", "other", "same"] as const) {
         page.locator('[data-deck-card][class*="expanded"]'),
       ).toHaveCount(1);
       await page.mouse.move(1, 1);
-    }
-    else
+    } else
       await page
         .getByRole("button", { name: "测试卡牌 2，1 张", exact: true })
         .hover();
@@ -201,6 +200,98 @@ for (const removal of ["leave", "blank", "other", "same"] as const) {
 }
 
 for (const outcome of ["success", "failure"] as const) {
+  test(`pending additions block conflicting requests and recover after ${outcome}`, async ({
+    page,
+  }) => {
+    const state = await mock_api(page);
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let context_started!: () => void;
+    const started = new Promise<void>((resolve) => {
+      context_started = resolve;
+    });
+    let conflicts = 0;
+    page.on("request", (request) => {
+      if (/\/(save|parse_code)$/.test(request.url())) conflicts++;
+    });
+    await page.route("**/api/v1/decks/1/card_contexts", async (route) => {
+      context_started();
+      await pending;
+      await route.fulfill(
+        outcome === "failure"
+          ? {
+              status: 503,
+              json: {
+                status: 503,
+                data: null,
+                error: {
+                  code: "dependency_unavailable",
+                  message: "unavailable",
+                },
+                request_id: "test",
+              },
+            }
+          : {
+              json: {
+                status: 200,
+                data: {
+                  items: [{ ...context(2), requested_printing_uuid: uuid(2) }],
+                },
+                error: null,
+                request_id: "test",
+              },
+            },
+      );
+    });
+    await page.goto("/decks/1/edit");
+    await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
+    const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
+    await modal.getByRole("button", { name: "搜索", exact: true }).click();
+    await modal.getByRole("button", { name: "加入", exact: true }).click();
+    await started;
+    const adding = modal.getByRole("button", { name: "加入中", exact: true });
+    await expect(adding).toBeDisabled();
+    await expect(adding).toHaveCSS("opacity", "0.3");
+    await expect(modal.getByRole("spinbutton")).toBeDisabled();
+    await expect(modal.getByRole("spinbutton")).toHaveCSS("opacity", "0.3");
+    await expect(
+      modal.getByRole("button", { name: "×", exact: true }),
+    ).toBeDisabled();
+    await expect(modal.getByRole("textbox")).toBeEnabled();
+    await modal.getByRole("button", { name: "搜索", exact: true }).click();
+    await expect(adding).toBeDisabled();
+    for (const name of ["保存卡组", "读取卡组配置"]) {
+      const button = page.getByRole("button", {
+        name,
+        exact: true,
+        includeHidden: true,
+      });
+      await expect(button).toBeEnabled();
+      await button.evaluate((element: HTMLButtonElement) => element.click());
+      await expect(button).toBeEnabled();
+    }
+    expect(conflicts).toBe(0);
+    release();
+    if (outcome === "failure") {
+      const error = page.getByRole("dialog", { name: "操作失败", exact: true });
+      await expect(error).toBeVisible();
+      await error.getByRole("button", { name: "关闭", exact: true }).click();
+    }
+    await expect(
+      modal.getByRole("button", { name: "加入", exact: true }),
+    ).toBeEnabled();
+    await expect(modal.getByRole("spinbutton")).toBeEnabled();
+    await modal.getByRole("button", { name: "×", exact: true }).click();
+    await page.getByRole("button", { name: "保存卡组", exact: true }).click();
+    await expect(page).toHaveURL("/decks/1");
+    const cards = state.save_body?.sections.flatMap((section) => section.cards);
+    expect(cards?.some((card) => card.printing_uuid === uuid(2))).toBe(
+      outcome === "success",
+    );
+  });
+
   test(`a closed editing session ignores a late context ${outcome}`, async ({
     page,
   }) => {
@@ -260,11 +351,11 @@ for (const outcome of ["success", "failure"] as const) {
     await page.goto("/decks/1/edit");
     const old_modal = await request_add();
     await requested;
-    await old_modal.getByRole("button", { name: "×", exact: true }).click();
-    await page.getByRole("link", { name: "卡组", exact: true }).click();
-    await expect(page).toHaveURL("/decks");
-    await page.getByRole("link", { name: "查看测试卡组", exact: true }).click();
-    await page.getByRole("link", { name: "编辑卡组", exact: true }).click();
+    await expect(
+      old_modal.getByRole("button", { name: "×", exact: true }),
+    ).toBeDisabled();
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.reload();
     await expect(
       page.getByRole("textbox", { name: "卡组名称", exact: true }),
     ).toBeVisible();

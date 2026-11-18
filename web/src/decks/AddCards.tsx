@@ -11,6 +11,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useStore } from "zustand";
 import { api, type DTO } from "../api/client";
 import { Modal, validation_error } from "../ui/feedback";
 import { LoadMore } from "../ui/controls";
@@ -54,6 +55,9 @@ export function AddCards({
     search_gate = useRef(false),
     revision = useRef(0);
   const [searching, setSearching] = useState(false);
+  const adding = useStore(session.tasks, (state) =>
+    state.items.some((task) => task.kind === "add"),
+  );
   const [modal_root, setModalRoot] = useState<HTMLDivElement | null>(null);
   const [input, setInput] = useState(""),
     [suggestion, setSuggestion] = useState(""),
@@ -122,7 +126,10 @@ export function AddCards({
       open
       title="增加卡牌"
       className={styles.addModal}
-      close={close}
+      close={() => {
+        if (!session.has_tasks) close();
+      }}
+      close_disabled={adding}
       close_label="×"
       content_ref={setModalRoot}
     >
@@ -241,13 +248,17 @@ function Candidate({
 }) {
   const client = useQueryClient(),
     gate = useRef(false);
+  const task_key = item.card.oracle_id ?? item.card.printing_uuid;
+  const pending = useStore(session.tasks, (state) =>
+    state.items.some((task) => task.kind === "add" && task.key === task_key),
+  );
   const form = useForm({
     defaultValues: { quantity: 1 },
     resolver: zodResolver(quantity_schema),
   });
   const add = useMutation({
     mutationFn: (quantity: number) =>
-      session.run(async () => {
+      session.run_task("add", task_key, async () => {
         const cached = item.card.oracle_id
           ? client.getQueryData<DTO<"DeckContextResponse">>(
               session.key(deck_id, "oracle", item.card.oracle_id),
@@ -277,7 +288,7 @@ function Candidate({
       onSubmit={(event) => {
         void form.handleSubmit(
           ({ quantity }) => {
-            if (gate.current) return;
+            if (gate.current || pending) return;
             gate.current = true;
             add.mutate(quantity);
           },
@@ -304,11 +315,11 @@ function Candidate({
         min={1}
         max={4294967295}
         step={1}
-        disabled={add.isPending}
+        disabled={pending || add.isPending}
         {...form.register("quantity", { valueAsNumber: true })}
       />
-      <button type="submit" disabled={add.isPending}>
-        加入
+      <button type="submit" disabled={pending || add.isPending}>
+        {pending || add.isPending ? "加入中" : "加入"}
       </button>
     </form>
   );

@@ -75,15 +75,16 @@ function Editor({ initial: loaded }: { initial: Deck }) {
   const client = useQueryClient(),
     navigate = useNavigate(),
     saving = useRef(false);
+  const has_tasks = useStore(session.tasks, (state) => state.items.length > 0);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      state.dirty &&
+      (state.dirty || has_tasks) &&
       !saving.current &&
       (currentLocation.pathname !== nextLocation.pathname ||
         currentLocation.search !== nextLocation.search),
   );
   useBeforeUnload((event) => {
-    if (state.dirty) {
+    if (state.dirty || session.has_tasks) {
       event.preventDefault();
       event.returnValue = "";
     }
@@ -117,8 +118,9 @@ function Editor({ initial: loaded }: { initial: Deck }) {
   }, [cover]);
   const save = useMutation({
     mutationFn: () =>
-      session.run(async () => {
-        const name = name_schema.safeParse(state.deck.name);
+      session.run_task("save", "save", async () => {
+        const snapshot = editor.getState().deck;
+        const name = name_schema.safeParse(snapshot.name);
         if (!name.success)
           throw new ApiError(
             "validation_failed",
@@ -126,12 +128,12 @@ function Editor({ initial: loaded }: { initial: Deck }) {
           );
         return api.post(
           "/api/v1/decks/{deck_id}/save",
-          { ...deck_save(state.deck), name: name.data },
+          { ...deck_save(snapshot), name: name.data },
           { path: { deck_id: initial.deck_id } },
         );
       }),
     onSuccess: (deck) => {
-      if (!session.is_active) return;
+      if (!deck || !session.is_active) return;
       saving.current = true;
       state.saved();
       client.setQueryData(["decks", "detail", initial.deck_id], deck);
@@ -148,7 +150,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
   });
   const parse = useMutation({
     mutationFn: () =>
-      session.run(async () => {
+      session.run_task("parse", "parse", async () => {
         if (
           new TextEncoder().encode(source).length > 786432 ||
           source.split(/\r\n|\r|\n/).length > 1000
@@ -194,7 +196,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
         return { name: parsed.name, sections };
       }),
     onSuccess: (result) => {
-      if (!session.is_active) return;
+      if (!result || !session.is_active) return;
       editor.getState().replace(result.name, result.sections);
     },
   });

@@ -1,9 +1,41 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { api, ApiError, type DTO } from "../api/client";
+import { createStore } from "zustand/vanilla";
+
+type EditingTask = { kind: "add" | "save" | "parse"; key: string; id: symbol };
 
 export class EditingSession {
   readonly id = crypto.randomUUID();
   private active = false;
+  readonly tasks = createStore(() => ({ items: [] as EditingTask[] }));
+
+  get has_tasks() {
+    return this.tasks.getState().items.length > 0;
+  }
+
+  async run_task<T>(
+    kind: EditingTask["kind"],
+    key: string,
+    work: () => Promise<T>,
+  ): Promise<T | undefined> {
+    this.assert_active();
+    const tasks = this.tasks.getState().items;
+    if (
+      tasks.some(
+        (task) => kind !== "add" || task.kind !== "add" || task.key === key,
+      )
+    )
+      return;
+    const id = Symbol();
+    this.tasks.setState({ items: [...tasks, { kind, key, id }] });
+    try {
+      return await this.run(work);
+    } finally {
+      this.tasks.setState((state) => ({
+        items: state.items.filter((task) => task.id !== id),
+      }));
+    }
+  }
 
   activate() {
     this.active = true;

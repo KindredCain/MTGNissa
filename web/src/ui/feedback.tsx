@@ -37,6 +37,7 @@ export function Modal({
   close,
   className,
   close_label = "关闭",
+  close_disabled = false,
   dismiss = false,
   layer = "default",
   content_ref,
@@ -48,6 +49,7 @@ export function Modal({
   close?: () => void;
   className?: string;
   close_label?: string;
+  close_disabled?: boolean;
   dismiss?: boolean;
   layer?: "default" | "error";
   content_ref?: Ref<HTMLDivElement>;
@@ -92,7 +94,11 @@ export function Modal({
             {title_meta && (
               <span className={styles.modalMeta}>{title_meta}</span>
             )}
-            {close && <button onClick={close}>{close_label}</button>}
+            {close && (
+              <button disabled={close_disabled} onClick={close}>
+                {close_label}
+              </button>
+            )}
           </div>
           {children}
         </Dialog.Content>
