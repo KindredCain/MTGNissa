@@ -43,14 +43,45 @@ describe("unsaved deck editing", () => {
     expect(result.sections[1].cards[0].exception?.type).toBe("shortage");
     expect(result.sections[2].cards[0].exception?.type).toBe("shortage");
   });
-  it("clears the last removed cover and never submits oracle IDs or source text", () => {
+  it("retains a zero-quantity cover until removal and normalizes the save payload", () => {
     const editor = create_editor(deck());
     editor.getState().quantity("mainboard", uuid(1001), -2);
-    expect(editor.getState().deck.cover_printing_uuid).toBeNull();
+    expect(editor.getState().deck.cover_printing_uuid).toBe(uuid(1));
     const payload = deck_save(editor.getState().deck);
+    expect(payload.cover_printing_uuid).toBeNull();
     expect(payload.sections[1].cards).toEqual([]);
     expect(JSON.stringify(payload)).not.toContain("oracle_id");
     expect(payload).not.toHaveProperty("source_text");
+    editor.getState().quantity("mainboard", uuid(1001), 1);
+    expect(editor.getState().serialize().cover_printing_uuid).toBe(uuid(1));
+    editor.getState().quantity("mainboard", uuid(1001), -1);
+    editor.getState().remove_zero();
+    expect(editor.getState().deck.cover_printing_uuid).toBeNull();
+  });
+  it("retains the selected cover while its oracle remains in any section", () => {
+    const initial = deck();
+    const other_context = context(2);
+    initial.sections[3].cards = [
+      context_card(
+        {
+          ...other_context,
+          oracle_id: uuid(1001),
+          card: { ...other_context.card, oracle_id: uuid(1001) },
+        },
+        1,
+      ),
+    ];
+    const editor = create_editor(initial);
+    editor.getState().quantity("mainboard", uuid(1001), -2);
+    editor.getState().remove_zero();
+    editor.getState().name("仍保留封面");
+    expect(editor.getState().deck.cover_printing_uuid).toBe(uuid(1));
+    expect(editor.getState().serialize().cover_printing_uuid).toBe(uuid(1));
+    editor.getState().quantity("maybeboard", uuid(1001), -1);
+    expect(editor.getState().deck.cover_printing_uuid).toBe(uuid(1));
+    expect(editor.getState().serialize().cover_printing_uuid).toBeNull();
+    editor.getState().remove_zero();
+    expect(editor.getState().deck.cover_printing_uuid).toBeNull();
   });
   it("preserves the current name when parsing returns no name", () => {
     const editor = create_editor(deck());

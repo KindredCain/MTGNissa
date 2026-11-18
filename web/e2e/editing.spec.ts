@@ -199,6 +199,34 @@ for (const removal of ["leave", "blank", "other", "same"] as const) {
   });
 }
 
+for (const restore of [false, true]) {
+  test(`saving a fixed zero-quantity cover normalizes its payload, restore=${restore}`, async ({
+    page,
+  }) => {
+    const state = await mock_api(page);
+    state.deck.sections[1]!.cards = [context_card(context(1), 1)];
+    await page.goto("/decks/1/edit");
+    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
+    const card = page.getByRole("button", { name: /测试卡牌 1，\d 张/ });
+    await card.click({ position: { x: 70, y: 12 } });
+    await page
+      .getByRole("button", { name: "减少测试卡牌 1", exact: true })
+      .click();
+    await expect(card).toHaveAttribute("aria-label", "测试卡牌 1，0 张");
+    await expect(card).toHaveClass(/selected/);
+    if (restore)
+      await page
+        .getByRole("button", { name: "增加测试卡牌 1", exact: true })
+        .click();
+    await page.getByRole("button", { name: "保存卡组", exact: true }).click();
+    await expect(page).toHaveURL("/decks/1");
+    expect(state.save_body?.cover_printing_uuid).toBe(restore ? uuid(1) : null);
+    expect(
+      state.save_body?.sections.flatMap((section) => section.cards),
+    ).toHaveLength(restore ? 1 : 0);
+  });
+}
+
 for (const outcome of ["success", "failure"] as const) {
   test(`pending additions block conflicting requests and recover after ${outcome}`, async ({
     page,

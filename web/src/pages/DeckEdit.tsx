@@ -19,12 +19,7 @@ import { api, ApiError } from "../api/client";
 import { Board } from "../decks/Board";
 import { AddCards } from "../decks/AddCards";
 import { create_editor } from "../decks/store";
-import {
-  context_card,
-  deck_save,
-  section_types,
-  type Deck,
-} from "../decks/model";
+import { context_card, section_types, type Deck } from "../decks/model";
 import { EditingSession, get_contexts } from "../decks/contexts";
 import { Modal } from "../ui/feedback";
 import { Skeleton } from "../ui/controls";
@@ -119,7 +114,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
   const save = useMutation({
     mutationFn: () =>
       session.run_task("save", "save", async () => {
-        const snapshot = editor.getState().deck;
+        const snapshot = editor.getState().serialize();
         const name = name_schema.safeParse(snapshot.name);
         if (!name.success)
           throw new ApiError(
@@ -128,7 +123,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
           );
         return api.post(
           "/api/v1/decks/{deck_id}/save",
-          { ...deck_save(snapshot), name: name.data },
+          { ...snapshot, name: name.data },
           { path: { deck_id: initial.deck_id } },
         );
       }),
@@ -266,6 +261,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
           deck={state.deck}
           editor={locked ? undefined : editor}
           cover_mode={cover}
+          cover_oracle_id={state.cover_oracle_id}
           on_cover={() => setCover(false)}
         />
       </fieldset>

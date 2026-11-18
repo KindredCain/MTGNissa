@@ -47,11 +47,13 @@ export function Board({
   deck,
   editor,
   cover_mode = false,
+  cover_oracle_id,
   on_cover,
 }: {
   deck: Deck;
   editor?: EditorStore;
   cover_mode?: boolean;
+  cover_oracle_id?: string;
   on_cover?: () => void;
 }) {
   const [selection, setSelection] = useState<Selection | null>(null),
@@ -168,9 +170,12 @@ export function Board({
     "commander",
     ...type_order.filter((type) => type !== "other" || others),
   ];
-  const cover_oracle = deck.sections
-    .flatMap((section) => section.cards)
-    .find((card) => card.printing_uuid === deck.cover_printing_uuid)?.oracle_id;
+  const cover_oracle =
+    cover_oracle_id ??
+    deck.sections
+      .flatMap((section) => section.cards)
+      .find((card) => card.printing_uuid === deck.cover_printing_uuid)
+      ?.oracle_id;
   const onDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current as
       { card: DeckCard; section: SectionType } | undefined;

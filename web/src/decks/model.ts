@@ -129,10 +129,23 @@ export function context_card(
     exception: null,
   };
 }
-export function deck_save(deck: Deck): DTO<"DeckSaveRequest"> {
+export function deck_save(
+  deck: Deck,
+  cover_oracle_id = deck.sections
+    .flatMap((section) => section.cards)
+    .find((card) => card.printing_uuid === deck.cover_printing_uuid)?.oracle_id,
+): DTO<"DeckSaveRequest"> {
   return {
     name: deck.name,
-    cover_printing_uuid: deck.cover_printing_uuid,
+    cover_printing_uuid:
+      cover_oracle_id &&
+      deck.sections.some((section) =>
+        section.cards.some(
+          (card) => card.oracle_id === cover_oracle_id && card.quantity > 0,
+        ),
+      )
+        ? deck.cover_printing_uuid
+        : null,
     sections: deck.sections.map((section) => ({
       type: section.type,
       cards: section.cards

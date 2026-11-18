@@ -11,6 +11,7 @@ type State = {
   deck: Deck;
   dirty: boolean;
   baseline: string;
+  cover_oracle_id?: string;
   name: (name: string) => void;
   cover: (printing_uuid: string | null) => void;
   quantity: (section: SectionType, oracle_id: string, delta: number) => void;
@@ -24,25 +25,32 @@ type State = {
   ) => void;
   replace: (name: string | null, sections: Deck["sections"]) => void;
   saved: () => void;
+  serialize: () => ReturnType<typeof deck_save>;
 };
 export function create_editor(initial: Deck) {
   return createStore<State>((set, get) => {
+    let cover_oracle_id = initial.sections
+      .flatMap((section) => section.cards)
+      .find(
+        (card) => card.printing_uuid === initial.cover_printing_uuid,
+      )?.oracle_id;
     function commit(deck: Deck) {
-      const all = deck.sections
-        .flatMap((section) => section.cards)
-        .filter((card) => card.quantity > 0);
-      const cover_card = get()
-        .deck.sections.flatMap((section) => section.cards)
-        .find((card) => card.printing_uuid === deck.cover_printing_uuid);
+      const all = deck.sections.flatMap((section) => section.cards);
+      if (deck.cover_printing_uuid !== get().deck.cover_printing_uuid)
+        cover_oracle_id = all.find(
+          (card) => card.printing_uuid === deck.cover_printing_uuid,
+        )?.oracle_id;
       if (
         deck.cover_printing_uuid &&
-        !all.some((card) => card.oracle_id === cover_card?.oracle_id)
+        !all.some((card) => card.oracle_id === cover_oracle_id)
       )
         deck = { ...deck, cover_printing_uuid: null };
       const next = with_summary(deck);
       set({
         deck: next,
-        dirty: JSON.stringify(deck_save(next)) !== get().baseline,
+        cover_oracle_id: next.cover_printing_uuid ? cover_oracle_id : undefined,
+        dirty:
+          JSON.stringify(deck_save(next, cover_oracle_id)) !== get().baseline,
       });
     }
     function alter(
@@ -71,6 +79,8 @@ export function create_editor(initial: Deck) {
       deck: initial,
       dirty: false,
       baseline: JSON.stringify(deck_save(initial)),
+      cover_oracle_id,
+      serialize: () => deck_save(get().deck, cover_oracle_id),
       name: (name) => commit({ ...get().deck, name }),
       cover: (printing_uuid) =>
         commit({ ...get().deck, cover_printing_uuid: printing_uuid }),
@@ -161,7 +171,7 @@ export function create_editor(initial: Deck) {
       replace: (name, sections) =>
         commit({ ...get().deck, name: name ?? get().deck.name, sections }),
       saved: () =>
-        set({ dirty: false, baseline: JSON.stringify(deck_save(get().deck)) }),
+        set({ dirty: false, baseline: JSON.stringify(get().serialize()) }),
     };
   });
 }
