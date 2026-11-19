@@ -39,3 +39,12 @@ func requestDecodeError(err error, message string) error {
 	}
 	return apperror.Wrap(apperror.CodeInvalidRequest, message, err)
 }
+
+func oneOf(value string, choices ...string) bool {
+	for _, choice := range choices {
+		if value == choice {
+			return true
+		}
+	}
+	return false
+}

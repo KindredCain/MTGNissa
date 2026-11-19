@@ -45,6 +45,15 @@ type personalOrderTerm struct {
 	descending bool
 }
 
+type personalFilterValues struct {
+	Query      string
+	Sets       []string
+	Languages  []string
+	Colors     []string
+	ManaValues []string
+	Rarities   []string
+}
+
 // PrintingRefStore refreshes pending personal query metadata from Card DB.
 type PrintingRefStore struct {
 	app   *sqlx.DB
@@ -100,7 +109,7 @@ func personalBase(table string) *goqu.SelectDataset {
 	return dataset
 }
 
-func personalFilters(base *goqu.SelectDataset, params model.CollectionParams) *goqu.SelectDataset {
+func personalFilters(base *goqu.SelectDataset, params personalFilterValues) *goqu.SelectDataset {
 	if params.Query != "" {
 		base = base.Where(goqu.L("LOWER(r.name) COLLATE utf8mb4_bin LIKE ? ESCAPE '='", "%"+escapeLike(params.Query)+"%"))
 	}
@@ -151,18 +160,18 @@ func personalPage(base *goqu.SelectDataset, order string, position *PersonalPosi
 		boundary = *position
 	}
 	terms := []personalOrderTerm{}
+	nameOrder := personalOrderTerm{goqu.L("CAST(LOWER(r.name) AS BINARY)"), boundary.Name, false}
 	switch order {
-	case "set":
+	case "color":
+		terms = append(terms, personalOrderTerm{goqu.L(personalColorOrder), boundary.Color, false}, nameOrder)
+	case "mana_value_asc":
+		terms = append(terms, personalOrderTerm{goqu.L("r.cmc"), boundary.Mana, false}, nameOrder)
+	case "name_asc":
+		terms = append(terms, nameOrder)
+	default:
 		terms = append(terms, personalOrderTerm{goqu.L("COALESCE(DATE_FORMAT(r.set_released_at, '%Y-%m-%d'),'')"), boundary.SetDate, true},
 			personalOrderTerm{goqu.L("r.set_code COLLATE utf8mb4_bin"), boundary.SetCode, false},
 			personalOrderTerm{goqu.L("r.collector_sort_key"), collectorSortKey(boundary.Number), false})
-	case "color":
-		terms = append(terms, personalOrderTerm{goqu.L(personalColorOrder), boundary.Color, false})
-	case "mana_value":
-		terms = append(terms, personalOrderTerm{goqu.L("r.cmc"), boundary.Mana, false})
-	}
-	if order != "set" {
-		terms = append(terms, personalOrderTerm{goqu.L("CAST(LOWER(r.name) AS BINARY)"), boundary.Name, false})
 	}
 	terms = append(terms, personalOrderTerm{goqu.L("r.printing_uuid"), boundary.UUID, false})
 	orders := make([]exp.OrderedExpression, 0, len(terms))

@@ -106,7 +106,7 @@ func (s *Service) List(ctx context.Context, params model.CollectionParams) (mode
 				return model.CollectionPage{}, apperror.New(apperror.CodeDependencyUnavailable, "personal printing is unavailable")
 			}
 			page.Items[i].Card = card
-			if params.Sort == "set" {
+			if params.Sort == "set_desc" {
 				set := card.Set
 				page.Items[i].GroupSet = &set
 			}
@@ -118,7 +118,7 @@ func (s *Service) List(ctx context.Context, params model.CollectionParams) (mode
 func normalizeParams(params model.CollectionParams) model.CollectionParams {
 	params.Query = strings.ToLower(strings.TrimSpace(params.Query))
 	if params.Sort == "" {
-		params.Sort = "set"
+		params.Sort = "set_desc"
 	}
 	params.Sets = canonicalValues(params.Sets, true)
 	params.Languages = canonicalValues(params.Languages, true)

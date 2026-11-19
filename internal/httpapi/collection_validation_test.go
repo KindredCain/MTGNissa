@@ -11,10 +11,10 @@ import (
 
 func TestCollectionQueryDefaultsAndRepeatedFilters(t *testing.T) {
 	params, err := parseCollectionParams(url.Values{})
-	if err != nil || params.Sort != "set" || params.MergeSets || !params.MergeLanguages {
+	if err != nil || params.Sort != "set_desc" || params.MergeSets || !params.MergeLanguages {
 		t.Fatalf("defaults=%#v error=%v", params, err)
 	}
-	query, _ := url.ParseQuery("q=+Nissa+&sort=name&merge_sets=true&merge_languages=false&set_code=KLD&set_code=KHM&language=en&language=ja&color=G&color=multicolor&mana_value=5&mana_value=8_plus&rarity=mythic")
+	query, _ := url.ParseQuery("q=+Nissa+&sort=name_asc&merge_sets=true&merge_languages=false&set_code=KLD&set_code=KHM&language=en&language=ja&color=G&color=multicolor&mana_value=5&mana_value=8_plus&rarity=mythic")
 	params, err = parseCollectionParams(query)
 	if err != nil || params.Query != "Nissa" || !params.MergeSets || params.MergeLanguages || len(params.Sets) != 2 || len(params.Languages) != 2 || len(params.Colors) != 2 || len(params.ManaValues) != 2 {
 		t.Fatalf("params=%#v error=%v", params, err)
@@ -23,8 +23,8 @@ func TestCollectionQueryDefaultsAndRepeatedFilters(t *testing.T) {
 
 func TestCollectionQueryRejectsInvalidEnumsCombinationsAndRepeatedScalars(t *testing.T) {
 	for _, raw := range []string{
-		"sort=other", "sort=set&merge_sets=true", "merge_sets=1", "merge_languages=", "merge_languages=False",
-		"sort=name&sort=color", "q=a&q=b", "cursor=a&cursor=b", "merge_sets=false&merge_sets=true",
+		"sort=other", "sort=set", "sort=mana_value", "sort=name", "sort=set_desc&merge_sets=true", "merge_sets=1", "merge_languages=", "merge_languages=False",
+		"sort=name_asc&sort=color", "q=a&q=b", "cursor=a&cursor=b", "merge_sets=false&merge_sets=true",
 		"color=W,U", "color=other", "mana_value=8", "mana_value=2.5", "rarity=gold",
 		"language=en,ja", "set_code=KLD,KHM", "set_code=12345678901234567", "q=%00", "cursor=%00",
 	} {

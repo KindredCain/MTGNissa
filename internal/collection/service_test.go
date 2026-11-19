@@ -41,7 +41,7 @@ func TestPageKeepsSQLBoundaryAndUsesCardDBDisplayMetadata(t *testing.T) {
 	id := "00000000-0000-4000-8000-000000000001"
 	boundary := &store.PersonalPosition{UUID: id, Name: "saved name", SetCode: "OLD", SetDate: "2020-01-01", Number: "107a", Mana: 2.5, Color: 1}
 	card := model.CardSummary{PrintingUUID: id, Name: "Current Card DB Name", DisplayName: "Current Translation", CMC: 7, Set: model.SetRef{Code: "OLD", DisplayName: "Current Set"}, Language: model.Language{Code: "en"}}
-	for _, order := range []string{"set", "name", "color", "mana_value"} {
+	for _, order := range []string{"set_desc", "name_asc", "color", "mana_value_asc"} {
 		stub := &storeStub{page: model.CollectionPage{Total: 12, Items: []model.CollectionItem{{Card: model.CardSummary{PrintingUUID: id, Name: "must not display"}}}}, next: boundary, cards: map[string]model.CardSummary{id: card}}
 		service := Service{store: stub, pageSize: 2}
 		stub.page.Summary = model.OwnershipTotals{TotalQuantity: 42, DistinctCards: 9}
@@ -53,7 +53,7 @@ func TestPageKeepsSQLBoundaryAndUsesCardDBDisplayMetadata(t *testing.T) {
 		if err != nil || page.Total != 12 || len(page.Items) != 1 || !reflect.DeepEqual(page.Items[0].Card, card) || !reflect.DeepEqual(stub.resolved, []string{id}) || stub.pageSize != 2 || stub.params.Query != "name" || !reflect.DeepEqual(stub.params.Languages, []string{"en", "ja"}) {
 			t.Fatalf("sort=%s page=%+v params=%+v error=%v", order, page, stub.params, err)
 		}
-		if order == "set" && (page.Items[0].GroupSet == nil || *page.Items[0].GroupSet != card.Set) {
+		if order == "set_desc" && (page.Items[0].GroupSet == nil || *page.Items[0].GroupSet != card.Set) {
 			t.Fatalf("header used saved metadata: %+v", page.Items[0])
 		}
 		if page.Summary.TotalQuantity != 42 || page.Items[0].Quantity != (model.Quantity{Normal: 2, Foil: 3}) || !page.Items[0].MergedLanguages || page.Items[0].GroupSummary.TotalQuantity != 17 {

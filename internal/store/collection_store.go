@@ -67,7 +67,8 @@ func (s *CollectionStore) List(ctx context.Context, params model.CollectionParam
 	if err := tx.GetContext(ctx, &page.Summary, statement, args...); err != nil {
 		return page, nil, err
 	}
-	groups := collectionGroups(personalFilters(base, params), params.MergeSets, params.MergeLanguages)
+	filters := personalFilterValues{Query: params.Query, Sets: params.Sets, Languages: params.Languages, Colors: params.Colors, ManaValues: params.ManaValues, Rarities: params.Rarities}
+	groups := collectionGroups(personalFilters(base, filters), params.MergeSets, params.MergeLanguages)
 	page.Total, err = personalCount(ctx, tx, mysqlDialect.From(groups.As("groups")).Prepared(true))
 	if err != nil {
 		return page, nil, err
@@ -79,7 +80,7 @@ func (s *CollectionStore) List(ctx context.Context, params model.CollectionParam
 		return page, nil, err
 	}
 	totals := map[string]model.OwnershipTotals{}
-	if params.Sort == "set" && len(rows) > 0 {
+	if params.Sort == "set_desc" && len(rows) > 0 {
 		codes := make([]string, 0, len(rows))
 		for _, row := range rows {
 			codes = append(codes, row.SetCode)
@@ -98,7 +99,7 @@ func (s *CollectionStore) List(ctx context.Context, params model.CollectionParam
 	}
 	for _, row := range rows {
 		item := model.CollectionItem{Card: model.CardSummary{PrintingUUID: row.UUID}, Quantity: row.Quantity, MergedSets: params.MergeSets, MergedLanguages: params.MergeLanguages}
-		if params.Sort == "set" {
+		if params.Sort == "set_desc" {
 			total := totals[row.SetCode]
 			item.GroupSummary = &total
 		}

@@ -47,7 +47,7 @@ func getCollection(service collectionLister) gin.HandlerFunc {
 }
 
 func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
-	params := model.CollectionParams{Query: strings.TrimSpace(query.Get("q")), Sort: "set", MergeLanguages: true, Cursor: query.Get("cursor")}
+	params := model.CollectionParams{Query: strings.TrimSpace(query.Get("q")), Sort: "set_desc", MergeLanguages: true, Cursor: query.Get("cursor")}
 	for _, field := range []string{"q", "sort", "merge_sets", "merge_languages", "cursor"} {
 		if len(query[field]) > 1 {
 			return model.CollectionParams{}, apperror.New(apperror.CodeInvalidRequest, field+" must not be repeated")
@@ -62,7 +62,7 @@ func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
 	if value := query.Get("sort"); value != "" {
 		params.Sort = value
 	}
-	if !oneOf(params.Sort, "set", "color", "mana_value", "name") {
+	if !oneOf(params.Sort, "set_desc", "color", "mana_value_asc", "name_asc") {
 		return model.CollectionParams{}, validationError("sort", "must_be_a_valid_collection_sort")
 	}
 	for field, target := range map[string]*bool{"merge_sets": &params.MergeSets, "merge_languages": &params.MergeLanguages} {
@@ -74,8 +74,8 @@ func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
 			*target = value == "true"
 		}
 	}
-	if params.Sort == "set" && params.MergeSets {
-		return model.CollectionParams{}, validationError("merge_sets", "must_be_false_when_sort_is_set")
+	if params.Sort == "set_desc" && params.MergeSets {
+		return model.CollectionParams{}, validationError("merge_sets", "must_be_false_when_sort_is_set_desc")
 	}
 	for _, filter := range []struct {
 		field  string
@@ -111,13 +111,4 @@ func parseCollectionParams(query url.Values) (model.CollectionParams, error) {
 		*filter.target = values
 	}
 	return params, nil
-}
-
-func oneOf(value string, choices ...string) bool {
-	for _, choice := range choices {
-		if value == choice {
-			return true
-		}
-	}
-	return false
 }

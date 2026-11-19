@@ -6,13 +6,11 @@ import (
 	"testing"
 
 	"github.com/doug-martin/goqu/v9"
-
-	"mtgnissa/internal/model"
 )
 
 func TestPersonalFiltersStayInAppDBAndTreatNamesLiterally(t *testing.T) {
 	for _, table := range []string{"collection_item", "wishlist_item"} {
-		params := model.CollectionParams{Query: "a%_=", Sets: []string{"old", "new"}, Languages: []string{"en", "ja"}, Colors: []string{"W", "multicolor", "colorless"}, ManaValues: []string{"2", "8_plus"}, Rarities: []string{"common", "rare"}}
+		params := personalFilterValues{Query: "a%_=", Sets: []string{"old", "new"}, Languages: []string{"en", "ja"}, Colors: []string{"W", "multicolor", "colorless"}, ManaValues: []string{"2", "8_plus"}, Rarities: []string{"common", "rare"}}
 		query, args, err := personalColumns(personalFilters(personalBase(table), params)).ToSQL()
 		if err != nil {
 			t.Fatal(err)
@@ -37,7 +35,7 @@ func TestPersonalFiltersStayInAppDBAndTreatNamesLiterally(t *testing.T) {
 
 func TestCollectionSQLGroupsFilteredRowsAndKeepsExactMergeKeys(t *testing.T) {
 	for _, test := range []struct{ sets, languages bool }{{false, false}, {false, true}, {true, false}, {true, true}} {
-		groups := collectionGroups(personalFilters(personalBase("collection_item"), model.CollectionParams{Languages: []string{"ja"}}), test.sets, test.languages)
+		groups := collectionGroups(personalFilters(personalBase("collection_item"), personalFilterValues{Languages: []string{"ja"}}), test.sets, test.languages)
 		query, _, err := groups.ToSQL()
 		if err != nil {
 			t.Fatal(err)
@@ -66,7 +64,7 @@ func TestCollectionSQLGroupsFilteredRowsAndKeepsExactMergeKeys(t *testing.T) {
 
 func TestPersonalSQLCursorUsesAllTiesAndNaturalNumberKey(t *testing.T) {
 	boundary := &PersonalPosition{SetDate: "2020-01-01", SetCode: "SET", Number: "107a", Color: 2, Mana: 2.5, Name: "same", UUID: "00000000-0000-4000-8000-000000000001"}
-	for _, order := range []string{"set", "color", "mana_value", "name"} {
+	for _, order := range []string{"set_desc", "color", "mana_value_asc", "name_asc"} {
 		query, args, err := personalPage(personalColumns(personalBase("wishlist_item")), order, boundary, 50).ToSQL()
 		if err != nil {
 			t.Fatal(err)
@@ -74,7 +72,7 @@ func TestPersonalSQLCursorUsesAllTiesAndNaturalNumberKey(t *testing.T) {
 		if !strings.Contains(query, "r.printing_uuid > ?") || !strings.Contains(query, "r.printing_uuid ASC LIMIT ?") || args[len(args)-1] != int64(51) || strings.Contains(query, "OFFSET") {
 			t.Fatalf("missing unique boundary or lookahead: %s %#v", query, args)
 		}
-		if order == "set" {
+		if order == "set_desc" {
 			for _, fragment := range []string{"COALESCE(DATE_FORMAT(r.set_released_at, '%Y-%m-%d'),'') < ?", "r.set_code COLLATE utf8mb4_bin = ?", "r.collector_sort_key > ?", "r.collector_sort_key = ?"} {
 				if !strings.Contains(query, fragment) {
 					t.Fatalf("missing mixed-direction cursor %q: %s", fragment, query)

@@ -11,15 +11,15 @@ import (
 
 func TestWishlistQueryDefaultsFiltersAndRejectedMergeParameters(t *testing.T) {
 	params, err := parseWishlistParams(url.Values{})
-	if err != nil || params.Sort != "set" {
+	if err != nil || params.Sort != "set_desc" {
 		t.Fatalf("defaults=%#v error=%v", params, err)
 	}
-	query, _ := url.ParseQuery("q=+Nissa+&sort=name&set_code=KLD&set_code=KHM&language=en&language=ja&color=G&mana_value=5&rarity=mythic")
+	query, _ := url.ParseQuery("q=+Nissa+&sort=name_asc&set_code=KLD&set_code=KHM&language=en&language=ja&color=G&mana_value=5&rarity=mythic")
 	params, err = parseWishlistParams(query)
-	if err != nil || params.Query != "Nissa" || len(params.Sets) != 2 || len(params.Languages) != 2 || params.Sort != "name" {
+	if err != nil || params.Query != "Nissa" || len(params.Sets) != 2 || len(params.Languages) != 2 || params.Sort != "name_asc" {
 		t.Fatalf("params=%#v error=%v", params, err)
 	}
-	for _, raw := range []string{"merge_sets=false", "merge_languages=", "sort=other", "sort=name&sort=set", "q=a&q=b", "cursor=a&cursor=b", "color=gold", "mana_value=2.5", "rarity=gold", "set_code=KLD,KHM", "language=en,ja", "q=%00", "cursor=%00"} {
+	for _, raw := range []string{"merge_sets=false", "merge_languages=", "sort=other", "sort=name_asc&sort=set_desc", "q=a&q=b", "cursor=a&cursor=b", "color=gold", "mana_value=2.5", "rarity=gold", "set_code=KLD,KHM", "language=en,ja", "q=%00", "cursor=%00"} {
 		query, _ := url.ParseQuery(raw)
 		if _, err := parseWishlistParams(query); err == nil {
 			t.Errorf("accepted invalid wishlist query %s", raw)

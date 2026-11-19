@@ -39,7 +39,7 @@ func (s *WishlistStore) List(ctx context.Context, params model.WishlistParams, p
 		return page, nil, err
 	}
 	defer tx.Rollback()
-	filters := model.CollectionParams{Query: params.Query, Sets: params.Sets, Languages: params.Languages, Colors: params.Colors, ManaValues: params.ManaValues, Rarities: params.Rarities}
+	filters := personalFilterValues{Query: params.Query, Sets: params.Sets, Languages: params.Languages, Colors: params.Colors, ManaValues: params.ManaValues, Rarities: params.Rarities}
 	base := personalFilters(personalBase("wishlist_item"), filters)
 	page.Total, err = personalCount(ctx, tx, base)
 	if err != nil {
