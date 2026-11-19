@@ -8,3 +8,4 @@ export const query_client = new QueryClient({
     mutations: { retry: false },
   },
 });
+query_client.setQueryDefaults(["deck_context"], { gcTime: Infinity });
