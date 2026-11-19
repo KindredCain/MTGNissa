@@ -237,7 +237,7 @@
   background: #153526;
   border-color: var(--orange);
 }
-.nameInput {
+.nameField {
   width: 360px;
   height: 38px;
   background: #ffffff0d;
@@ -245,6 +245,48 @@
   color: white;
   border-radius: 7px;
   margin-bottom: 8px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 700;
+}
+.nameText {
+  position: relative;
+  min-width: 1ch;
+  max-width: calc(100% - 23px);
+  height: 100%;
+  flex: 0 1 auto;
+}
+.nameField:focus-within {
+  outline: 2px solid #f4a621;
+  outline-offset: 2px;
+}
+.nameInput:focus-visible {
+  outline: none;
+}
+.nameText > span {
+  visibility: hidden;
+  white-space: pre;
+}
+.nameInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.namePencil {
+  flex: 0 0 15px;
+  color: #f4a621;
+  pointer-events: none;
 }
 .region {
   margin-bottom: 34px;
@@ -411,30 +453,90 @@
   color: #f7d9a0;
 }
 .exceptionInfo {
+  --exception-background: #14221de6;
+  --exception-border: #c66b62;
+  --exception-title: #f7c6be;
   position: fixed;
-  background: #fff8f5;
-  border: 1px solid #c66b62;
-  color: #54372f;
+  background: var(--exception-background);
+  border: 1px solid var(--exception-border);
+  color: #98aaa1;
   border-radius: 8px;
   width: 232px;
   height: 92px;
-  padding: 16px 12px;
+  z-index: 82;
+  pointer-events: auto;
+}
+.exceptionUsage {
+  --exception-border: #b79551;
+  --exception-title: #f7d9a0;
+}
+.exceptionContent {
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.exceptionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--exception-title);
+  margin-bottom: 10px;
+}
+.exceptionTitle svg {
+  flex-shrink: 0;
+}
+.exceptionTitle > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exceptionMetrics {
   display: grid;
   grid-template-columns: 42px 42px 48px 42px;
   gap: 10px;
-  font-size: 9px;
-  z-index: 82;
-  pointer-events: none;
+  font-size: 8px;
+  white-space: nowrap;
 }
 .exceptionInfo strong {
   display: block;
-  font-size: 15px;
-  padding-top: 8px;
+  font-size: 12px;
+  padding-top: 4px;
+  font-weight: 400;
+  color: #f2f5f1;
 }
-.exceptionInfo {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  pointer-events: auto;
+.exceptionArrow {
+  position: absolute;
+  top: var(--exception-arrow-top);
+  left: -6px;
+  overflow: visible;
+  pointer-events: none;
+}
+.exceptionArrow path {
+  fill: var(--exception-background);
+  stroke: var(--exception-border);
+  stroke-width: 1px;
+}
+.exceptionInfo::before {
+  content: "";
+  position: absolute;
+  top: var(--exception-arrow-top);
+  left: -1px;
+  width: 2px;
+  height: 12px;
+  background: var(--exception-background);
+  pointer-events: none;
+}
+.exceptionInfo[data-exception-side="left"] .exceptionArrow {
+  left: auto;
+  right: -6px;
+}
+.exceptionInfo[data-exception-side="left"]::before {
+  left: auto;
+  right: -1px;
 }
 .bubble {
   position: fixed;

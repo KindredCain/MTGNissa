@@ -43,6 +43,22 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
         expanded = page.locator('[data-deck-card][class*="expanded"]');
       await badge.hover();
       await expect(hint).toBeVisible();
+      await expect(hint).toContainText(
+        `${status === "shortage" ? "数量不足" : "卡组占用"} 1`,
+      );
+      await expect(hint).toHaveCSS(
+        "border-top-color",
+        status === "shortage" ? "rgb(198, 107, 98)" : "rgb(183, 149, 81)",
+      );
+      const anchor = (await badge.boundingBox())!,
+        panel = (await hint.boundingBox())!,
+        arrow = (await hint.locator("svg").first().boundingBox())!;
+      expect(
+        Math.abs(arrow.y + arrow.height / 2 - anchor.y - anchor.height / 2),
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(panel.x - anchor.x - anchor.width - 4),
+      ).toBeLessThanOrEqual(1);
       await expect(expanded).toHaveCount(0);
       await expect(page.getByRole("tooltip")).toHaveCount(0);
       await badge.focus();
@@ -89,6 +105,73 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     });
   }
 }
+
+test("exception hints opening left remain connected to the status tab", async ({
+  page,
+}, testInfo) => {
+  const state = await mock_api(page);
+  state.deck.sections[1]!.cards = [
+    context_card(context(2, { type_group: "land", owned_quantity: 0 }), 1),
+  ];
+  state.deck = with_summary(state.deck);
+  await page.goto("/decks/1");
+  const badge = page.getByRole("button", { name: "数量不足", exact: true });
+  await badge.hover();
+  const hint = page.locator("[data-exception-side]");
+  await expect(hint).toHaveAttribute("data-exception-side", "left");
+  const anchor = (await badge.boundingBox())!,
+    panel = (await hint.boundingBox())!,
+    arrow = (await hint.locator("svg").first().boundingBox())!;
+  expect(Math.abs(anchor.x - panel.x - panel.width - 4)).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(arrow.y + arrow.height / 2 - anchor.y - anchor.height / 2),
+  ).toBeLessThanOrEqual(1);
+  for (const cell of await hint
+    .locator('[class*="exceptionMetrics"] > div')
+    .all())
+    expect(
+      await cell.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth,
+      ),
+    ).toBe(true);
+  await hint.screenshot({ path: testInfo.outputPath("exception-left.png") });
+  await page.screenshot({
+    path: testInfo.outputPath("exception-connection.png"),
+    clip: {
+      x: panel.x - 8,
+      y: panel.y - 8,
+      width: panel.width + 36,
+      height: panel.height + 16,
+    },
+  });
+});
+
+test("editor pencil follows the name without overflowing long names", async ({
+  page,
+}, testInfo) => {
+  await mock_api(page);
+  await page.goto("/decks/1/edit");
+  const name = page.getByRole("textbox", { name: "卡组名称", exact: true });
+  const field = name.locator("../..");
+  const pencil = field.locator("svg");
+  await name.fill("短名");
+  const input_box = (await name.boundingBox())!,
+    icon_box = (await pencil.boundingBox())!,
+    field_box = (await field.boundingBox())!;
+  expect(
+    Math.abs(icon_box.x - input_box.x - input_box.width - 8),
+  ).toBeLessThanOrEqual(1);
+  expect(icon_box.width).toBe(15);
+  await field.screenshot({ path: testInfo.outputPath("name-pencil.png") });
+  await name.fill("长名称".repeat(85));
+  const long_icon = (await pencil.boundingBox())!,
+    long_field = (await field.boundingBox())!;
+  expect(long_field.width).toBe(field_box.width);
+  expect(long_icon.x + long_icon.width).toBeLessThanOrEqual(
+    long_field.x + long_field.width - 10,
+  );
+  await expect(name).toHaveValue("长名称".repeat(85));
+});
 
 test("editor keeps one expanded card and clears the previous fixed selection", async ({
   page,
@@ -195,11 +278,9 @@ for (const quantity of [0, 3, 10]) {
     state.deck = with_summary(state.deck);
     await page.goto("/decks/1/edit");
     await page.getByRole("button", { name: "卡组统计", exact: true }).click();
-    const area = page
-      .locator("section")
-      .filter({
-        has: page.getByRole("heading", { name: "抽到概率", exact: true }),
-      });
+    const area = page.locator("section").filter({
+      has: page.getByRole("heading", { name: "抽到概率", exact: true }),
+    });
     const least = area.getByRole("spinbutton", {
       name: "至少张数",
       exact: true,

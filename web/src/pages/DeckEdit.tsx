@@ -204,12 +204,31 @@ function Editor({ initial: loaded }: { initial: Deck }) {
       >
         <header className={styles.header}>
           <div>
-            <input
-              className={styles.nameInput}
-              aria-label="卡组名称"
-              value={state.deck.name}
-              onChange={(event) => state.name(event.target.value)}
-            />
+            <div className={styles.nameField}>
+              <div className={styles.nameText}>
+                <span aria-hidden="true">{state.deck.name || " "}</span>
+                <input
+                  className={styles.nameInput}
+                  aria-label="卡组名称"
+                  value={state.deck.name}
+                  onChange={(event) => state.name(event.target.value)}
+                />
+              </div>
+              <svg
+                className={styles.namePencil}
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L9 17l-4 1 1-4Z" />
+              </svg>
+            </div>
             <p>
               共 {state.deck.summary.counted_total} 张 · 收集率{" "}
               {Math.round(state.deck.summary.collection_rate * 100)}%

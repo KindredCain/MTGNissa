@@ -676,7 +676,7 @@ function DraggableCard({
             event.stopPropagation();
             pointer_inside.current = false;
             onLeave();
-            onException(rect());
+            onException(event.currentTarget.getBoundingClientRect());
           }}
           onPointerLeave={(event) => {
             onExceptionLeave();
@@ -691,12 +691,12 @@ function DraggableCard({
           onFocus={(event) => {
             event.stopPropagation();
             if (!pointer_inside.current) onLeave();
-            onException(rect());
+            onException(event.currentTarget.getBoundingClientRect());
           }}
           onBlur={onExceptionLeave}
           onClick={(event) => {
             event.stopPropagation();
-            onException(rect());
+            onException(event.currentTarget.getBoundingClientRect());
           }}
         >
           {card.exception.type === "shortage" ? "!" : "▱"}
@@ -752,43 +752,105 @@ export function PreviewBubble({
       .flatMap((section) => section.cards)
       .filter((item) => item.oracle_id === card.oracle_id)
       .reduce((sum, item) => sum + item.quantity, 0) ?? card.quantity;
-  if (exception)
+  if (exception) {
+    const opens_right =
+      rect.right + 4 + 232 <= viewport.left + viewport.width - 8;
+    const hint_left = opens_right ? rect.right + 4 : rect.left - 4 - 232;
+    const hint_top = Math.max(
+      viewport.top + 8,
+      Math.min(rect.top - 5, viewport.top + viewport.height - 92 - 8),
+    );
+    const arrow_top = Math.max(
+      6,
+      Math.min(74, rect.top + rect.height / 2 - hint_top - 6),
+    );
+    const usage = card.exception?.type === "deck_usage";
     return (
       <div
-        className={styles.exceptionInfo}
+        className={`${styles.exceptionInfo} ${usage ? styles.exceptionUsage : ""}`}
         data-deck-preview
-        style={{ left, top, maxHeight: viewport.height - 16 }}
+        data-exception-side={opens_right ? "right" : "left"}
+        style={
+          {
+            left: Math.max(viewport.left + 8, hint_left),
+            top: hint_top,
+            maxHeight: viewport.height - 16,
+            "--exception-arrow-top": `${arrow_top}px`,
+          } as CSSProperties
+        }
         tabIndex={0}
         onPointerEnter={onPointerEnter}
         onPointerLeave={onPointerLeave}
         onFocus={onPointerEnter}
         onBlur={onPointerLeave}
       >
-        {[
-          ["当前卡组", current],
-          ["实际拥有", card.owned_quantity],
-          [
-            "所有卡组合计",
-            deck
-              ? current + card.other_decks_quantity
-              : card.all_decks_quantity,
-          ],
-          [
-            "使用卡组",
-            deck
-              ? card.other_decks_count + (current > 0 ? 1 : 0)
-              : card.using_decks,
-          ],
-        ].map(([name, value]) => (
-          <div key={name}>
-            {name}
-            <strong>
-              {value} {name === "使用卡组" ? "个" : "张"}
-            </strong>
+        <svg
+          className={styles.exceptionArrow}
+          width="7"
+          height="12"
+          viewBox="0 0 7 12"
+          aria-hidden="true"
+        >
+          <path d={opens_right ? "M7 0 1 6 7 12" : "M0 0 6 6 0 12"} />
+        </svg>
+        <div className={styles.exceptionContent}>
+          <div className={styles.exceptionTitle}>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              {usage ? (
+                <>
+                  <path d="m12 3 10 5-10 5L2 8Z" />
+                  <path d="m2 12 10 5 10-5M2 16l10 5 10-5" />
+                </>
+              ) : (
+                <>
+                  <path d="M10.3 3.9 2 18.2A2 2 0 0 0 3.7 21h16.6a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                  <path d="M12 9v4m0 4h.01" />
+                </>
+              )}
+            </svg>
+            <span>
+              {exception_names[usage ? "deck_usage" : "shortage"]}{" "}
+              {card.exception?.missing_quantity}
+            </span>
           </div>
-        ))}
+          <div className={styles.exceptionMetrics}>
+            {[
+              ["当前卡组", current],
+              ["实际拥有", card.owned_quantity],
+              [
+                "所有卡组合计",
+                deck
+                  ? current + card.other_decks_quantity
+                  : card.all_decks_quantity,
+              ],
+              [
+                "使用卡组",
+                deck
+                  ? card.other_decks_count + (current > 0 ? 1 : 0)
+                  : card.using_decks,
+              ],
+            ].map(([name, value]) => (
+              <div key={name}>
+                {name}
+                <strong>
+                  {value} {name === "使用卡组" ? "个" : "张"}
+                </strong>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
+  }
   if (variant === "text")
     return (
       <TextPreview
