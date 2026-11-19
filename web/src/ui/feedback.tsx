@@ -26,8 +26,12 @@ export function validation_error(message: string) {
   notify_error(new ApiError("validation_failed", message));
 }
 const ToastContext = createContext<(message: string) => void>(() => {});
+const ErrorContext = createContext(false);
 export function useToast() {
   return useContext(ToastContext);
+}
+export function useErrorOpen() {
+  return useContext(ErrorContext);
 }
 export function Modal({
   open,
@@ -125,21 +129,23 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     }
   }, [toast]);
   return (
-    <ToastContext.Provider value={setToast}>
-      {children}
-      <Modal open={errors.length > 0} title="操作失败" layer="error">
-        <div className={styles.errorBody}>{errors[0]}</div>
-        <div className={styles.modalFooter}>
-          <button onClick={() => setErrors((current) => current.slice(1))}>
-            关闭
-          </button>
-        </div>
-      </Modal>
-      {toast && (
-        <div role="status" className={styles.toast}>
-          {toast}
-        </div>
-      )}
-    </ToastContext.Provider>
+    <ErrorContext.Provider value={errors.length > 0}>
+      <ToastContext.Provider value={setToast}>
+        {children}
+        <Modal open={errors.length > 0} title="操作失败" layer="error">
+          <div className={styles.errorBody}>{errors[0]}</div>
+          <div className={styles.modalFooter}>
+            <button onClick={() => setErrors((current) => current.slice(1))}>
+              关闭
+            </button>
+          </div>
+        </Modal>
+        {toast && (
+          <div role="status" className={styles.toast}>
+            {toast}
+          </div>
+        )}
+      </ToastContext.Provider>
+    </ErrorContext.Provider>
   );
 }

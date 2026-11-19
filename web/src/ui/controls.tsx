@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation, useSearchParams } from "react-router";
+import { useErrorOpen } from "./feedback";
 import styles from "./ui.module.css";
 export type Option = { value: string; label: string };
 export function useURLState(
@@ -248,18 +249,104 @@ export function LoadMore({
   end_label?: string;
   more_label?: string;
 }) {
-  const sentinel = useRef<HTMLDivElement>(null);
+  const sentinel = useRef<HTMLDivElement>(null),
+    requested = useRef(false),
+    error_open = useErrorOpen();
   useEffect(() => {
-    if (!sentinel.current || !has_more || loading || failed) return;
+    if (!loading) requested.current = false;
+  }, [has_more, loading, root, failed, loaded_count]);
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !has_more || loading || error_open) return;
+    function request() {
+      if (requested.current) return;
+      requested.current = true;
+      load();
+    }
+    if (failed) {
+      const scroller = root ?? document.body;
+      let armed = false,
+        previous_top = scroller.scrollTop;
+      function retry() {
+        const position = node!.getBoundingClientRect(),
+          bounds = root?.getBoundingClientRect();
+        if (
+          armed &&
+          position.top <=
+            (bounds?.bottom ?? document.body.clientHeight) + 400 &&
+          position.bottom >= (bounds?.top ?? 0) - 400
+        )
+          request();
+      }
+      function accepts(event: Event) {
+        if (!(event.target instanceof Element)) return false;
+        const floating = event.target.closest(
+          '[role="dialog"], [role="tooltip"]',
+        );
+        return !floating || floating.contains(scroller);
+      }
+      function wheel(event: Event) {
+        if (!accepts(event)) return;
+        // Modal scroll locks can prevent overscroll while the wheel still expresses retry intent.
+        armed = (event as WheelEvent).deltaY > 0;
+        retry();
+      }
+      function keydown(event: Event) {
+        if (!accepts(event)) return;
+        const key = event as KeyboardEvent,
+          target = event.target as Element;
+        if (
+          key.defaultPrevented ||
+          key.altKey ||
+          key.ctrlKey ||
+          key.metaKey ||
+          target.closest('input, textarea, select, [contenteditable="true"]')
+        )
+          return;
+        armed =
+          ["ArrowDown", "PageDown", "End"].includes(key.key) ||
+          (key.key === " " &&
+            !key.shiftKey &&
+            !target.closest('button, [role="button"], a'));
+        retry();
+      }
+      function pointerdown(event: Event) {
+        armed =
+          event.target === scroller && (event as PointerEvent).button === 0;
+      }
+      function pointerup() {
+        armed = false;
+      }
+      function scroll() {
+        const next_top = scroller.scrollTop;
+        if (next_top > previous_top) retry();
+        else if (next_top < previous_top) armed = false;
+        previous_top = next_top;
+      }
+      scroller.addEventListener("wheel", wheel, { passive: true });
+      scroller.addEventListener("keydown", keydown);
+      scroller.addEventListener("pointerdown", pointerdown);
+      scroller.addEventListener("scroll", scroll, { passive: true });
+      document.addEventListener("pointerup", pointerup);
+      document.addEventListener("pointercancel", pointerup);
+      return () => {
+        scroller.removeEventListener("wheel", wheel);
+        scroller.removeEventListener("keydown", keydown);
+        scroller.removeEventListener("pointerdown", pointerdown);
+        scroller.removeEventListener("scroll", scroll);
+        document.removeEventListener("pointerup", pointerup);
+        document.removeEventListener("pointercancel", pointerup);
+      };
+    }
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) load();
+        if (entries.some((entry) => entry.isIntersecting)) request();
       },
       { root, rootMargin: "400px" },
     );
-    observer.observe(sentinel.current);
+    observer.observe(node);
     return () => observer.disconnect();
-  }, [has_more, loading, load, root, failed]);
+  }, [has_more, loading, load, root, failed, error_open]);
   return (
     <div ref={sentinel} className={styles.loadMore}>
       {failed ? null : loading ? (
