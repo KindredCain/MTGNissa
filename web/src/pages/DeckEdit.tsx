@@ -69,6 +69,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
     [cover, setCover] = useState(false);
   const client = useQueryClient(),
     navigate = useNavigate(),
+    statistics_trigger = useRef<HTMLButtonElement>(null),
     saving = useRef(false);
   const has_tasks = useStore(session.tasks, (state) => state.items.length > 0);
   const blocker = useBlocker(
@@ -285,7 +286,9 @@ function Editor({ initial: loaded }: { initial: Deck }) {
         />
       </fieldset>
       <Bookmark
-        top={expanded ? 660 : 356}
+        top={356}
+        hidden={stats}
+        button_ref={statistics_trigger}
         disabled={locked}
         onClick={() => setStats(true)}
       />
@@ -294,7 +297,8 @@ function Editor({ initial: loaded }: { initial: Deck }) {
           <Statistics
             deck={state.deck}
             close={() => setStats(false)}
-            bookmark_top={expanded ? 660 : 356}
+            bookmark_top={356}
+            trigger_ref={statistics_trigger}
           />
         </Suspense>
       )}

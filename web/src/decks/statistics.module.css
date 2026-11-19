@@ -4,6 +4,7 @@
   z-index: 100;
   background: #07120a44;
   backdrop-filter: blur(7px);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 150px 0;
@@ -17,6 +18,19 @@
   padding: 36px 38px;
   border-radius: 12px 0 0 12px;
   box-shadow: -12px 0 50px #0004;
+  transform: translateX(100%);
+  transition: transform 240ms ease-in-out;
+}
+.drawer[data-motion="open"] {
+  transform: translateX(0);
+}
+.drawer[data-motion="closing"] {
+  transform: translateX(calc(100% + 38px));
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition-duration: 1ms;
+  }
 }
 .bookmark {
   position: absolute;

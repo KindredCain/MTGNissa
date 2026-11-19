@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
@@ -29,12 +35,24 @@ export default function Statistics({
   deck,
   close,
   bookmark_top,
+  trigger_ref,
 }: {
   deck: Deck;
   close: () => void;
   bookmark_top: number;
+  trigger_ref: RefObject<HTMLButtonElement | null>;
 }) {
   const viewport = useVisualViewport();
+  const drawer = useRef<HTMLDivElement>(null),
+    [motion, setMotion] = useState<"entering" | "open" | "closing">("entering");
+  useLayoutEffect(() => {
+    // Establish the offscreen position before starting the CSS transition.
+    drawer.current?.getBoundingClientRect();
+    const frame = requestAnimationFrame(() =>
+      setMotion((current) => (current === "entering" ? "open" : current)),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const [curves, setCurves] = useState<Grouping>("type"),
     [prob, setProb] = useState<Grouping>("type"),
     [distribution, setDistribution] = useState<Grouping>("type"),
@@ -66,7 +84,7 @@ export default function Statistics({
     <Dialog.Root
       open
       onOpenChange={(value) => {
-        if (!value) close();
+        if (!value) setMotion("closing");
       }}
     >
       <Dialog.Portal>
@@ -81,18 +99,32 @@ export default function Statistics({
             bottom: "auto",
           }}
           onClick={(event) => {
-            if (event.target === event.currentTarget) close();
+            if (event.target === event.currentTarget) setMotion("closing");
           }}
         >
           <Dialog.Content
+            ref={drawer}
             className={styles.drawer}
+            data-motion={motion}
             aria-describedby={undefined}
-            onPointerDownOutside={() => close()}
+            onPointerDownOutside={() => setMotion("closing")}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              trigger_ref.current?.focus({ preventScroll: true });
+            }}
+            onTransitionEnd={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                event.propertyName === "transform" &&
+                motion === "closing"
+              )
+                close();
+            }}
           >
             <button
               className={styles.bookmark}
               style={{ top: bookmark_top - 150 }}
-              onClick={close}
+              onClick={() => setMotion("closing")}
             >
               卡组统计
             </button>

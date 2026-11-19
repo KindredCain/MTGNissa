@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { api } from "../api/client";
@@ -12,6 +12,7 @@ const Statistics = lazy(() => import("../decks/Statistics"));
 export function Component() {
   const { deck_id = "" } = useParams(),
     [stats, setStats] = useState(false),
+    statistics_trigger = useRef<HTMLButtonElement>(null),
     [deleting, setDeleting] = useState(false),
     action = useDeckActions(deck_id);
   const query = useQuery({
@@ -62,13 +63,19 @@ export function Component() {
             </div>
           </header>
           <Board deck={deck} />
-          <Bookmark top={310} onClick={() => setStats(true)} />
+          <Bookmark
+            top={310}
+            hidden={stats}
+            button_ref={statistics_trigger}
+            onClick={() => setStats(true)}
+          />
           {stats && (
             <Suspense>
               <Statistics
                 deck={deck}
                 close={() => setStats(false)}
                 bookmark_top={310}
+                trigger_ref={statistics_trigger}
               />
             </Suspense>
           )}
