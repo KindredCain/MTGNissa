@@ -23,31 +23,37 @@ export function set_params(params: URLSearchParams) {
       | "card_count_asc",
   };
 }
-export function personal_params(params: URLSearchParams) {
+type CollectionQuery = NonNullable<QueryParams<"/api/v1/collection">>;
+type WishlistQuery = NonNullable<QueryParams<"/api/v1/wishlist">>;
+
+export function collection_params(params: URLSearchParams) {
+  const sort = (params.get("sort") || "set_desc") as NonNullable<
+    CollectionQuery["sort"]
+  >;
   return {
     q: params.get("q") ?? undefined,
     set_code: params.getAll("set_code"),
     language: params.getAll("language"),
-    color: params.getAll("color") as NonNullable<
-      QueryParams<"/api/v1/collection">
-    >["color"],
-    mana_value: params.getAll("mana_value") as NonNullable<
-      QueryParams<"/api/v1/collection">
-    >["mana_value"],
-    rarity: params.getAll("rarity") as NonNullable<
-      QueryParams<"/api/v1/collection">
-    >["rarity"],
-    sort: (params.get("sort") ?? "set") as
-      "set" | "color" | "mana_value" | "name",
+    color: params.getAll("color") as CollectionQuery["color"],
+    mana_value: params.getAll("mana_value") as CollectionQuery["mana_value"],
+    rarity: params.getAll("rarity") as CollectionQuery["rarity"],
+    sort,
+    merge_sets:
+      sort === "set_desc" ? false : params.get("merge_sets") === "true",
+    merge_languages: params.get("merge_languages") !== "false",
   };
 }
-export function collection_params(params: URLSearchParams) {
-  const query = personal_params(params);
+export function wishlist_params(params: URLSearchParams) {
   return {
-    ...query,
-    merge_sets:
-      query.sort === "set" ? false : params.get("merge_sets") === "true",
-    merge_languages: params.get("merge_languages") !== "false",
+    q: params.get("q") ?? undefined,
+    set_code: params.getAll("set_code"),
+    language: params.getAll("language"),
+    color: params.getAll("color") as WishlistQuery["color"],
+    mana_value: params.getAll("mana_value") as WishlistQuery["mana_value"],
+    rarity: params.getAll("rarity") as WishlistQuery["rarity"],
+    sort: (params.get("sort") || "set_desc") as NonNullable<
+      WishlistQuery["sort"]
+    >,
   };
 }
 export function deck_params(params: URLSearchParams) {
@@ -86,7 +92,7 @@ export function collection_options(params: URLSearchParams) {
   });
 }
 export function wishlist_options(params: URLSearchParams) {
-  const query = personal_params(params);
+  const query = wishlist_params(params);
   return infiniteQueryOptions({
     queryKey: ["wishlist", "list", query],
     initialPageParam: null as string | null,

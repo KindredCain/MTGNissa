@@ -633,8 +633,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | --- | --- | --- |
 | `q` | string? | 按关联的 `mtgnissa_card.name` 模糊查询 |
 | `set_code`、`language`、`color`、`mana_value`、`rarity` | string[]? | 各参数均可省略，省略表示不限制对应维度；同字段 OR，不同字段 AND |
-| `sort` | enum? | 可省略，默认 `set`；可选值为 `set`、`color`、`mana_value`、`name` |
-| `merge_sets` | boolean? | 可省略，默认 `false`；`sort=set` 时必须为 `false` |
+| `sort` | enum? | 可省略，默认 `set_desc`；可选值为 `set_desc`、`color`、`mana_value_asc`、`name_asc` |
+| `merge_sets` | boolean? | 可省略，默认 `false`；`sort=set_desc` 时必须为 `false` |
 | `merge_languages` | boolean? | 可省略，默认 `true` |
 | `cursor` | string? | 下一批游标 |
 
@@ -658,8 +658,8 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | 字段 | 类型 | 可空 | 说明 |
 | --- | --- | --- | --- |
 | `card` | `CardSummaryDTO` | 否 | 当前分组的展示卡及详情入口 |
-| `group_set` | `SetRefDTO` | 是 | `sort=set` 时所属系列；其他排序为 `null` |
-| `group_summary` | object | 是 | `sort=set` 时该系列筛选前的权威 `total_quantity` 和按逻辑卡去重的 `distinct_cards`；其他排序为 `null` |
+| `group_set` | `SetRefDTO` | 是 | `sort=set_desc` 时所属系列；其他排序为 `null` |
+| `group_summary` | object | 是 | `sort=set_desc` 时该系列筛选前的权威 `total_quantity` 和按逻辑卡去重的 `distinct_cards`；其他排序为 `null` |
 | `normal_quantity` | integer | 否 | 当前合并分组内普通卡总数，最小为 0 |
 | `foil_quantity` | integer | 否 | 当前合并分组内闪卡总数，最小为 0 |
 | `merged_sets` | boolean | 否 | 当前列表实际生效的 `merge_sets` 请求值；为 `true` 时本项不显示数量加减控件 |
@@ -674,9 +674,9 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `total` | integer | 否 | 应用筛选和合并后的列表项总数，用于结果计数和游标列表控件 |
 | `next_cursor` | string | 是 | 后续批次游标；加载完毕为 `null` |
 
-展示卡图和详情目标由后端在当前分组候选中按发行日期从新到旧、同日按 `printing_uuid` 升序选择。前端使用返回的 `card.printing_uuid` 进入具体版本详情，并可用只读 `card.oracle_id` 判断逻辑卡身份。`group_set` 和 `group_summary` 在 `sort=set` 时共同提供系列标头信息。列表筛选先作用于收藏明细，再严格按上表对应的分组键求和；合并不会重复或丢失数量。系列标头汇总和页头汇总不随筛选缩小，分别表达该系列和整个收藏的真实持有量。
+展示卡图和详情目标由后端在当前分组候选中按发行日期从新到旧、同日按 `printing_uuid` 升序选择。前端使用返回的 `card.printing_uuid` 进入具体版本详情，并可用只读 `card.oracle_id` 判断逻辑卡身份。`group_set` 和 `group_summary` 在 `sort=set_desc` 时共同提供系列标头信息。列表筛选先作用于收藏明细，再严格按上表对应的分组键求和；合并不会重复或丢失数量。系列标头汇总和页头汇总不随筛选缩小，分别表达该系列和整个收藏的真实持有量。
 
-排序规则固定为：`set` 按系列发行日期从新到旧、系列内收藏编号自然升序；`color` 按白、蓝、黑、红、绿、多色、无色，颜色相同按英文卡名不区分大小写 A–Z；`mana_value` 按 `cmc` 从低到高，数值相同按英文卡名不区分大小写 A–Z；`name` 按英文卡名不区分大小写 A–Z。所有规则最终均以返回展示卡的 `card.printing_uuid` 升序兜底。
+排序规则固定为：`set_desc` 按系列发行日期从新到旧、系列内收藏编号自然升序；`color` 按白、蓝、黑、红、绿、多色、无色，颜色相同按英文卡名不区分大小写 A–Z；`mana_value_asc` 按 `cmc` 从低到高，数值相同按英文卡名不区分大小写 A–Z；`name_asc` 按英文卡名不区分大小写 A–Z。所有规则最终均以返回展示卡的 `card.printing_uuid` 升序兜底。
 
 只有 `merged_sets = false` 且 `merged_languages = false` 的卡位渲染普通／闪卡数量加减控件，并以该项 `card.printing_uuid` 调用 7.1。任一字段为 `true` 时，卡位仍显示合并后的 `normal_quantity` 和 `foil_quantity`，但数量条只读，必须完全隐藏减号、加号及其热区；不得仅以禁用外观保留控件，也不得从合并代表卡的 `printing_uuid` 发起调整。由于 `merged_*` 表示当前有效视图开关，即使某个合并分组当前恰好只有一条明细，也仍按合并卡位处理。
 
@@ -692,10 +692,10 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | --- | --- | --- |
 | `q` | string? | 按关联的 `mtgnissa_card.name` 模糊查询 |
 | `set_code`、`language`、`color`、`mana_value`、`rarity` | string[]? | 各参数均可省略，省略表示不限制对应维度；使用同名重复参数传递；同字段 OR，不同字段 AND |
-| `sort` | enum? | 可省略，默认 `set`；可选值为 `set`、`color`、`mana_value`、`name` |
+| `sort` | enum? | 可省略，默认 `set_desc`；可选值为 `set_desc`、`color`、`mana_value_asc`、`name_asc` |
 | `cursor` | string? | 下一批游标 |
 
-筛选值域和四种排序规则与收藏列表相同；愿望单不接受合并参数。`sort=set` 时按系列分组，`group_set` 返回对应 `SetRefDTO`；其他排序使用连续平铺，`group_set` 为 `null`。每个 `WishlistItemDTO` 还包含 `card: CardSummaryDTO` 和恒为 `true` 的 `included: boolean`，二者不可为 `null`。页面响应使用通用游标结构。
+当前筛选值域和四种排序规则与收藏列表相同，但查询参数、默认值和排序白名单独立维护；愿望单不接受合并参数。`sort=set_desc` 时按系列分组，`group_set` 返回对应 `SetRefDTO`；其他排序使用连续平铺，`group_set` 为 `null`。每个 `WishlistItemDTO` 还包含 `card: CardSummaryDTO` 和恒为 `true` 的 `included: boolean`，二者不可为 `null`。页面响应使用通用游标结构。
 
 ## 8. 卡组
 

@@ -40,6 +40,8 @@ export async function mock_api(page: Page) {
     const url = new URL(route.request().url()),
       method = route.request().method(),
       endpoint = url.pathname.replace("/api/v1", "");
+    const personal_grouped =
+      (url.searchParams.get("sort") || "set_desc") === "set_desc";
     let data: unknown = {},
       status = 200;
     if (
@@ -133,11 +135,13 @@ export async function mock_api(page: Page) {
         items: [
           {
             card: card(),
-            group_set: card().set,
-            group_summary: {
-              total_quantity: state.normal + state.foil,
-              distinct_cards: 1,
-            },
+            group_set: personal_grouped ? card().set : null,
+            group_summary: personal_grouped
+              ? {
+                  total_quantity: state.normal + state.foil,
+                  distinct_cards: 1,
+                }
+              : null,
             normal_quantity: state.normal,
             foil_quantity: state.foil,
             merged_sets: url.searchParams.get("merge_sets") === "true",
@@ -155,7 +159,13 @@ export async function mock_api(page: Page) {
     else if (endpoint === "/wishlist")
       data = {
         items: state.included
-          ? [{ card: card(), group_set: card().set, included: true }]
+          ? [
+              {
+                card: card(),
+                group_set: personal_grouped ? card().set : null,
+                included: true,
+              },
+            ]
           : [],
         total: state.included ? 1 : 0,
         next_cursor: null,

@@ -198,7 +198,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description Cursor-paginated owned-card list. Name/filter/sort/merge changes start a new cursor sequence. sort=set forbids merge_sets=true. summary and group_summary are authoritative unfiltered ownership totals. Backend grouping resolves Oracle identity and falls back to individual printing identity when Oracle is absent. Only items with both merged flags false can expose quantity adjustments; merged representatives are read-only aggregates. After an adjustment keep the visible item/order until re-entry and update counts from the mutation response. Unsupported sort, color, mana_value or rarity values return 422 validation_failed with field details. group_set is nonnull only for sort=set; other sorts return null. */
+    /** @description Cursor-paginated owned-card list. Name/filter/sort/merge changes start a new cursor sequence. sort=set_desc forbids merge_sets=true. summary and group_summary are authoritative unfiltered ownership totals. Backend grouping resolves Oracle identity and falls back to individual printing identity when Oracle is absent. Only items with both merged flags false can expose quantity adjustments; merged representatives are read-only aggregates. After an adjustment keep the visible item/order until re-entry and update counts from the mutation response. Unsupported sort, color, mana_value or rarity values return 422 validation_failed with field details. group_set is nonnull only for sort=set_desc; other sorts return null. */
     get: operations["get_collection"];
     put?: never;
     post?: never;
@@ -215,7 +215,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description Cursor-paginated wishlist entries. Does not accept merge parameters. sort=set supplies Set grouping; other sorts are flat. Returned entries have included=true. After cancellation the current UI may retain its confirmed local row until a fresh list is obtained; that UI state is not a different list-response contract. Unsupported sort, color, mana_value or rarity values return 422 validation_failed with field details. group_set is nonnull only for sort=set; other sorts return null. */
+    /** @description Cursor-paginated wishlist entries. Does not accept merge parameters. sort=set_desc supplies Set grouping; other sorts are flat. Returned entries have included=true. After cancellation the current UI may retain its confirmed local row until a fresh list is obtained; that UI state is not a different list-response contract. Unsupported sort, color, mana_value or rarity values return 422 validation_failed with field details. group_set is nonnull only for sort=set_desc; other sorts return null. */
     get: operations["get_wishlist"];
     put?: never;
     post?: never;
@@ -618,7 +618,7 @@ export interface components {
     CollectionItemResponse: {
       card: components["schemas"]["CardSummaryResponse"];
       group_set: components["schemas"]["CardSetResponse"] | null;
-      /** @description Nonnull only for sort=set, alongside group_set; otherwise null. It contains unfiltered Set ownership totals. */
+      /** @description Nonnull only for sort=set_desc, alongside group_set; otherwise null. It contains unfiltered Set ownership totals. */
       group_summary: components["schemas"]["OwnershipTotalsResponse"] | null;
       normal_quantity: number;
       foil_quantity: number;
@@ -1937,11 +1937,11 @@ export interface operations {
         rarity?: (
           "common" | "uncommon" | "rare" | "mythic" | "special" | "bonus" | ""
         )[];
-        /** @description Omission or an empty string uses set. Other unsupported values return 422 validation_failed with field=sort. */
-        sort?: "set" | "color" | "mana_value" | "name" | "";
+        /** @description Omission or an empty string uses set_desc. Other unsupported values return 422 validation_failed with field=sort. */
+        sort?: "set_desc" | "color" | "mana_value_asc" | "name_asc" | "";
         /** @description Opaque cursor returned by the same endpoint; do not parse or modify it. It is bound to the submitted query/filter/sort/merge conditions. Discard it when conditions change. Null next_cursor means completion. An invalid or mismatched cursor returns 400 invalid_cursor. */
         cursor?: string;
-        /** @description Defaults to false and must remain false when sort=set; a parsed but invalid combination returns 422 validation_failed with field=merge_sets. Text other than true or false is a boolean type error and returns 400 invalid_request. */
+        /** @description Defaults to false and must remain false when sort=set_desc; a parsed but invalid combination returns 422 validation_failed with field=merge_sets. Text other than true or false is a boolean type error and returns 400 invalid_request. */
         merge_sets?: boolean;
         merge_languages?: boolean;
       };
@@ -2002,8 +2002,8 @@ export interface operations {
         rarity?: (
           "common" | "uncommon" | "rare" | "mythic" | "special" | "bonus" | ""
         )[];
-        /** @description Omission or an empty string uses set. Other unsupported values return 422 validation_failed with field=sort. */
-        sort?: "set" | "color" | "mana_value" | "name" | "";
+        /** @description Omission or an empty string uses set_desc. Other unsupported values return 422 validation_failed with field=sort. */
+        sort?: "set_desc" | "color" | "mana_value_asc" | "name_asc" | "";
         /** @description Opaque cursor returned by the same endpoint; do not parse or modify it. It is bound to the submitted query/filter/sort/merge conditions. Discard it when conditions change. Null next_cursor means completion. An invalid or mismatched cursor returns 400 invalid_cursor. */
         cursor?: string;
       };

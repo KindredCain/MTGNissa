@@ -108,16 +108,16 @@ export const card_sort_names = {
 
 export const personal_sort_names = {
   collection: {
-    set: "系列发行 ↓",
+    set_desc: "系列发行 ↓",
     color: "颜色",
-    mana_value: "法术力值 ↑",
-    name: "名称 ↑",
+    mana_value_asc: "法术力值 ↑",
+    name_asc: "名称 ↑",
   },
   wishlist: {
-    set: "系列发行 ↓",
+    set_desc: "系列发行 ↓",
     color: "颜色",
-    mana_value: "法术力值 ↑",
-    name: "名称 ↑",
+    mana_value_asc: "法术力值 ↑",
+    name_asc: "名称 ↑",
   },
 } as const;
 

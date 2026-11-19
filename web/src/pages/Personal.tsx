@@ -8,7 +8,8 @@ import {
 import {
   collection_options,
   wishlist_options,
-  personal_params,
+  collection_params,
+  wishlist_params,
   type WishlistItemView,
 } from "../api/lists";
 import { api, type DTO } from "../api/client";
@@ -20,7 +21,7 @@ import {
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardTile } from "../cards/CardTile";
 import { CardFilters } from "../cards/filters";
-import { personal_sorts } from "../cards/model";
+import { collection_sorts, wishlist_sorts } from "../cards/model";
 import { useCardActions } from "../cards/mutations";
 import {
   LoadMore,
@@ -46,7 +47,8 @@ function usePersonalFilters(kind: "collection" | "wishlist") {
       await client.fetchInfiniteQuery(collection_options(next));
     else await client.fetchInfiniteQuery(wishlist_options(next));
   });
-  const query = personal_params(params);
+  const query =
+    kind === "collection" ? collection_params(params) : wishlist_params(params);
   return { kind, params, update, query };
 }
 function Filters({
@@ -57,6 +59,16 @@ function Filters({
   filters: ReturnType<typeof usePersonalFilters>;
 }) {
   const { kind, params, update, query } = filters;
+  const sort_options =
+    kind === "collection"
+      ? collection_sorts.map((value) => ({
+          value,
+          label: personal_sort_names.collection[value],
+        }))
+      : wishlist_sorts.map((value) => ({
+          value,
+          label: personal_sort_names.wishlist[value],
+        }));
   return (
     <>
       <SearchInput
@@ -94,18 +106,19 @@ function Filters({
         label="排序"
         prefix="排序："
         value={query.sort}
-        options={personal_sorts.map((value) => ({
-          value,
-          label: personal_sort_names[kind][value],
-        }))}
+        options={sort_options}
         onChange={(value) =>
-          update({
-            sort: value,
-            merge_sets:
-              value === "set"
-                ? "false"
-                : (params.get("merge_sets") ?? undefined),
-          })
+          update(
+            kind === "collection"
+              ? {
+                  sort: value,
+                  merge_sets:
+                    value === "set_desc"
+                      ? "false"
+                      : (params.get("merge_sets") ?? undefined),
+                }
+              : { sort: value },
+          )
         }
       />
     </>
@@ -114,14 +127,7 @@ function Filters({
 function Collection() {
   const filters = usePersonalFilters("collection"),
     { params, update } = filters;
-  const query = {
-    ...filters.query,
-    merge_sets:
-      filters.query.sort === "set"
-        ? false
-        : params.get("merge_sets") === "true",
-    merge_languages: params.get("merge_languages") !== "false",
-  };
+  const query = collection_params(params);
   const options = useQuery({
     queryKey: ["collection", "options"],
     queryFn: ({ signal }) =>
@@ -162,7 +168,7 @@ function Collection() {
                   type="checkbox"
                   role="switch"
                   checked={query.merge_sets}
-                  disabled={query.sort === "set"}
+                  disabled={query.sort === "set_desc"}
                   onChange={(event) =>
                     update({ merge_sets: String(event.target.checked) })
                   }

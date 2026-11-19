@@ -1,4 +1,4 @@
-import type { DTO } from "../api/client";
+import type { DTO, QueryParams } from "../api/client";
 import type { Option } from "../ui/controls";
 import {
   card_sort_names,
@@ -25,7 +25,24 @@ export const rarity_options: Option[] = (
   value,
   label: rarity_names[value],
 }));
-export const personal_sorts = ["set", "color", "mana_value", "name"] as const;
+export const collection_sorts = [
+  "set_desc",
+  "color",
+  "mana_value_asc",
+  "name_asc",
+] as const satisfies readonly Exclude<
+  NonNullable<QueryParams<"/api/v1/collection">>["sort"],
+  undefined | ""
+>[];
+export const wishlist_sorts = [
+  "set_desc",
+  "color",
+  "mana_value_asc",
+  "name_asc",
+] as const satisfies readonly Exclude<
+  NonNullable<QueryParams<"/api/v1/wishlist">>["sort"],
+  undefined | ""
+>[];
 export const local_sort: Option[] = (
   [
     "collector_number_desc",
