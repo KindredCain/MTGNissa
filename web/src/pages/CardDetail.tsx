@@ -45,7 +45,9 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
           }),
       });
       if (intent === revision.current && active_location.current === location)
-        navigate(`/cards/${encodeURIComponent(next_uuid)}`);
+        navigate(`/cards/${encodeURIComponent(next_uuid)}`, {
+          state: { scroll: "preserve" },
+        });
     } catch {
       /* QueryCache reports the failure; keep the current printing visible. */
     }

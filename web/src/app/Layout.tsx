@@ -3,12 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { SearchInput } from "../ui/controls";
 import styles from "./layout.module.css";
+import { BodyScrollRestoration } from "./BodyScrollRestoration";
 export function Layout() {
   const navigate = useNavigate(),
     location = useLocation();
   function search(value: string) {
     if (!value) return;
-    navigate(`/search?q=${encodeURIComponent(value)}`);
+    navigate(`/search?q=${encodeURIComponent(value)}`, {
+      state: { scroll: "top" },
+    });
   }
   const app = useQuery({
     queryKey: ["app"],
@@ -20,6 +23,7 @@ export function Layout() {
     !location.pathname.startsWith("/operation_logs");
   return (
     <>
+      <BodyScrollRestoration />
       <header className={styles.nav}>
         <NavLink to="/sets" className={styles.logo}>
           <img src="/assets/kQcrD.svg" alt="" width="24" height="24" /> MTG

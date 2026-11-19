@@ -40,8 +40,7 @@ export function useURLState(
     const intent = ++revision.current;
     const commit = () => {
       if (intent === revision.current && active_location.current === location) {
-        setParams(next);
-        document.body.scrollTo({ top: 0 });
+        setParams(next, { state: { scroll: "top" } });
       }
     };
     if (prepare)
@@ -277,6 +276,7 @@ export function Skeleton({ cards = false }: { cards?: boolean }) {
   return (
     <div
       aria-label="加载中"
+      data-scroll-loading
       className={cards ? styles.skeletonGrid : styles.skeletonRows}
     >
       {Array.from({ length: 10 }, (_, index) => (
