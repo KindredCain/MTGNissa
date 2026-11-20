@@ -147,6 +147,7 @@
 }
 .menu {
   display: grid;
+  gap: 2px;
   background: white;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -156,12 +157,22 @@
   box-shadow: 0 8px 24px #18201d22;
 }
 .menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 32px;
   border: 0;
   background: transparent;
   text-align: left;
   border-radius: 4px;
   font-size: 12px;
-  padding: 10px;
+  padding: 0 10px;
+}
+.menu button > svg {
+  color: #596760;
+}
+.menu .dangerText > svg {
+  color: #a94747;
 }
 .menu button:hover {
   background: #eef2eb;
@@ -219,6 +230,10 @@
 }
 .headerActions button,
 .headerActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   background: var(--orange);
   border: 1px solid var(--orange);
   border-radius: 7px;
@@ -290,6 +305,7 @@
 }
 .region {
   margin-bottom: 34px;
+  margin-inline: -8px;
 }
 .regionTitle {
   height: 42px;
@@ -326,11 +342,14 @@
   border: 1px solid currentColor;
   border-radius: 4px;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 .columns {
   display: grid;
-  grid-template-columns: repeat(8, 150px);
-  gap: 18px;
+  grid-template-columns: repeat(8, 158px);
+  gap: 14px;
   padding-right: 12px;
   min-height: 230px;
   width: max-content;
@@ -347,7 +366,7 @@
   justify-content: space-between;
 }
 .column {
-  width: 150px;
+  width: 158px;
   position: relative;
 }
 .stack {
@@ -356,6 +375,7 @@
 .slot {
   width: 162px;
   height: 30px;
+  margin-left: 4px;
   position: relative;
   transition: height 0.12s;
 }
@@ -434,6 +454,9 @@
   background: #ffffff66;
 }
 .exception {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   left: 150px;
   top: 7px;
@@ -443,6 +466,7 @@
   padding: 0;
   background: #603a35;
   border: 1px solid #c66b62;
+  border-left: 0;
   font-size: 9px;
   color: #f7c6be;
   z-index: 5;
@@ -699,6 +723,9 @@
   font-weight: 400;
 }
 .importBody .importRead {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: var(--orange);
   border-color: var(--orange);
   color: #263728;
@@ -729,12 +756,22 @@
   z-index: 45;
   background: var(--orange);
   color: #263728;
-  padding: 10px 11px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border: 0;
   border-radius: 8px 0 0 8px;
+  font-size: 13px;
+}
+.drawerButton > span {
   writing-mode: vertical-rl;
   letter-spacing: 5px;
-  font-size: 13px;
+}
+.drawerButton[hidden] {
+  display: none;
 }
 .addModal {
   width: 940px;

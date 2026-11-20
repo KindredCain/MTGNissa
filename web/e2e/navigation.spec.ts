@@ -54,12 +54,18 @@ test("cached detail navigation starts at top and history restores each body posi
   const link = page.getByRole("link", { name: "查看测试卡牌 1", exact: true });
   await link.click();
   await expect(page).toHaveURL(`/cards/${uuid(1)}`);
+  await expect(
+    page.getByRole("heading", { name: "规则文字", exact: true }),
+  ).toBeVisible();
   await page.goBack();
   await expect(link).toBeVisible();
   const list_position = await scroll_body(page, 700);
   expect(list_position).toBe(700);
   await link.evaluate((element: HTMLAnchorElement) => element.click());
   await expect(page).toHaveURL(`/cards/${uuid(1)}`);
+  await expect(
+    page.getByRole("heading", { name: "规则文字", exact: true }),
+  ).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.body.scrollTop)).toBe(0);
   const detail_position = await scroll_body(page, 450);
   expect(detail_position).toBe(450);

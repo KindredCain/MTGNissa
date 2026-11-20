@@ -1,6 +1,7 @@
 import type { Ref } from "react";
 import { useVisualViewport } from "../ui/viewport";
 import styles from "./decks.module.css";
+import { Icon } from "../ui/Icon";
 export function Bookmark({
   top,
   disabled = false,
@@ -28,7 +29,8 @@ export function Bookmark({
       disabled={disabled}
       onClick={onClick}
     >
-      卡组统计
+      <Icon name="chart-no-axes-column-increasing" size={15} />
+      <span>卡组统计</span>
     </button>
   );
 }

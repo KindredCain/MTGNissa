@@ -5,6 +5,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { api, create_idempotent_post } from "../api/client";
 import { Modal, notify_error, useToast } from "../ui/feedback";
 import styles from "./decks.module.css";
+import { Icon } from "../ui/Icon";
 export function useDeckActions(deck_id: string) {
   const [post_intent] = useState(create_idempotent_post);
   const client = useQueryClient(),
@@ -112,6 +113,7 @@ export function DeckMenu({ deck_id }: { deck_id: string }) {
                 navigate(`/decks/${encodeURIComponent(deck_id)}/edit`)
               }
             >
+              <Icon name="pencil" />
               编辑卡组
             </button>
             <button
@@ -121,6 +123,7 @@ export function DeckMenu({ deck_id }: { deck_id: string }) {
                 action.mutate("copy");
               }}
             >
+              <Icon name="copy" />
               复制卡组
             </button>
             <button
@@ -130,6 +133,7 @@ export function DeckMenu({ deck_id }: { deck_id: string }) {
                 action.mutate("code");
               }}
             >
+              <Icon name="clipboard-copy" />
               复制卡组代码
             </button>
             <button
@@ -139,6 +143,7 @@ export function DeckMenu({ deck_id }: { deck_id: string }) {
                 setDeleting(true);
               }}
             >
+              <Icon name="trash-2" />
               删除卡组
             </button>
           </Popover.Content>

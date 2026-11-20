@@ -5,6 +5,7 @@ import { PageHeader, pageStyles } from "../app/Layout";
 import { CardGrid } from "../cards/CardTile";
 import { LoadMore, Skeleton, useURLState } from "../ui/controls";
 import styles from "../cards/cards.module.css";
+import { Icon } from "../ui/Icon";
 export function Component() {
   const { params } = useURLState(),
     q = params.get("q") ?? "";
@@ -25,7 +26,10 @@ export function Component() {
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={`${pageStyles.content} ${styles.resultsMain}`}>
         <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
-          <Link to="/sets">卡牌中心</Link>›<Link to="/sets">全部卡牌</Link>›
+          <Link to="/sets">卡牌中心</Link>
+          <Icon name="chevron-right" size={13} />
+          <Link to="/sets">全部卡牌</Link>
+          <Icon name="chevron-right" size={13} />
           <span
             title={list.data?.pages[0].executed_query ?? q}
             style={{

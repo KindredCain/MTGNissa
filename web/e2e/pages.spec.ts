@@ -345,9 +345,10 @@ test("card details flip face without refetching and preserve tag queries", async
   await expect(
     usage.getByRole("heading", { name: "卡组使用情况", exact: true }),
   ).toBeVisible();
-  await expect(
-    usage.getByRole("link", { name: "测试卡组 ↗ 2" }),
-  ).toHaveAttribute("href", "/decks/1");
+  await expect(usage.getByRole("link", { name: "测试卡组 2" })).toHaveAttribute(
+    "href",
+    "/decks/1",
+  );
   await page.getByRole("button", { name: "功能标签", exact: true }).click();
   await page.getByRole("link", { name: 'otag:"mana rock"' }).click();
   await expect(page).toHaveURL(/\/search\?q=/);
@@ -386,9 +387,10 @@ for (const owned of [0, 6]) {
     );
     await summary.scrollIntoViewIfNeeded();
     await expect(summary).toBeInViewport();
-    await expect(
-      page.getByRole("link", { name: "Deck B ↗ 2" }),
-    ).toHaveAttribute("href", "/decks/2");
+    await expect(page.getByRole("link", { name: "Deck B 2" })).toHaveAttribute(
+      "href",
+      "/decks/2",
+    );
   });
 }
 for (const layout of ["adventure", "split", "flip"]) {

@@ -8,6 +8,7 @@ import { Skeleton } from "../ui/controls";
 import styles from "../decks/decks.module.css";
 import { Bookmark } from "../decks/Bookmark";
 import { relative_time } from "../decks/time";
+import { Icon } from "../ui/Icon";
 const Statistics = lazy(() => import("../decks/Statistics"));
 export function Component() {
   const { deck_id = "" } = useParams(),
@@ -39,18 +40,21 @@ export function Component() {
             </div>
             <div className={styles.headerActions}>
               <Link to={`/decks/${encodeURIComponent(deck_id)}/edit`}>
+                <Icon name="file-text" />
                 编辑卡组
               </Link>
               <button
                 disabled={action.isPending}
                 onClick={() => action.mutate("copy")}
               >
+                <Icon name="copy" />
                 复制卡组
               </button>
               <button
                 disabled={action.isPending}
                 onClick={() => action.mutate("code")}
               >
+                <Icon name="clipboard-copy" />
                 复制卡组代码
               </button>
               <button
@@ -58,6 +62,7 @@ export function Component() {
                 disabled={action.isPending}
                 onClick={() => setDeleting(true)}
               >
+                <Icon name="trash-2" />
                 删除卡组
               </button>
             </div>

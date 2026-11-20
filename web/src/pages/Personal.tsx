@@ -34,6 +34,7 @@ import {
   useURLState,
 } from "../ui/controls";
 import styles from "../cards/cards.module.css";
+import { Icon } from "../ui/Icon";
 export function Component() {
   return <Collection />;
 }
@@ -154,7 +155,7 @@ function Collection() {
       <main className={pageStyles.content}>
         <nav className={pageStyles.breadcrumb} aria-label="面包屑">
           <Link to="/sets">卡牌中心</Link>
-          <span aria-hidden="true">›</span>
+          <Icon name="chevron-right" size={13} />
           <Link to="/collection" aria-current="page">
             我的卡牌
           </Link>
@@ -245,7 +246,7 @@ function OwnedTile({ item }: { item: DTO<"CollectionItemResponse"> }) {
                   disabled={actions.pending || value === 0}
                   onClick={() => actions.act({ finish, delta: -1 })}
                 >
-                  −
+                  <Icon name="minus" size={8} />
                 </button>
               )}
               <span title={`${label} ${value}`}>
@@ -258,7 +259,7 @@ function OwnedTile({ item }: { item: DTO<"CollectionItemResponse"> }) {
                   disabled={actions.pending}
                   onClick={() => actions.act({ finish, delta: 1 })}
                 >
-                  ＋
+                  <Icon name="plus" size={8} />
                 </button>
               )}
             </div>
@@ -294,7 +295,7 @@ function Wishlist() {
       <main className={pageStyles.content}>
         <nav className={pageStyles.breadcrumb} aria-label="面包屑">
           <Link to="/sets">卡牌中心</Link>
-          <span aria-hidden="true">›</span>
+          <Icon name="chevron-right" size={13} />
           <Link to="/wishlist" aria-current="page">
             愿望单
           </Link>
@@ -362,7 +363,7 @@ function PersonalGroup({
               共 {summary.total_quantity} 张，{summary.distinct_cards} 种
             </small>
           )}
-          <span aria-hidden="true">{expanded ? "⌃" : "⌄"}</span>
+          <Icon name={expanded ? "chevron-up" : "chevron-down"} size={13} />
         </button>
       )}
       <div id={content_id} hidden={!!set && !expanded}>
@@ -388,7 +389,7 @@ function WishlistTile({ item }: { item: WishlistItemView }) {
             actions.act({ included: !item.included });
           }}
         >
-          {item.included ? "★" : "☆"}
+          <Icon name="star" filled={item.included} />
         </button>
       </div>
     </CardTile>

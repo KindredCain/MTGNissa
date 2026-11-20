@@ -10,6 +10,7 @@ import {
 import { pageStyles } from "../app/Layout";
 import { CardImage } from "../cards/CardImage";
 import { useCardActions } from "../cards/mutations";
+import { Icon } from "../ui/Icon";
 import { Mana } from "../cards/Mana";
 import { Select, Skeleton, Stepper } from "../ui/controls";
 import styles from "../cards/detail.module.css";
@@ -87,7 +88,8 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
         >
           {card.set.display_name}（{language_name(card.language.code)}）
         </Link>
-        ›{card.display_name}
+        <Icon name="chevron-right" size={13} />
+        {card.display_name}
       </div>
       <div className={styles.layout}>
         <div>
@@ -101,6 +103,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
               className={styles.faceButton}
               onClick={() => setBack((value) => !value)}
             >
+              <Icon name="refresh-cw" size={15} />{" "}
               {back ? "查看正面" : "查看反面"}
             </button>
           )}
@@ -201,7 +204,9 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                     to={`/search?q=${encodeURIComponent(tag.query)}`}
                   >
                     {tag.query}
-                    <span>↗</span>
+                    <span>
+                      <Icon name="arrow-up-right" size={13} />
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -215,7 +220,9 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
         <aside className={styles.aside}>
           <section className={styles.collectionPanel}>
             <div className={styles.asideTitle}>
-              <Link to="/collection">我的收藏 ↗</Link>
+              <Link to="/collection">
+                我的收藏 <Icon name="arrow-up-right" size={13} />
+              </Link>
               <button
                 disabled={actions.pending}
                 aria-pressed={data.wishlist.included}
@@ -223,7 +230,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                   actions.act({ included: !data.wishlist.included })
                 }
               >
-                {data.wishlist.included ? "★" : "☆"} 愿望单
+                <Icon name="star" filled={data.wishlist.included} /> 愿望单
               </button>
             </div>
             <Stepper
@@ -265,6 +272,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             <div className={styles.languageSelect}>
               <Select
                 label="当前系列语言"
+                icon="languages"
                 value={card.printing_uuid}
                 options={data.languages.map((language) => ({
                   value: language.printing_uuid,
@@ -334,7 +342,9 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                 key={deck.deck_id}
                 to={`/decks/${encodeURIComponent(deck.deck_id)}`}
               >
-                <span>{deck.name} ↗</span>
+                <span>
+                  {deck.name} <Icon name="arrow-up-right" size={13} />
+                </span>
                 <span>{deck.quantity}</span>
               </Link>
             ))}

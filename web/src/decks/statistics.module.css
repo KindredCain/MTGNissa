@@ -39,12 +39,19 @@
   height: 118px;
   background: var(--orange);
   color: #263728;
-  padding: 10px 11px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border: 0;
   border-radius: 8px 0 0 8px;
+  font-size: 13px;
+}
+.bookmark > span {
   writing-mode: vertical-rl;
   letter-spacing: 5px;
-  font-size: 13px;
 }
 .title {
   font-size: 26px;
@@ -221,6 +228,15 @@
   border-bottom: 1px solid #314d3b;
   color: #c6d6cb;
   padding: 10px 14px;
+}
+.probabilityName {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.probabilityName img {
+  width: 14px;
+  height: 14px;
 }
 .condition {
   display: flex;

@@ -34,6 +34,7 @@ import {
 } from "./model";
 import type { EditorStore } from "./store";
 import styles from "./decks.module.css";
+import { Icon } from "../ui/Icon";
 import { useVisualViewport } from "../ui/viewport";
 import { useAnchorRect, useHoverPreview } from "../ui/preview";
 /* dnd-kit returns refs and render state in the same hook result. Its public
@@ -291,13 +292,15 @@ export function Board({
               <h2>{section_names[kind]}</h2>
               {shortage.count > 0 && (
                 <span className={`${styles.badge} ${styles.shortage}`}>
-                  ⚠ {exception_names.shortage} {shortage.count}种·缺
+                  <Icon name="triangle-alert" size={11} color="#ffaaa5" />
+                  {exception_names.shortage} {shortage.count}种·缺
                   {shortage.missing}张
                 </span>
               )}
               {usage.count > 0 && (
                 <span className={`${styles.badge} ${styles.usage}`}>
-                  ▱ {exception_names.deck_usage} {usage.count}种·缺
+                  <Icon name="layers" size={11} color="#ffd18a" />
+                  {exception_names.deck_usage} {usage.count}种·缺
                   {usage.missing}张
                 </span>
               )}
@@ -307,7 +310,7 @@ export function Board({
               <div
                 className={styles.columns}
                 style={{
-                  gridTemplateColumns: `repeat(${columns.length},150px)`,
+                  gridTemplateColumns: `repeat(${columns.length},158px)`,
                 }}
               >
                 {columns.map((type) => {
@@ -641,7 +644,7 @@ function DraggableCard({
             onFlip();
           }}
         >
-          ↻
+          <Icon name="refresh-cw" size={15} />
         </button>
       )}
       {expanded && editor && !cover_mode && (
@@ -655,14 +658,14 @@ function DraggableCard({
             disabled={card.quantity === 0}
             onClick={() => quick(-1)}
           >
-            −
+            <Icon name="minus" />
           </button>
           <i />
           <button
             aria-label={`增加${card.card.display_name}`}
             onClick={() => quick(1)}
           >
-            ＋
+            <Icon name="plus" />
           </button>
         </div>
       )}
@@ -699,7 +702,13 @@ function DraggableCard({
             onException(event.currentTarget);
           }}
         >
-          {card.exception.type === "shortage" ? "!" : "▱"}
+          <Icon
+            name={
+              card.exception.type === "shortage" ? "triangle-alert" : "layers"
+            }
+            size={10}
+            color={card.exception.type === "shortage" ? "#ffb0ab" : "#ffd18a"}
+          />
         </button>
       )}
     </div>

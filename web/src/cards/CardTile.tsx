@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { CardImage } from "./CardImage";
 import type { Card } from "./model";
 import styles from "./cards.module.css";
+import { Icon } from "../ui/Icon";
 export function CardTile({
   card,
   children,
@@ -30,7 +31,7 @@ export function CardTile({
             aria-label={`翻面：${card.display_name}`}
             onClick={() => setBack((current) => !current)}
           >
-            ↻
+            <Icon name="refresh-cw" size={15} />
           </button>
         )}
       </div>

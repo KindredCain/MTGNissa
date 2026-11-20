@@ -14,6 +14,24 @@
   font-size: 12px;
   background: white;
 }
+.dateInput {
+  display: inline-flex;
+  position: relative;
+}
+.dateInput input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin: 0;
+}
+.dateIcon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #69766f;
+}
 .dates button {
   width: 72px;
   height: 34px;
@@ -21,12 +39,40 @@
   font-size: 12px;
 }
 .typeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   background: transparent;
   border: 0;
   color: var(--green);
   padding: 0;
   border-radius: 0;
   font-size: 12px;
+}
+.actionIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.detailCell {
+  width: 58px;
+  padding: 0 16px 0 0;
+  text-align: right;
+}
+.detailLink {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: #7a8580;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 .detail {
   width: 1040px;

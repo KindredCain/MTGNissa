@@ -22,6 +22,7 @@ import { create_editor } from "../decks/store";
 import { context_card, section_types, type Deck } from "../decks/model";
 import { EditingSession, get_contexts } from "../decks/contexts";
 import { Modal } from "../ui/feedback";
+import { Icon } from "../ui/Icon";
 import { Skeleton } from "../ui/controls";
 import styles from "../decks/decks.module.css";
 import { Bookmark } from "../decks/Bookmark";
@@ -236,7 +237,10 @@ function Editor({ initial: loaded }: { initial: Deck }) {
             </p>
           </div>
           <div className={styles.headerActions}>
-            <button onClick={() => setAdd(true)}>增加卡牌</button>
+            <button onClick={() => setAdd(true)}>
+              <Icon name="plus" />
+              增加卡牌
+            </button>
             <button
               className={cover ? styles.coverMode : ""}
               disabled={
@@ -247,9 +251,13 @@ function Editor({ initial: loaded }: { initial: Deck }) {
               aria-pressed={cover}
               onClick={() => setCover((value) => !value)}
             >
+              <Icon name="images" />
               选择封面
             </button>
-            <button onClick={() => save.mutate()}>保存卡组</button>
+            <button onClick={() => save.mutate()}>
+              <Icon name="save" />
+              保存卡组
+            </button>
           </div>
         </header>
         <section className={styles.import}>
@@ -258,7 +266,10 @@ function Editor({ initial: loaded }: { initial: Deck }) {
             aria-expanded={expanded}
             onClick={() => setExpanded((value) => !value)}
           >
-            卡组代码<span>{expanded ? "⌃" : "⌄"}</span>
+            卡组代码
+            <span>
+              <Icon name={expanded ? "chevron-up" : "chevron-down"} size={15} />
+            </span>
           </button>
           {expanded && (
             <div className={styles.importBody}>
@@ -272,6 +283,7 @@ function Editor({ initial: loaded }: { initial: Deck }) {
                 className={styles.importRead}
                 onClick={() => parse.mutate()}
               >
+                <Icon name="file-input" />
                 读取卡组配置
               </button>
             </div>

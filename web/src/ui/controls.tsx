@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useLocation, useSearchParams } from "react-router";
 import { useErrorOpen } from "./feedback";
+import { Icon, type IconName } from "./Icon";
 import styles from "./ui.module.css";
 export type Option = { value: string; label: string };
 export function useURLState(
@@ -88,6 +89,9 @@ function SearchField({
         onSubmit(input.trim());
       }}
     >
+      <button aria-label="搜索" type="submit">
+        <Icon name="search" />
+      </button>
       <input
         aria-label={placeholder}
         placeholder={placeholder}
@@ -95,9 +99,6 @@ function SearchField({
         maxLength={512}
         onChange={(event) => setInput(event.target.value)}
       />
-      <button aria-label="搜索" type="submit">
-        ⌕
-      </button>
     </form>
   );
 }
@@ -108,6 +109,7 @@ export function Select({
   options,
   onChange,
   disabled = false,
+  icon,
 }: {
   label: string;
   prefix?: string;
@@ -115,10 +117,12 @@ export function Select({
   options: Option[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  icon?: IconName;
 }) {
   return (
-    <label className={styles.select}>
+    <label className={`${styles.select} ${icon ? styles.selectWithIcon : ""}`}>
       <span className={styles.srOnly}>{label}</span>
+      {icon && <Icon name={icon} className={styles.selectLeadingIcon} />}
       <select
         aria-label={label}
         value={value}
@@ -132,6 +136,7 @@ export function Select({
           </option>
         ))}
       </select>
+      <Icon name="chevron-down" className={styles.selectChevron} />
     </label>
   );
 }
@@ -170,7 +175,7 @@ export function MultiSelect({
           : value.length === 1
             ? options.find((option) => option.value === value[0])?.label
             : `已选 ${value.length} 项`}
-        <span>⌄</span>
+        <Icon name={open ? "chevron-up" : "chevron-down"} size={13} />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
@@ -185,7 +190,9 @@ export function MultiSelect({
               onCheckedChange={() => setDraft([])}
               className={styles.checkbox}
             >
-              <Checkbox.Indicator>✓</Checkbox.Indicator>
+              <Checkbox.Indicator>
+                <Icon name="check" size={11} />
+              </Checkbox.Indicator>
             </Checkbox.Root>
             全部
           </label>
@@ -203,7 +210,9 @@ export function MultiSelect({
                   )
                 }
               >
-                <Checkbox.Indicator>✓</Checkbox.Indicator>
+                <Checkbox.Indicator>
+                  <Icon name="check" size={11} />
+                </Checkbox.Indicator>
               </Checkbox.Root>
               {option.label}
             </label>
@@ -350,7 +359,10 @@ export function LoadMore({
   return (
     <div ref={sentinel} className={styles.loadMore}>
       {failed ? null : loading ? (
-        "加载中…"
+        <span className={styles.loading}>
+          <Icon name="loader-circle" className={styles.spinner} />
+          加载中…
+        </span>
       ) : has_more ? (
         <span>{more_label}</span>
       ) : loaded_count > 0 ? (
@@ -393,7 +405,7 @@ export function Stepper({
         disabled={disabled || decrease_disabled || value === 0}
         onClick={() => onChange(-1)}
       >
-        −
+        <Icon name="minus" />
       </button>
       <output>{value}</output>
       <button
@@ -401,7 +413,7 @@ export function Stepper({
         disabled={disabled}
         onClick={() => onChange(1)}
       >
-        ＋
+        <Icon name="plus" />
       </button>
     </div>
   );
@@ -435,7 +447,7 @@ export function Pagination({
           onClick={() => onChange(page - 1)}
           aria-label="上一页"
         >
-          ‹
+          <Icon name="chevron-left" />
         </button>
         {Array.from(
           { length: Math.max(0, Math.min(pages, 5)) },
@@ -455,7 +467,7 @@ export function Pagination({
           onClick={() => onChange(page + 1)}
           aria-label="下一页"
         >
-          ›
+          <Icon name="chevron-right" />
         </button>
       </nav>
     </div>

@@ -26,6 +26,7 @@ import {
   useURLState,
 } from "../ui/controls";
 import styles from "../decks/decks.module.css";
+import { Icon } from "../ui/Icon";
 export function Component() {
   const [post_intent] = useState(create_idempotent_post);
   const client = useQueryClient(),
@@ -79,7 +80,7 @@ export function Component() {
           disabled={create.isPending}
           onClick={() => create.mutate()}
         >
-          ＋ 新建卡组
+          <Icon name="plus" /> 新建卡组
         </button>
       </PageHeader>
       <main className={pageStyles.content}>
@@ -128,7 +129,10 @@ export function Component() {
                       ) : (
                         <div className={styles.emptyCover}>◌</div>
                       )}
-                      <time>◷ {relative_time(deck.updated_at)}</time>
+                      <time>
+                        <Icon name="clock-3" size={9} />{" "}
+                        {relative_time(deck.updated_at)}
+                      </time>
                     </div>
                     <div className={styles.colorBand}>
                       {total > 0 &&
@@ -178,12 +182,19 @@ export function Component() {
                                 : styles.usage
                             }
                           >
-                            {deck.exception.type === "shortage" ? "⚠" : "▱"}{" "}
+                            <Icon
+                              name={
+                                deck.exception.type === "shortage"
+                                  ? "triangle-alert"
+                                  : "layers"
+                              }
+                              size={11}
+                            />{" "}
                             {exception_names[deck.exception.type]}
                           </span>
                         )}
                         <span className={styles.deckDetailLink}>
-                          查看卡组 ↗
+                          查看卡组 <Icon name="arrow-up-right" size={13} />
                         </span>
                       </div>
                     </div>

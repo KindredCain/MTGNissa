@@ -23,6 +23,7 @@ import {
 } from "./calculations";
 import styles from "./statistics.module.css";
 import { useVisualViewport } from "../ui/viewport";
+import { Icon } from "../ui/Icon";
 echarts.use([BarChart, GridComponent, TooltipComponent, CanvasRenderer]);
 const group_options = [
   { value: "type", label: "类型" },
@@ -126,7 +127,8 @@ export default function Statistics({
               style={{ top: bookmark_top - 150 }}
               onClick={() => setMotion("closing")}
             >
-              卡组统计
+              <Icon name="chart-no-axes-column-increasing" size={15} />
+              <span>卡组统计</span>
             </button>
             <Dialog.Title className={styles.title}>卡组统计</Dialog.Title>
             <p className={styles.subtitle}>统计主牌 · 备牌、备选不计入</p>
@@ -288,7 +290,17 @@ export default function Statistics({
                     : prob_groups
                   ).map((group) => (
                     <tr key={group.key}>
-                      <td>{group.name}</td>
+                      <td>
+                        <span className={styles.probabilityName}>
+                          {prob === "produced" &&
+                            (group.key === "none" ? (
+                              <Icon name="circle-off" />
+                            ) : (
+                              <Mana cost={`{${group.key}}`} />
+                            ))}
+                          {group.name}
+                        </span>
+                      </td>
                       <td>{group.quantity}</td>
                       <td>
                         {(
@@ -410,7 +422,7 @@ function NumberStepper({
         disabled={disabled || value <= min}
         onClick={() => change(Math.max(min, value - 1))}
       >
-        −
+        <Icon name="minus" />
       </button>
       <input
         aria-label={label}
@@ -443,7 +455,7 @@ function NumberStepper({
         disabled={disabled || value >= max}
         onClick={() => change(Math.min(max, value + 1))}
       >
-        ＋
+        <Icon name="plus" />
       </button>
     </div>
   );

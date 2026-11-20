@@ -10,6 +10,7 @@ import {
 import { ApiError } from "../api/client";
 import styles from "./ui.module.css";
 import { useVisualViewport } from "./viewport";
+import { Icon } from "./Icon";
 const events = new EventTarget();
 export function notify_error(error: unknown) {
   if (error instanceof DOMException && error.name === "AbortError") return;
@@ -94,13 +95,28 @@ export function Modal({
           onPointerDownOutside={(event) => event.preventDefault()}
         >
           <div className={styles.modalTitle} data-modal-title>
-            <Dialog.Title>{title}</Dialog.Title>
+            <Dialog.Title>
+              {layer === "error" && (
+                <span className={styles.errorIcon}>
+                  <Icon name="circle-alert" size={16} />
+                </span>
+              )}
+              {title}
+            </Dialog.Title>
             {title_meta && (
               <span className={styles.modalMeta}>{title_meta}</span>
             )}
             {close && (
-              <button disabled={close_disabled} onClick={close}>
-                {close_label}
+              <button
+                aria-label={close_label}
+                disabled={close_disabled}
+                onClick={close}
+              >
+                {close_label === "×" ? (
+                  <Icon name="x" size={16} />
+                ) : (
+                  close_label
+                )}
               </button>
             )}
           </div>
@@ -142,6 +158,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         </Modal>
         {toast && (
           <div role="status" className={styles.toast}>
+            <span className={styles.successIcon}>
+              <Icon name="check" />
+            </span>
             {toast}
           </div>
         )}

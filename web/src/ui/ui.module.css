@@ -7,6 +7,12 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+.icon {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  pointer-events: none;
+}
 .search {
   display: flex;
   width: 250px;
@@ -20,14 +26,22 @@
   width: 100%;
   min-width: 0;
   border: 0;
-  padding: 0 12px;
+  padding: 0 12px 0 8px;
   background: transparent;
   font-size: 12px;
 }
 .search button {
   border: 0;
   background: transparent;
-  padding: 0 10px;
+  padding: 0 0 0 12px;
+  color: #7a8580;
+  display: flex;
+  align-items: center;
+}
+.select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 .select select,
 .filter {
@@ -37,6 +51,27 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 11px;
+}
+.select select {
+  appearance: none;
+  padding-right: 33px;
+  width: 100%;
+}
+.selectWithIcon select {
+  padding-left: 33px;
+}
+.selectLeadingIcon {
+  position: absolute;
+  left: 11px;
+  color: var(--green);
+}
+.selectChevron {
+  position: absolute;
+  right: 11px;
+  color: #7a8580;
+}
+.select:has(select:disabled) > svg {
+  opacity: 0.4;
 }
 .filter {
   min-width: 100px;
@@ -133,6 +168,29 @@
 .modalTitle h2 {
   font-size: 18px;
   margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.errorIcon,
+.successIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.errorIcon {
+  width: 28px;
+  height: 28px;
+  background: #f6e9e8;
+  color: #b95050;
+}
+.successIcon {
+  width: 24px;
+  height: 24px;
+  background: #e5f0e9;
+  color: #357255;
 }
 .modalTitle > button {
   margin-bottom: 20px;
@@ -166,10 +224,17 @@
   bottom: 48px;
   left: 50%;
   transform: translateX(-50%);
-  background: #182b23ee;
-  border-radius: 8px;
-  padding: 14px 24px;
-  color: white;
+  background: white;
+  border: 1px solid #bfcbc3;
+  border-radius: 9px;
+  padding: 0 14px;
+  min-width: 262px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #263c2e;
+  font-size: 13px;
   z-index: 200;
   pointer-events: none;
 }
@@ -219,6 +284,24 @@
   place-items: center;
   color: var(--muted);
   font-size: 12px;
+}
+.loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
 }
 .skeletonRows,
 .skeletonGrid {

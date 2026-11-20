@@ -56,6 +56,10 @@
 .right input {
   color: white;
 }
+.right form svg {
+  width: 16px;
+  height: 16px;
+}
 .help {
   color: #9daaa4;
   border-radius: 50%;
@@ -125,6 +129,9 @@
   top: calc(var(--nav-height) + 44px);
 }
 .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: var(--orange);
   border-color: var(--orange);
 }

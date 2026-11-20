@@ -19,6 +19,7 @@ import {
   useURLState,
 } from "../ui/controls";
 import styles from "./sets.module.css";
+import { Icon } from "../ui/Icon";
 const sorts = [
   "released_desc",
   "released_asc",
@@ -64,7 +65,7 @@ export function Component() {
       <main className={pageStyles.content}>
         <div className={pageStyles.breadcrumb}>
           <Link to="/sets">卡牌中心</Link>
-          <span>›</span>
+          <Icon name="chevron-right" size={13} />
           <span>全部卡牌</span>
         </div>
         <Toolbar

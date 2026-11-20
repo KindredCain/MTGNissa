@@ -16,6 +16,7 @@ import {
   useURLState,
 } from "../ui/controls";
 import styles from "../cards/cards.module.css";
+import { Icon } from "../ui/Icon";
 export function Component() {
   const { set_code = "" } = useParams(),
     client = useQueryClient();
@@ -57,7 +58,10 @@ function SetCards({
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={pageStyles.content}>
         <div className={pageStyles.breadcrumb}>
-          <Link to="/sets">卡牌中心</Link>›<Link to="/sets">全部卡牌</Link>›
+          <Link to="/sets">卡牌中心</Link>
+          <Icon name="chevron-right" size={13} />
+          <Link to="/sets">全部卡牌</Link>
+          <Icon name="chevron-right" size={13} />
           <span>
             {list.data?.set.display_name ?? set_code}（
             {language_name(list.data?.language.code ?? query.language)}）
@@ -114,7 +118,8 @@ function Tokens({ set_code }: { set_code: string }) {
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={`${pageStyles.content} ${styles.resultsMain}`}>
         <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
-          <Link to="/sets">全部卡牌</Link>›
+          <Link to="/sets">全部卡牌</Link>
+          <Icon name="chevron-right" size={13} />
           <span>{list.data?.set.display_name ?? set_code}</span>
         </div>
         <div className={`${styles.resultCount} ${styles.tokenCount}`}>
@@ -158,7 +163,7 @@ function TokenTile({
             onClick={() => setBack((current) => !current)}
             aria-label={`翻面：${item.name}`}
           >
-            ↻
+            <Icon name="refresh-cw" size={15} />
           </button>
         )}
       </div>

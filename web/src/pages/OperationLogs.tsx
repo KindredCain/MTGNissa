@@ -10,6 +10,35 @@ import { PageHeader, pageStyles } from "../app/Layout";
 import { Modal, validation_error } from "../ui/feedback";
 import { Pagination, Skeleton, Toolbar, useURLState } from "../ui/controls";
 import styles from "./logs.module.css";
+import { Icon, type IconName } from "../ui/Icon";
+const action_icons = {
+  add_card: { icon: "plus", color: "#247650" },
+  remove_card: { icon: "minus", color: "#a64a43" },
+  add_wishlist: { icon: "star", color: "#b57816" },
+  remove_wishlist: { icon: "star-off", color: "#8a6a32" },
+  create_deck: { icon: "folder-plus", color: "#356c82" },
+  delete_deck: { icon: "folder-minus", color: "#a64a43" },
+  copy_deck: { icon: "copy", color: "#5e6f9a" },
+  modify_deck: { icon: "pencil", color: "#5a7166" },
+} satisfies Record<
+  DTO<"OperationSummaryResponse">["action_type"],
+  { icon: IconName; color: string }
+>;
+function ActionIcon({
+  action,
+}: {
+  action: DTO<"OperationSummaryResponse">["action_type"];
+}) {
+  const { icon, color } = action_icons[action];
+  return (
+    <span
+      className={styles.actionIcon}
+      style={{ color, backgroundColor: `${color}18` }}
+    >
+      <Icon name={icon} size={13} />
+    </span>
+  );
+}
 function date_label(date: string, weekday = true) {
   return new Intl.DateTimeFormat("zh-CN", {
     year: "numeric",
@@ -88,6 +117,7 @@ export function Component() {
               <th>日期</th>
               <th>操作类型</th>
               <th>操作次数</th>
+              <th className={styles.detailCell} aria-label="明细" />
             </tr>
           </thead>
           <tbody>
@@ -99,10 +129,20 @@ export function Component() {
                     className={styles.typeLink}
                     onClick={() => setDetail(item)}
                   >
+                    <ActionIcon action={item.action_type} />
                     {action_names[item.action_type]}
                   </button>
                 </td>
                 <td>{item.count} 条</td>
+                <td className={styles.detailCell}>
+                  <button
+                    className={styles.detailLink}
+                    aria-label={`查看${date_label(item.operation_date, false)}${action_names[item.action_type]}明细`}
+                    onClick={() => setDetail(item)}
+                  >
+                    <Icon name="chevron-right" size={15} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -155,19 +195,25 @@ function DateFilter({
     >
       <label>
         开始日期
-        <input
-          type="date"
-          value={start}
-          onChange={(event) => setStart(event.target.value)}
-        />
+        <span className={styles.dateInput}>
+          <input
+            type="date"
+            value={start}
+            onChange={(event) => setStart(event.target.value)}
+          />
+          <Icon name="calendar-days" className={styles.dateIcon} />
+        </span>
       </label>
       <label>
         结束日期
-        <input
-          type="date"
-          value={end}
-          onChange={(event) => setEnd(event.target.value)}
-        />
+        <span className={styles.dateInput}>
+          <input
+            type="date"
+            value={end}
+            onChange={(event) => setEnd(event.target.value)}
+          />
+          <Icon name="calendar-days" className={styles.dateIcon} />
+        </span>
       </label>
       <button disabled={pending}>查询</button>
     </form>

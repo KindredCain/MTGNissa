@@ -38,7 +38,7 @@ corepack pnpm check:contract
 | `src/api/` | API 请求、列表查询与生成类型 |
 | `src/cards/` | 卡牌展示、筛选、收藏和愿望单操作 |
 | `src/decks/` | 卡组编辑、拖拽、统计与编辑状态 |
-| `src/ui/` | 公共控件、弹窗和错误反馈 |
+| `src/ui/` | 公共控件、Lucide 图标、弹窗和错误反馈 |
 | `src/shared/` | 跨页面共用的展示映射和辅助函数 |
 | `src/test/` | 单元／组件测试的初始化和测试数据；用例位于对应源码旁 |
 | `public/` | 静态资源 |
