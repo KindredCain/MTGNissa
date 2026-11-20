@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { card, detail, uuid } from "../src/test/fixtures";
 import { mock_api } from "./mock-api";
 
-test("sort names remain scoped to their pages and keep the original parameter values", async ({
+test("sort names remain scoped to their pages and match the current parameter values", async ({
   page,
 }) => {
   await mock_api(page);
@@ -26,17 +26,17 @@ test("sort names remain scoped to their pages and keep the original parameter va
     {
       route: "/collection",
       control: "排序",
-      initial: "set",
+      initial: "set_desc",
       initial_name: "系列发行 ↓",
-      target: "mana_value",
+      target: "mana_value_asc",
       target_name: "法术力值 ↑",
     },
     {
       route: "/wishlist",
       control: "排序",
-      initial: "set",
+      initial: "set_desc",
       initial_name: "系列发行 ↓",
-      target: "name",
+      target: "name_asc",
       target_name: "名称 ↑",
     },
     {
