@@ -35,13 +35,13 @@ import {
 import type { EditorStore } from "./store";
 import styles from "./decks.module.css";
 import { useVisualViewport } from "../ui/viewport";
-import { useHoverPreview } from "../ui/preview";
+import { useAnchorRect, useHoverPreview } from "../ui/preview";
 /* dnd-kit returns refs and render state in the same hook result. Its public
  * isDragging/listeners/setNodeRef fields are intentionally read during render. */
 /* eslint-disable react-hooks/refs */
 type Preview = {
   card: DeckCard;
-  rect: DOMRect;
+  anchor: HTMLElement;
   exception?: boolean;
   section?: SectionType;
 };
@@ -105,11 +105,11 @@ export function Board({
     hide_exception();
     editor?.getState().remove_zero();
   }
-  function enter(card: DeckCard, section: SectionType, rect: DOMRect) {
+  function enter(card: DeckCard, section: SectionType, anchor: HTMLElement) {
     if (dragging.current || suppress_click.current || in_bubble.current) return;
     const id = `${section}:${card.oracle_id}`,
       previous = selection_ref.current,
-      next = { card, section, rect };
+      next = { card, section, anchor };
     select({ id, fixed: previous?.id === id && previous.fixed });
     hide_exception();
     setPreview(next);
@@ -374,7 +374,7 @@ export function Board({
                               onPress={() => {
                                 pressed.current = performance.now();
                               }}
-                              onEnter={(rect) => enter(card, section, rect)}
+                              onEnter={(anchor) => enter(card, section, anchor)}
                               onLeave={() => {
                                 if (
                                   dragging.current ||
@@ -406,7 +406,7 @@ export function Board({
                                 }
                                 select({ id, fixed: true });
                               }}
-                              onException={(rect) => {
+                              onException={(anchor) => {
                                 if (
                                   dragging.current ||
                                   suppress_click.current ||
@@ -415,7 +415,7 @@ export function Board({
                                   return;
                                 show_exception({
                                   card,
-                                  rect,
+                                  anchor,
                                   section,
                                   exception: true,
                                 });
@@ -552,10 +552,10 @@ function DraggableCard({
   disabled: boolean;
   selected: boolean;
   onPress: () => void;
-  onEnter: (rect: DOMRect) => void;
+  onEnter: (anchor: HTMLElement) => void;
   onLeave: () => void;
-  onClick: (rect: DOMRect) => void;
-  onException: (rect: DOMRect) => void;
+  onClick: () => void;
+  onException: (anchor: HTMLElement) => void;
   onExceptionLeave: () => void;
   editor?: EditorStore;
   cover_mode: boolean;
@@ -566,8 +566,7 @@ function DraggableCard({
     data: { card, section },
   });
   const ref = useRef<HTMLDivElement>(null),
-    pointer_inside = useRef(false),
-    rect = () => ref.current!.getBoundingClientRect();
+    pointer_inside = useRef(false);
   const quick = (delta: number) =>
     editor?.getState().quantity(section, card.oracle_id, delta);
   return (
@@ -579,7 +578,7 @@ function DraggableCard({
       onPointerEnter={(event) => {
         if ((event.target as Element).closest("[data-deck-exception]")) return;
         pointer_inside.current = true;
-        onEnter(rect());
+        onEnter(event.currentTarget);
       }}
       onPointerLeave={() => {
         if (!pointer_inside.current) return;
@@ -587,7 +586,8 @@ function DraggableCard({
         onLeave();
       }}
       onFocus={(event) => {
-        if (!event.target.closest("[data-deck-exception]")) onEnter(rect());
+        if (!event.target.closest("[data-deck-exception]"))
+          onEnter(event.currentTarget);
       }}
       onBlur={(event) => {
         if (
@@ -613,7 +613,7 @@ function DraggableCard({
         onContextMenu={(event) => {
           if (editor) event.preventDefault();
         }}
-        onClick={() => onClick(rect())}
+        onClick={onClick}
         aria-label={`${card.card.display_name}，${card.quantity} 张`}
       >
         <CardImage
@@ -676,7 +676,7 @@ function DraggableCard({
             event.stopPropagation();
             pointer_inside.current = false;
             onLeave();
-            onException(event.currentTarget.getBoundingClientRect());
+            onException(event.currentTarget);
           }}
           onPointerLeave={(event) => {
             onExceptionLeave();
@@ -685,18 +685,18 @@ function DraggableCard({
               ref.current?.contains(event.relatedTarget)
             ) {
               pointer_inside.current = true;
-              onEnter(rect());
+              onEnter(ref.current);
             }
           }}
           onFocus={(event) => {
             event.stopPropagation();
             if (!pointer_inside.current) onLeave();
-            onException(event.currentTarget.getBoundingClientRect());
+            onException(event.currentTarget);
           }}
           onBlur={onExceptionLeave}
           onClick={(event) => {
             event.stopPropagation();
-            onException(event.currentTarget.getBoundingClientRect());
+            onException(event.currentTarget);
           }}
         >
           {card.exception.type === "shortage" ? "!" : "▱"}
@@ -725,7 +725,8 @@ export function PreviewBubble({
   const viewport = useVisualViewport(),
     element = useRef<HTMLDivElement>(null),
     [height, setHeight] = useState(340);
-  const { card, rect, exception } = preview;
+  const { card, exception } = preview;
+  const rect = useAnchorRect(preview.anchor);
   useEffect(() => {
     const node = element.current;
     if (!node) return;
@@ -733,6 +734,7 @@ export function PreviewBubble({
     observer.observe(node);
     return () => observer.disconnect();
   }, [variant, exception]);
+  if (!rect) return null;
   const max_height = Math.min(480, viewport.height - 16);
   const width = exception ? 232 : 440,
     left =

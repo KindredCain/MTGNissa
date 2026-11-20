@@ -11,9 +11,36 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { MultiSelect, useURLState } from "./controls";
 import { FeedbackProvider, validation_error } from "./feedback";
-import { useHoverPreview } from "./preview";
+import { useAnchorRect, useHoverPreview } from "./preview";
 afterEach(cleanup);
 describe("shared interactions", () => {
+  it("stops tracking a preview when its anchor is removed", () => {
+    const anchor = document.createElement("button");
+    document.body.append(anchor);
+    const disconnect = vi.fn(),
+      remove = vi.spyOn(document, "removeEventListener");
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe = vi.fn();
+        disconnect = disconnect;
+      },
+    );
+    try {
+      const { result, rerender } = renderHook(() => useAnchorRect(anchor));
+      expect(result.current).not.toBeNull();
+      anchor.remove();
+      rerender();
+      expect(result.current).toBeNull();
+      expect(disconnect).toHaveBeenCalledOnce();
+      expect(remove).toHaveBeenCalledWith("scroll", expect.any(Function), true);
+    } finally {
+      cleanup();
+      anchor.remove();
+      remove.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
   it("delays leaving the trigger but hides immediately when leaving the preview", () => {
     vi.useFakeTimers();
     try {

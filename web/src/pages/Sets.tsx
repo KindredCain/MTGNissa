@@ -139,7 +139,12 @@ export function Component() {
                   >
                     <td style={{ paddingLeft: 18 + item.depth * 22 }}>
                       {target ? (
-                        <Link to={target}>{item.display_name}</Link>
+                        <Link
+                          to={target}
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {item.display_name}
+                        </Link>
                       ) : (
                         item.display_name
                       )}

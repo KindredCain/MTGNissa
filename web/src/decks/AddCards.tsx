@@ -73,7 +73,10 @@ export function AddCards({
     keep: keep_preview,
     leave: hide_preview,
     hide: hide_bubble,
-  } = useHoverPreview<{ item: DTO<"DeckCandidateResponse">; rect: DOMRect }>();
+  } = useHoverPreview<{
+    item: DTO<"DeckCandidateResponse">;
+    anchor: HTMLElement;
+  }>();
   const list = useInfiniteQuery({
     queryKey: ["deck_candidates", deck_id, submitted?.q, submitted?.revision],
     initialPageParam: null as string | null,
@@ -199,7 +202,7 @@ export function AddCards({
               deck_id={deck_id}
               session={session}
               editor={editor}
-              onPreview={(rect) => show_preview({ item, rect })}
+              onPreview={(anchor) => show_preview({ item, anchor })}
               onLeave={hide_preview}
             />
           ))}
@@ -223,7 +226,7 @@ export function AddCards({
             onPointerLeave={hide_bubble}
             preview={{
               card: candidate_preview(preview.item),
-              rect: preview.rect,
+              anchor: preview.anchor,
             }}
           />,
           modal_root,
@@ -243,7 +246,7 @@ function Candidate({
   deck_id: string;
   session: EditingSession;
   editor: EditorStore;
-  onPreview: (rect: DOMRect) => void;
+  onPreview: (anchor: HTMLElement) => void;
   onLeave: () => void;
 }) {
   const client = useQueryClient(),
@@ -280,9 +283,10 @@ function Candidate({
   });
   return (
     <form
+      noValidate
       className={styles.resultRow}
       onPointerEnter={(event) => {
-        onPreview(event.currentTarget.getBoundingClientRect());
+        onPreview(event.currentTarget);
       }}
       onPointerLeave={onLeave}
       onSubmit={(event) => {
@@ -300,11 +304,11 @@ function Candidate({
         type="button"
         className={styles.resultName}
         onFocus={(event) => {
-          onPreview(event.currentTarget.getBoundingClientRect());
+          onPreview(event.currentTarget);
         }}
         onBlur={onLeave}
         onClick={(event) => {
-          onPreview(event.currentTarget.getBoundingClientRect());
+          onPreview(event.currentTarget);
         }}
       >
         {item.card.display_name}

@@ -932,6 +932,53 @@ test("add-card overlay and statistics keep background locked", async ({
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+
+test("incomplete log dates use the shared error dialog without querying", async ({
+  page,
+}) => {
+  await mock_api(page);
+  const requests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/operation_logs/summary")
+      requests.push(request.url());
+  });
+  await page.goto("/operation_logs");
+  await expect(page.locator("tbody tr")).not.toHaveCount(0);
+  const initial_requests = requests.length;
+  const error = page.getByRole("dialog", { name: "操作失败", exact: true });
+  for (const label of ["开始日期", "结束日期"]) {
+    const input = page.getByLabel(label);
+    await input.fill("2026-10-01");
+    await input.press("ArrowLeft");
+    await input.press("Backspace");
+    expect(
+      await input.evaluate(
+        (element: HTMLInputElement) => element.validity.badInput,
+      ),
+    ).toBe(true);
+    await page.getByRole("button", { name: "查询", exact: true }).click();
+    await expect(error).toBeVisible();
+    await expect(error).toContainText("请输入完整有效的日期。");
+    expect(requests).toHaveLength(initial_requests);
+    await expect(page).toHaveURL(/\/operation_logs$/);
+    await error.getByRole("button", { name: "关闭", exact: true }).click();
+    await input.fill("");
+  }
+  await page.getByLabel("开始日期").fill("2026-10-31");
+  await page.getByLabel("结束日期").fill("2026-10-01");
+  await page.getByRole("button", { name: "查询", exact: true }).click();
+  await expect(error).toContainText("开始日期不能晚于结束日期。");
+  expect(requests).toHaveLength(initial_requests);
+  await error.getByRole("button", { name: "关闭", exact: true }).click();
+  await page.getByLabel("开始日期").fill("");
+  await page.getByLabel("结束日期").fill("");
+  await page.getByRole("button", { name: "查询", exact: true }).click();
+  await expect(page).toHaveURL(/\/operation_logs\?page=1$/);
+  await expect(error).toHaveCount(0);
+  expect(new URL(requests.at(-1)!).searchParams.has("start_date")).toBe(false);
+  expect(new URL(requests.at(-1)!).searchParams.has("end_date")).toBe(false);
+});
+
 test("log date inputs follow history and only submit on query", async ({
   page,
 }) => {

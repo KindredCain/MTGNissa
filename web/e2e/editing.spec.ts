@@ -3,6 +3,44 @@ import { mock_api } from "./mock-api";
 import { context, uuid } from "../src/test/fixtures";
 import { context_card, with_summary } from "../src/decks/model";
 
+test("invalid add quantities use the shared error dialog without adding cards", async ({
+  page,
+}) => {
+  await mock_api(page);
+  let context_requests = 0;
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.endsWith("/card_contexts"))
+      context_requests++;
+  });
+  await page.goto("/decks/1/edit");
+  await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
+  await modal.getByRole("button", { name: "搜索", exact: true }).click();
+  const quantity = modal.getByRole("spinbutton");
+  const error = page.getByRole("dialog", { name: "操作失败", exact: true });
+  for (const value of ["0", "-1", "1.5", "4294967296", ""]) {
+    await quantity.fill(value);
+    await modal.getByRole("button", { name: "加入", exact: true }).click();
+    await expect(error).toBeVisible();
+    await expect(error).toContainText(
+      "加入数量必须为 1 至 4,294,967,295 的整数。",
+    );
+    expect(context_requests).toBe(0);
+    await error.getByRole("button", { name: "关闭", exact: true }).click();
+  }
+  await quantity.fill("1");
+  await quantity.press("Enter");
+  await expect.poll(() => context_requests).toBe(1);
+  await expect(
+    modal.getByRole("button", { name: "加入", exact: true }),
+  ).toBeEnabled();
+  expect(context_requests).toBe(1);
+  await modal.getByRole("button", { name: "×", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "测试卡牌 2，1 张", exact: true }),
+  ).toBeVisible();
+});
+
 for (const route of ["/decks/1", "/decks/1/edit"]) {
   for (const status of ["shortage", "deck_usage"] as const) {
     test(`${status} hints do not change card expansion or fixation at ${route}`, async ({

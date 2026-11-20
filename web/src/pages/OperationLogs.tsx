@@ -138,9 +138,18 @@ function DateFilter({
     [end, setEnd] = useState(end_date);
   return (
     <form
+      noValidate
       className={styles.dates}
       onSubmit={(event) => {
         event.preventDefault();
+        if (
+          Array.from(event.currentTarget.querySelectorAll("input")).some(
+            (input) => !input.validity.valid,
+          )
+        ) {
+          validation_error("请输入完整有效的日期。");
+          return;
+        }
         onSubmit(start, end);
       }}
     >
