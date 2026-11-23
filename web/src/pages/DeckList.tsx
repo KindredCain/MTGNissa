@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { api, create_idempotent_post } from "../api/client";
 import { decks_options } from "../api/lists";
 import { PageHeader, pageStyles } from "../app/Layout";
-import { CardImage } from "../cards/CardImage";
+import { CardImage, CardImagePlaceholder } from "../cards/CardImage";
 import { DeckMenu } from "../decks/actions";
 import { colors, palette, section_types } from "../decks/model";
 import {
@@ -127,7 +127,7 @@ export function Component() {
                           name={deck.name}
                         />
                       ) : (
-                        <div className={styles.emptyCover}>◌</div>
+                        <CardImagePlaceholder name={deck.name} />
                       )}
                       <time>
                         <Icon name="clock-3" size={9} />{" "}

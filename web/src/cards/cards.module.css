@@ -48,15 +48,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 18px;
-  color: #f1eaf4;
-}
-.placeholder > span {
-  font-size: 82px;
-}
-.placeholder small {
-  font-size: 12px;
+  background: linear-gradient(145deg, #4c8559, #122a1b);
+  color: #ffffff55;
 }
 .cardWrap {
   position: relative;

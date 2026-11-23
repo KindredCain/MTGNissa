@@ -43,10 +43,15 @@
 }
 .cover > div:first-child {
   width: 328px;
-  height: 457px;
+  height: 100%;
   position: relative;
-  top: -54px;
   border-radius: 0;
+}
+.cover > div:first-child > img {
+  position: absolute;
+  top: -54px;
+  left: 0;
+  height: 457px;
 }
 .cover::after {
   content: "";
@@ -65,13 +70,6 @@
   z-index: 1;
   color: #34433a;
   font-size: 10px;
-}
-.emptyCover {
-  background: #dce5dc;
-  color: #97a798;
-  display: grid;
-  place-items: center;
-  font-size: 80px;
 }
 .colorBand {
   display: flex;

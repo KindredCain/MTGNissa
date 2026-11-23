@@ -1,6 +1,20 @@
 import { useState } from "react";
 import type { DTO } from "../api/client";
+import { Icon } from "../ui/Icon";
 import styles from "./cards.module.css";
+
+export function CardImagePlaceholder({ name }: { name: string }) {
+  return (
+    <div
+      className={styles.placeholder}
+      role="img"
+      aria-label={`${name}，暂无卡图`}
+    >
+      <Icon name="sparkles" size={46} />
+    </div>
+  );
+}
+
 export function CardImage({
   images,
   name,
@@ -27,14 +41,7 @@ export function CardImage({
           onError={() => setFailed(url)}
         />
       ) : (
-        <div
-          className={styles.placeholder}
-          role="img"
-          aria-label={`${name}，暂无卡图`}
-        >
-          <span>◌</span>
-          <small>暂无卡图</small>
-        </div>
+        <CardImagePlaceholder name={name} />
       )}
     </div>
   );

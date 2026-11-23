@@ -231,11 +231,11 @@ export default function Statistics({
                 ))}
               </div>
               {curves === "tag" && curve_groups.length > 12 && (
-                <button onClick={() => setAllCurves((value) => !value)}>
-                  {all_curves
-                    ? "收起"
-                    : `显示全部（共 ${curve_groups.length} 个）`}
-                </button>
+                <ExpandButton
+                  expanded={all_curves}
+                  total={curve_groups.length}
+                  onClick={() => setAllCurves((value) => !value)}
+                />
               )}
             </section>
             <section className={styles.module}>
@@ -320,11 +320,11 @@ export default function Statistics({
                 </tbody>
               </table>
               {prob === "tag" && prob_groups.length > 12 && (
-                <button onClick={() => setAllProb((value) => !value)}>
-                  {all_prob
-                    ? "收起"
-                    : `显示全部（共 ${prob_groups.length} 个）`}
-                </button>
+                <ExpandButton
+                  expanded={all_prob}
+                  total={prob_groups.length}
+                  onClick={() => setAllProb((value) => !value)}
+                />
               )}
             </section>
             <section className={styles.module}>
@@ -389,6 +389,28 @@ function ColorDistribution({
     </div>
   );
 }
+function ExpandButton({
+  expanded,
+  total,
+  onClick,
+}: {
+  expanded: boolean;
+  total: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={styles.expandButton}
+      aria-expanded={expanded}
+      onClick={onClick}
+    >
+      {expanded ? "收起" : `显示全部（共 ${total} 个）`}
+      <Icon name={expanded ? "chevron-up" : "chevron-down"} size={12} />
+    </button>
+  );
+}
+
 function NumberStepper({
   label,
   value,
