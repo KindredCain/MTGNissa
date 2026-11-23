@@ -211,6 +211,101 @@ for (const origin of ["/decks", "/decks/1"]) {
   });
 }
 
+for (const origin of ["/decks", "/decks/1"]) {
+  for (const outcome of [
+    "query-error",
+    "clipboard-error",
+    "success",
+  ] as const) {
+    test(`copying deck code from ${origin} reports each ${outcome} once`, async ({
+      page,
+    }) => {
+      const state = await mock_api(page);
+      await page.addInitScript((deny: boolean) => {
+        let written = "";
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: {
+            writeText: async (text: string) => {
+              if (deny)
+                throw new DOMException("Clipboard denied", "NotAllowedError");
+              written = text;
+            },
+            readText: async () => written,
+          },
+        });
+      }, outcome === "clipboard-error");
+      await page.goto(origin);
+      await expect(
+        page.getByRole("button", {
+          name: origin === "/decks" ? "更多卡组操作" : "复制卡组代码",
+          exact: true,
+        }),
+      ).toBeVisible();
+      let fail_query = outcome === "query-error";
+      let failures = 0;
+      if (fail_query) {
+        await page.route("**/api/v1/decks/1", async (route) => {
+          if (!fail_query) return route.fallback();
+          failures++;
+          await route.fulfill({
+            status: 503,
+            json: {
+              status: 503,
+              data: null,
+              error: { code: "dependency_unavailable", message: "unavailable" },
+              request_id: "test",
+            },
+          });
+        });
+        await page.evaluate(async () => {
+          const path = "/src/api/query.ts";
+          const { query_client } = await import(/* @vite-ignore */ path);
+          await query_client.invalidateQueries({
+            queryKey: ["decks", "detail", "1"],
+            refetchType: "none",
+          });
+        });
+      }
+      async function copy() {
+        if (origin === "/decks")
+          await page
+            .getByRole("button", { name: "更多卡组操作", exact: true })
+            .click();
+        await page
+          .getByRole("button", { name: "复制卡组代码", exact: true })
+          .click();
+      }
+      const error = page.getByRole("dialog", { name: "操作失败", exact: true });
+      if (outcome !== "success") {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          await copy();
+          await expect(error).toBeVisible();
+          await error
+            .getByRole("button", { name: "关闭", exact: true })
+            .click();
+          await expect(error).toHaveCount(0);
+          await expect(
+            page.getByText("卡组代码已复制", { exact: true }),
+          ).toHaveCount(0);
+          if (outcome === "query-error") expect(failures).toBe(attempt);
+        }
+        if (outcome === "clipboard-error") return;
+        fail_query = false;
+      }
+      await copy();
+      await expect(
+        page.getByRole("status").filter({ hasText: "卡组代码已复制" }),
+      ).toBeVisible();
+      await expect(error).toHaveCount(0);
+      expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+        state.deck.source_text,
+      );
+      await expect(page).toHaveURL(origin);
+    });
+  }
+}
+
 test("deck menus switch exclusively and close on repeated or outside clicks", async ({
   page,
 }) => {
@@ -985,6 +1080,26 @@ test("log date inputs follow history and only submit on query", async ({
   page,
 }) => {
   await mock_api(page);
+  await page.route("**/api/v1/operation_logs/summary?**", (route) => {
+    if (!new URL(route.request().url()).searchParams.has("start_date"))
+      return route.fallback();
+    return route.fulfill({
+      json: {
+        status: 200,
+        data: {
+          items: [
+            { operation_date: "2026-10-15", action_type: "add_card", count: 1 },
+          ],
+          page: 1,
+          page_size: 10,
+          total_items: 1,
+          total_pages: 1,
+        },
+        error: null,
+        request_id: "test",
+      },
+    });
+  });
   const requests: string[] = [];
   page.on("request", (request) => {
     if (new URL(request.url()).pathname === "/api/v1/operation_logs/summary")
@@ -1007,6 +1122,7 @@ test("log date inputs follow history and only submit on query", async ({
   expect(new URL(requests.at(-1)!).searchParams.get("end_date")).toBe(
     "2026-10-31",
   );
+  await expect(page.locator("tbody")).toContainText("2026年10月15日");
   await page.goBack();
   await expect(page).toHaveURL(/\/operation_logs$/);
   await expect(start).toHaveValue("");

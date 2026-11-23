@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
+import type { Query } from "@tanstack/react-query";
 import { mock_api } from "./mock-api";
-import { card, detail, uuid } from "../src/test/fixtures";
+import { card, deck, detail, uuid } from "../src/test/fixtures";
 
 async function scroll_body(page: Page, top: number) {
   const expected = await page.evaluate((value) => {
@@ -43,6 +44,138 @@ async function mock_details(page: Page) {
         },
       }),
     );
+}
+
+for (const action of ["create", "copy-list", "copy-detail"] as const) {
+  for (const destination of ["stay", "leave", "return"] as const) {
+    test(`pending ${action} respects ${destination} and preserves successful cache invalidation`, async ({
+      page,
+    }) => {
+      await mock_api(page);
+      const origin = action === "copy-detail" ? "/decks/1" : "/decks";
+      const endpoint =
+        action === "create" ? "/api/v1/decks" : "/api/v1/decks/1/copies";
+      const created = {
+        ...deck(),
+        deck_id: "2",
+        name: action === "create" ? "新建卡组" : "复制 测试卡组",
+      };
+      await page.route("**/api/v1/decks/2", (route) =>
+        route.fulfill({
+          json: { status: 200, data: created, error: null, request_id: "test" },
+        }),
+      );
+      let release!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route(`**${endpoint}`, async (route) => {
+        if (route.request().method() !== "POST") return route.fallback();
+        await pending;
+        await route.fulfill({
+          status: 201,
+          json: {
+            status: 201,
+            data: { deck_id: created.deck_id, name: created.name },
+            error: null,
+            request_id: "test",
+          },
+        });
+      });
+      await page.goto(origin);
+      await expect(
+        page.getByRole("button", {
+          name:
+            action === "copy-list"
+              ? "更多卡组操作"
+              : action === "create"
+                ? "新建卡组"
+                : "复制卡组",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page.evaluate(async () => {
+        const query_path = "/src/api/query.ts";
+        const list_path = "/src/api/lists.ts";
+        const { query_client } = await import(/* @vite-ignore */ query_path);
+        const { decks_options } = await import(/* @vite-ignore */ list_path);
+        await query_client.fetchInfiniteQuery(
+          decks_options(new URLSearchParams()),
+        );
+      });
+      if (action === "copy-list")
+        await page.getByRole("button", { name: "更多卡组操作" }).click();
+      const requested = page.waitForRequest(
+        (request) =>
+          new URL(request.url()).pathname === endpoint &&
+          request.method() === "POST",
+      );
+      await page
+        .getByRole("button", {
+          name: action === "create" ? "新建卡组" : "复制卡组",
+          exact: true,
+        })
+        .click();
+      await requested;
+      if (destination !== "stay") {
+        await page
+          .getByRole("navigation", { name: "主导航" })
+          .getByRole("link", { name: "操作日志", exact: true })
+          .click();
+        await expect(page).toHaveURL("/operation_logs");
+        await expect(
+          page.getByRole("heading", { name: "操作日志", exact: true }),
+        ).toBeVisible();
+        if (destination === "return") {
+          await page.goBack();
+          await expect(page).toHaveURL(origin);
+        }
+      } else if (action === "create") {
+        // Filtering the current page must not count as leaving it.
+        await page
+          .getByRole("combobox", { name: "卡组排序" })
+          .selectOption("name_asc");
+        await expect(page).toHaveURL("/decks?sort=name_asc");
+      }
+      release();
+      await expect
+        .poll(async () =>
+          page.evaluate(async (check_logs) => {
+            const path = "/src/api/query.ts";
+            const { query_client } = await import(/* @vite-ignore */ path);
+            const lists = query_client
+              .getQueryCache()
+              .findAll({ queryKey: ["decks", "list"] });
+            const logs = query_client
+              .getQueryCache()
+              .findAll({ queryKey: ["operation_logs"] });
+            return (
+              lists.length > 0 &&
+              lists.every((query: Query) => query.state.isInvalidated) &&
+              (!check_logs ||
+                (logs.length > 0 &&
+                  logs.every((query: Query) => query.state.isInvalidated)))
+            );
+          }, destination !== "stay"),
+        )
+        .toBe(true);
+      if (destination === "stay") {
+        await expect(page).toHaveURL("/decks/2/edit");
+        await expect(
+          page.getByRole("textbox", { name: "卡组名称", exact: true }),
+        ).toHaveValue(created.name);
+      } else {
+        await expect(page).toHaveURL(
+          destination === "leave" ? "/operation_logs" : origin,
+        );
+        expect(
+          await page
+            .getByRole("textbox", { name: "卡组名称", exact: true })
+            .count(),
+        ).toBe(0);
+      }
+    });
+  }
 }
 
 test("cached detail navigation starts at top and history restores each body position", async ({

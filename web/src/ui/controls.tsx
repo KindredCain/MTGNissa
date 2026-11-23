@@ -12,6 +12,20 @@ import { useErrorOpen } from "./feedback";
 import { Icon, type IconName } from "./Icon";
 import styles from "./ui.module.css";
 export type Option = { value: string; label: string };
+export function usePageGuard() {
+  const { pathname } = useLocation(),
+    active_page = useRef<object | null>(null);
+  useLayoutEffect(() => {
+    active_page.current = {};
+    return () => {
+      active_page.current = null;
+    };
+  }, [pathname]);
+  return () => {
+    const page = active_page.current;
+    return () => page !== null && active_page.current === page;
+  };
+}
 export function useURLState(
   prepare?: (
     next: URLSearchParams,
@@ -155,22 +169,32 @@ export function MultiSelect({
 }) {
   const [open, setOpen] = useState(false),
     [draft, setDraft] = useState(value);
+  function all_selected(selected: string[]) {
+    return (
+      options.length > 0 &&
+      selected.length === options.length &&
+      options.every((option) => selected.includes(option.value))
+    );
+  }
   return (
     <Popover.Root
       open={open}
       onOpenChange={(next) => {
         if (next) setDraft(value);
-        else if (
-          draft.length !== value.length ||
-          draft.some((item) => !value.includes(item))
-        )
-          onChange(draft);
+        else {
+          const selected = all_selected(draft) ? [] : draft;
+          if (
+            selected.length !== value.length ||
+            selected.some((item) => !value.includes(item))
+          )
+            onChange(selected);
+        }
         setOpen(next);
       }}
     >
       <Popover.Trigger className={styles.filter} aria-label={label}>
         {label}：
-        {!value.length || value.length === options.length
+        {!value.length || all_selected(value)
           ? all_label
           : value.length === 1
             ? options.find((option) => option.value === value[0])?.label
@@ -186,7 +210,7 @@ export function MultiSelect({
           <label className={styles.check}>
             <Checkbox.Root
               aria-label={`${label}：全部`}
-              checked={!draft.length}
+              checked={!draft.length || all_selected(draft)}
               onCheckedChange={() => setDraft([])}
               className={styles.checkbox}
             >

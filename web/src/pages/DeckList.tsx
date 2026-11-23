@@ -23,12 +23,14 @@ import {
   Select,
   Skeleton,
   Toolbar,
+  usePageGuard,
   useURLState,
 } from "../ui/controls";
 import styles from "../decks/decks.module.css";
 import { Icon } from "../ui/Icon";
 export function Component() {
   const [post_intent] = useState(create_idempotent_post);
+  const capture_page = usePageGuard();
   const client = useQueryClient(),
     location = useLocation();
   const { params, update } = useURLState((next) =>
@@ -59,8 +61,9 @@ export function Component() {
     );
   }, [client, location.key]);
   const create = useMutation({
+    onMutate: () => capture_page(),
     mutationFn: () => post_intent("/api/v1/decks", { name: "新建卡组" }),
-    onSuccess: (deck) => {
+    onSuccess: (deck, _variables, is_current_page) => {
       void client.invalidateQueries({
         queryKey: ["decks", "list"],
         refetchType: "none",
@@ -69,7 +72,8 @@ export function Component() {
         queryKey: ["operation_logs"],
         refetchType: "none",
       });
-      navigate(`/decks/${encodeURIComponent(deck.deck_id)}/edit`);
+      if (is_current_page?.())
+        navigate(`/decks/${encodeURIComponent(deck.deck_id)}/edit`);
     },
   });
   return (

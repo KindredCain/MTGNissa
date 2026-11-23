@@ -145,6 +145,7 @@ describe("shared interactions", () => {
         options={[
           { value: "W", label: "白" },
           { value: "U", label: "蓝" },
+          { value: "B", label: "黑" },
         ]}
         value={[]}
         onChange={change}
@@ -160,6 +161,57 @@ describe("shared interactions", () => {
     await waitFor(() =>
       expect(change).toHaveBeenCalledExactlyOnceWith(["W", "U"]),
     );
+  });
+  for (const initial of [[], ["W"], ["W", "U"]]) {
+    it(`normalizes a complete multi-select to no filter from ${JSON.stringify(initial)}`, async () => {
+      const change = vi.fn();
+      render(
+        <MultiSelect
+          label="颜色"
+          options={[
+            { value: "W", label: "白" },
+            { value: "U", label: "蓝" },
+          ]}
+          value={initial}
+          onChange={change}
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "颜色" }));
+      for (const [value, label] of [
+        ["W", "白"],
+        ["U", "蓝"],
+      ])
+        if (!initial.includes(value))
+          fireEvent.click(screen.getByRole("checkbox", { name: label }));
+      expect(
+        screen.getByRole("checkbox", { name: "颜色：全部" }),
+      ).toBeChecked();
+      expect(change).not.toHaveBeenCalled();
+      fireEvent.keyDown(screen.getByRole("checkbox", { name: "蓝" }), {
+        key: "Escape",
+      });
+      await waitFor(() => expect(screen.queryByRole("checkbox")).toBeNull());
+      if (initial.length) expect(change).toHaveBeenCalledExactlyOnceWith([]);
+      else expect(change).not.toHaveBeenCalled();
+    });
+  }
+  it("does not submit a filter when selecting the only available option", async () => {
+    const change = vi.fn();
+    render(
+      <MultiSelect
+        label="语言"
+        value={[]}
+        options={[{ value: "en", label: "英文" }]}
+        onChange={change}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "语言" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "英文" }));
+    fireEvent.keyDown(screen.getByRole("checkbox", { name: "英文" }), {
+      key: "Escape",
+    });
+    await waitFor(() => expect(screen.queryByRole("checkbox")).toBeNull());
+    expect(change).not.toHaveBeenCalled();
   });
   it("keeps an error open on Escape and closes only through its button", async () => {
     render(

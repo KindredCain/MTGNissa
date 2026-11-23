@@ -6,8 +6,10 @@ import { api, create_idempotent_post } from "../api/client";
 import { Modal, notify_error, useToast } from "../ui/feedback";
 import styles from "./decks.module.css";
 import { Icon } from "../ui/Icon";
+import { usePageGuard } from "../ui/controls";
 export function useDeckActions(deck_id: string) {
   const [post_intent] = useState(create_idempotent_post);
+  const capture_page = usePageGuard();
   const client = useQueryClient(),
     navigate = useNavigate(),
     toast = useToast();
@@ -26,6 +28,7 @@ export function useDeckActions(deck_id: string) {
         toast("卡组代码已复制");
       }
       if (kind === "copy") {
+        const is_current_page = capture_page();
         const copy = await post_intent(
           "/api/v1/decks/{deck_id}/copies",
           undefined,
@@ -35,7 +38,8 @@ export function useDeckActions(deck_id: string) {
           queryKey: ["decks", "list"],
           refetchType: "none",
         });
-        navigate(`/decks/${encodeURIComponent(copy.deck_id)}/edit`);
+        if (is_current_page())
+          navigate(`/decks/${encodeURIComponent(copy.deck_id)}/edit`);
       }
       if (kind === "delete") {
         await api.post("/api/v1/decks/{deck_id}/delete", undefined, {
