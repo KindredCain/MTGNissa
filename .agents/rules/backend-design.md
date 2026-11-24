@@ -38,3 +38,7 @@
 
 - Add a new migration version for schema changes; do not rewrite migrations that have already been applied.
 - Preserve the database compatibility range and migration ownership defined in `docs/architecture.md` and `docs/app-data-schema.md`.
+
+## Card-data loading
+
+- Upstream owns source-data quality. Loading preflight is a coarse check of file readability, basic format, and necessary identifiers; do not require exhaustive field, uniqueness, or cross-table validation before staging-table creation. Preserve existing transformation, import, verification, and atomic-switch failure handling. Do not report deferred deep validation alone as a defect.
