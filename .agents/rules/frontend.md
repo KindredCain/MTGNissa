@@ -30,7 +30,8 @@
 - Keep business data and request behavior independent from viewport size and presentation layout.
 - Keep reusable domain state, calculations, and validation independent from UI components, dialogs, and Toasts. Return results or domain errors for pages or interaction Hooks to present.
 - Define cache and editor-session lifetimes explicitly. Background fetches must not overwrite unsaved edits; clear session-specific caches when the session ends.
-- Use cancellation, version checks, or result merging to prevent old asynchronous results from overwriting newer state. Results must not affect a session that has already ended.
+- Protect asynchronous results according to their impact. Prevent loss of unsaved edits, incorrect writes, results applied to the wrong query or entity, and effects on sessions that have already ended. Use cancellation, version checks, or result merging where needed.
+- Brief display inconsistencies that can be corrected by a subsequent fetch or refresh are acceptable when they do not affect persisted data or normal operation. Do not require request serialization or extra cache coordination solely to eliminate them.
 
 ## Mobile compatibility constraints
 
