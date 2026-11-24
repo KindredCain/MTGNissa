@@ -15,6 +15,7 @@ import (
 // Databases contains the independent card-data and application-data connection pools.
 type Databases struct{ Card, App *sqlx.DB }
 
+// Open creates and verifies the independent Card DB and App DB connection pools.
 func Open(ctx context.Context, cardCfg, appCfg config.DB) (*Databases, error) {
 	card, err := open(ctx, cardCfg)
 	if err != nil {
@@ -56,6 +57,7 @@ func open(ctx context.Context, c config.DB) (*sqlx.DB, error) {
 	return db, nil
 }
 
+// Close shuts down both database pools and returns the first close error, if any.
 func (d *Databases) Close() error {
 	var first error
 	if d.Card != nil {

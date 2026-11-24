@@ -37,10 +37,13 @@ type Application struct {
 	Logger    *slog.Logger
 }
 
+// Build initializes the application using defaults, CONFIG_FILE, and environment overrides.
 func Build(ctx context.Context) (*Application, error) {
 	return BuildWithConfig(ctx, "")
 }
 
+// BuildWithConfig loads configuration, prepares databases, and assembles the HTTP application.
+// An empty configPath falls back to CONFIG_FILE.
 func BuildWithConfig(ctx context.Context, configPath string) (*Application, error) {
 	var cfg config.Config
 	var err error

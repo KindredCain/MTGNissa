@@ -67,6 +67,7 @@ type fileDB struct {
 	MaxLifetime string `yaml:"conn_max_lifetime"`
 }
 
+// Load applies defaults, the optional CONFIG_FILE YAML file, and environment overrides.
 func Load() (Config, error) {
 	return LoadFile(os.Getenv("CONFIG_FILE"))
 }

@@ -86,14 +86,18 @@ type Manager struct {
 	progressTotal     int64
 }
 
+// Error returns the diagnostic message describing the card-data loading failure.
 func (e *TaskError) Error() string {
 	return e.Message
 }
 
+// NewManager binds card-data loading to the application lifecycle, Card DB, and source directory.
 func NewManager(ctx context.Context, db *sql.DB, databaseName, dir string, log *slog.Logger) *Manager {
 	return &Manager{ctx: ctx, db: db, databaseName: databaseName, dir: dir, log: log, tasks: make(map[string]*Task)}
 }
 
+// Start accepts one background load at a time and replaces the previous task history.
+// It returns ErrRunning while a load is active.
 func (m *Manager) Start() (Task, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -122,6 +126,7 @@ func (m *Manager) LogCurrentTaskStatus() {
 	m.log.Info("card data loading interrupted by shutdown", "task_id", id, "stage", stage, "file", file, "processed_rows", rows, "total_rows", total)
 }
 
+// Get returns a snapshot of the retained loading task identified by id, if present.
 func (m *Manager) Get(id string) (Task, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

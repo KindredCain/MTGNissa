@@ -114,6 +114,7 @@ type OperationDeckDetail struct {
 	DeckName    string `db:"deck_name"`
 }
 
+// Valid reports whether s names one of the four supported deck sections.
 func (s DeckSection) Valid() bool {
 	switch s {
 	case DeckSectionMainboard, DeckSectionSideboard, DeckSectionCommander, DeckSectionMaybeboard:
@@ -123,18 +124,22 @@ func (s DeckSection) Valid() bool {
 	}
 }
 
+// Valid reports whether a is one of the eight persisted operation actions.
 func (a ActionType) Valid() bool {
 	return a >= ActionAddCard && a <= ActionModifyDeck
 }
 
+// IsCardAction reports whether the action records a collection or wishlist card snapshot.
 func (a ActionType) IsCardAction() bool {
 	return a >= ActionAddCard && a <= ActionRemoveWishlist
 }
 
+// IsDeckAction reports whether the action records a deck identity and name snapshot.
 func (a ActionType) IsDeckAction() bool {
 	return a >= ActionCreateDeck && a <= ActionModifyDeck
 }
 
+// Valid reports whether f is a supported normal or foil collection finish.
 func (f FinishKind) Valid() bool {
 	return f == FinishNormal || f == FinishFoil
 }

@@ -315,6 +315,7 @@ func stringsToInterfaces(values []string) []any {
 	return result
 }
 
+// Options reads the language choices and root set types from one Card DB snapshot.
 func (s *SetStore) Options(ctx context.Context) (model.SetOptions, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
