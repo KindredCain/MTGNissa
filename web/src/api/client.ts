@@ -1,4 +1,5 @@
 import type { paths, components } from "./schema";
+import { random_uuid } from "../shared/uuid";
 
 export type DTO<K extends keyof components["schemas"]> =
   components["schemas"][K];
@@ -139,7 +140,7 @@ export function create_idempotent_post() {
   ): Promise<Payload<Operation<P, "post">>> => {
     const fingerprint = JSON.stringify([path, options.path, body]);
     if (!pending || pending.fingerprint !== fingerprint)
-      pending = { fingerprint, key: crypto.randomUUID() };
+      pending = { fingerprint, key: random_uuid() };
     const intent = pending;
     const data = await api.post(path, body, {
       ...options,

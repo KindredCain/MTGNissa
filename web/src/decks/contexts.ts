@@ -1,11 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { api, ApiError, type DTO } from "../api/client";
 import { createStore } from "zustand/vanilla";
+import { random_uuid } from "../shared/uuid";
 
 type EditingTask = { kind: "add" | "save" | "parse"; key: string; id: symbol };
 
 export class EditingSession {
-  readonly id = crypto.randomUUID();
+  readonly id = random_uuid();
   private active = false;
   readonly tasks = createStore(() => ({ items: [] as EditingTask[] }));
 

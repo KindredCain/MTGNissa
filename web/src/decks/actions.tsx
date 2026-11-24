@@ -7,6 +7,7 @@ import { Modal, notify_error, useToast } from "../ui/feedback";
 import styles from "./decks.module.css";
 import { Icon } from "../ui/Icon";
 import { usePageGuard } from "../ui/controls";
+import { write_clipboard } from "../shared/clipboard";
 export function useDeckActions(deck_id: string) {
   const [post_intent] = useState(create_idempotent_post);
   const capture_page = usePageGuard();
@@ -24,7 +25,7 @@ export function useDeckActions(deck_id: string) {
               signal,
             }),
         });
-        await navigator.clipboard.writeText(detail.source_text);
+        await write_clipboard(detail.source_text);
         toast("卡组代码已复制");
       }
       if (kind === "copy") {
@@ -173,7 +174,7 @@ export async function copy_code(
   toast: (message: string) => void,
 ) {
   try {
-    await navigator.clipboard.writeText(source);
+    await write_clipboard(source);
     toast("卡组代码已复制");
   } catch (error) {
     notify_error(error);

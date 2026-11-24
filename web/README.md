@@ -18,6 +18,12 @@ corepack pnpm dev
 $env:API_PROXY_TARGET = 'http://127.0.0.1:8081'
 ```
 
+## 浏览器访问兼容
+
+支持 localhost HTTP、域名 HTTPS、IP 加端口 HTTP、普通域名 HTTP 及 IP 加端口 HTTPS。HTTPS 证书须受浏览器信任并匹配访问的域名或 IP；证书及监听配置在整包部署阶段处理。
+
+UUID 使用 `crypto.getRandomValues` 生成 RFC 4122 v4 格式，不依赖仅安全上下文可用的 `crypto.randomUUID`。复制卡组代码优先使用 Clipboard API；普通 HTTP 下该 API 不可用时，使用用户点击触发的复制命令。浏览器拒绝复制时仍显示统一错误弹窗。
+
 ## API 类型
 
 [OpenAPI](../docs/openapi.json) 是类型生成的唯一输入。契约更新后运行：
