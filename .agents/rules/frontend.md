@@ -12,6 +12,15 @@
 - Use dnd-kit for deck drag-and-drop behavior and Apache ECharts for deck statistics. Lazy-load chart and complex editor code by route or feature.
 - Use pnpm through Corepack. Run TypeScript type checking separately because Vite transpilation does not perform type checking.
 
+## Code organization and style
+
+- Use PascalCase for components and types, and `useXxx` for Hooks. For ordinary functions, variables, and filenames, follow the owning module's existing conventions and keep comparable members consistent.
+- Use `snake_case` for API fields, parameters, and API action members defined by the contract; do not apply this requirement to all frontend code.
+- Use the existing Prettier and ESLint setup for formatting and linting. Explain the reasons, assumptions, or limits behind non-obvious logic rather than narrating the code.
+- Follow existing module patterns. Give shared abstractions a clear responsibility and actual reuse need; do not add layers speculatively.
+- Reuse existing capabilities before adding dependencies. Add a third-party dependency only for a clear benefit, and avoid frameworks or tools with overlapping responsibilities.
+- Centralize display-name mappings in `src/shared/display-names.ts`. Keep these mappings limited to names; option ranges, defaults, ordering, and request behavior belong in their business modules.
+
 ## State ownership
 
 - Put shareable navigation, submitted search, filters, sorting, and entity identifiers in the URL.
@@ -19,6 +28,9 @@
 - Put transient dropdown, modal, card-face, hover, and focus state in the owning React component.
 - Put only the unsaved deck content, section changes, quantities, dirty state, and leave-confirmation state in the deck editor store.
 - Keep business data and request behavior independent from viewport size and presentation layout.
+- Keep reusable domain state, calculations, and validation independent from UI components, dialogs, and Toasts. Return results or domain errors for pages or interaction Hooks to present.
+- Define cache and editor-session lifetimes explicitly. Background fetches must not overwrite unsaved edits; clear session-specific caches when the session ends.
+- Use cancellation, version checks, or result merging to prevent old asynchronous results from overwriting newer state. Results must not affect a session that has already ended.
 
 ## Mobile compatibility constraints
 
@@ -38,7 +50,7 @@
 
 ## API, build, and testing
 
-- Generate frontend API types from the approved OpenAPI 3.1 contract. Do not maintain duplicate handwritten request and response DTOs when generated types exist.
+- Generate frontend API types from the approved OpenAPI 3.1 contract and reuse generated DTO and enum types. Do not maintain duplicate handwritten API types or manually edit `src/api/schema.d.ts`. When an interface changes, synchronize its contract and callers, then run `corepack pnpm generate:api` and `corepack pnpm check:contract` from `web`.
 - Treat frontend validation as user feedback only. The Go backend remains authoritative for business validation.
 - In development, proxy `/api` and `/health` from Vite to the Go service. In production, build static assets for embedding into the Go binary; do not require a Node.js production process.
 - Ensure browser-history deep links can be refreshed by keeping `/api` and `/health` outside the SPA fallback and returning the frontend entry point for unmatched frontend routes.
