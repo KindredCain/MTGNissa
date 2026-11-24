@@ -6,7 +6,6 @@ import {
   type DeckCard,
   type SectionType,
 } from "./model";
-import { validation_error } from "../ui/feedback";
 type State = {
   deck: Deck;
   dirty: boolean;
@@ -14,15 +13,19 @@ type State = {
   cover_oracle_id?: string;
   name: (name: string) => void;
   cover: (printing_uuid: string | null) => void;
-  quantity: (section: SectionType, oracle_id: string, delta: number) => void;
+  quantity: (
+    section: SectionType,
+    oracle_id: string,
+    delta: number,
+  ) => string | undefined;
   remove_zero: () => void;
-  add: (card: DeckCard, quantity: number) => void;
+  add: (card: DeckCard, quantity: number) => string | undefined;
   move: (
     from: SectionType,
     to: SectionType,
     oracle_id: string,
     quantity: number,
-  ) => void;
+  ) => string | undefined;
   replace: (name: string | null, sections: Deck["sections"]) => void;
   saved: () => void;
   serialize: () => ReturnType<typeof deck_save>;
@@ -89,10 +92,8 @@ export function create_editor(initial: Deck) {
           .deck.sections.find((part) => part.type === section)
           ?.cards.find((card) => card.oracle_id === oracle_id);
         if (!card || card.quantity + delta < 0) return;
-        if (card.quantity + delta > 4294967295) {
-          validation_error("单张卡牌数量不能超过 4,294,967,295。");
-          return;
-        }
+        if (card.quantity + delta > 4294967295)
+          return "单张卡牌数量不能超过 4,294,967,295。";
         commit(alter(section, oracle_id, delta));
       },
       remove_zero: () => {
@@ -116,7 +117,8 @@ export function create_editor(initial: Deck) {
           existing = section.cards.find(
             (item) => item.oracle_id === card.oracle_id,
           );
-        if (existing) get().quantity("mainboard", card.oracle_id, quantity);
+        if (existing)
+          return get().quantity("mainboard", card.oracle_id, quantity);
         else
           commit({
             ...deck,
@@ -143,10 +145,8 @@ export function create_editor(initial: Deck) {
         let next = alter(from, oracle_id, -quantity);
         const target = next.sections.find((section) => section.type === to)!,
           existing = target.cards.find((item) => item.oracle_id === oracle_id);
-        if ((existing?.quantity ?? 0) + quantity > 4294967295) {
-          validation_error("单张卡牌数量不能超过 4,294,967,295。");
-          return;
-        }
+        if ((existing?.quantity ?? 0) + quantity > 4294967295)
+          return "单张卡牌数量不能超过 4,294,967,295。";
         if (existing) next = alter(to, oracle_id, quantity, next);
         else
           next = {

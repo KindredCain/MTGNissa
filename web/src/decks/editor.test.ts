@@ -9,6 +9,31 @@ import {
   probability,
 } from "./calculations";
 describe("unsaved deck editing", () => {
+  for (const operation of ["quantity", "add", "move"] as const) {
+    it(`returns ${operation} overflow feedback without changing state`, () => {
+      const initial = deck();
+      initial.sections[1].cards[0].quantity = 4294967294;
+      if (operation === "move")
+        initial.sections[2].cards = [context_card(context(), 2)];
+      const editor = create_editor(with_summary(initial)),
+        id = uuid(1001);
+      function apply(quantity: number) {
+        const state = editor.getState();
+        if (operation === "quantity")
+          return state.quantity("mainboard", id, quantity);
+        if (operation === "add")
+          return state.add(context_card(context(), quantity), quantity);
+        return state.move("sideboard", "mainboard", id, quantity);
+      }
+      expect(apply(1)).toBeUndefined();
+      expect(editor.getState().deck.sections[1].cards[0].quantity).toBe(
+        4294967295,
+      );
+      const before = editor.getState();
+      expect(apply(1)).toBe("单张卡牌数量不能超过 4,294,967,295。");
+      expect(editor.getState()).toBe(before);
+    });
+  }
   it("moves one or all copies, merges by oracle and keeps imported text independent", () => {
     const initial = deck(),
       editor = create_editor(initial),

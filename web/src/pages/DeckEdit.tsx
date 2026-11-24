@@ -38,28 +38,32 @@ const name_schema = z
       !/[\r\n\u0085\u2028\u2029]/u.test(value),
   );
 export function Component() {
-  const { deck_id = "" } = useParams(),
-    query = useQuery({
-      queryKey: ["decks", "detail", deck_id],
-      queryFn: ({ signal }) =>
-        api.get("/api/v1/decks/{deck_id}", undefined, {
-          path: { deck_id },
-          signal,
-        }),
-      refetchOnMount: "always",
-    });
-  // Wait for the entry refresh, then keep the editor mounted during refetches.
-  return query.data && (query.isFetchedAfterMount || !query.isFetching) ? (
-    <Editor key={deck_id} initial={query.data} />
+  const { deck_id = "" } = useParams();
+  return <Entry key={deck_id} deck_id={deck_id} />;
+}
+function Entry({ deck_id }: { deck_id: string }) {
+  const [initial, setInitial] = useState<Deck | null>(null);
+  const query = useQuery({
+    queryKey: ["decks", "detail", deck_id],
+    queryFn: ({ signal }) =>
+      api.get("/api/v1/decks/{deck_id}", undefined, {
+        path: { deck_id },
+        signal,
+      }),
+    refetchOnMount: "always",
+  });
+  // Only a successful entry fetch can start the snapshot used for this session.
+  if (!initial && query.isSuccess && query.isFetchedAfterMount)
+    setInitial(query.data);
+  return initial ? (
+    <Editor initial={initial} />
   ) : (
     <main className={styles.dark}>
       {(query.isPending || query.isFetching) && <Skeleton />}
     </main>
   );
 }
-function Editor({ initial: loaded }: { initial: Deck }) {
-  // The page owns one editing snapshot until it is saved or discarded.
-  const [initial] = useState(loaded);
+function Editor({ initial }: { initial: Deck }) {
   const [editor] = useState(() => create_editor(initial)),
     [session] = useState(() => new EditingSession()),
     state = useStore(editor),

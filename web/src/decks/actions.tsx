@@ -42,6 +42,7 @@ export function useDeckActions(deck_id: string) {
           navigate(`/decks/${encodeURIComponent(copy.deck_id)}/edit`);
       }
       if (kind === "delete") {
+        const is_current_page = capture_page();
         await api.post("/api/v1/decks/{deck_id}/delete", undefined, {
           path: { deck_id },
         });
@@ -50,7 +51,7 @@ export function useDeckActions(deck_id: string) {
           queryKey: ["decks"],
           refetchType: "none",
         });
-        navigate("/decks");
+        if (is_current_page()) navigate("/decks");
       }
       if (kind !== "code")
         void client.invalidateQueries({

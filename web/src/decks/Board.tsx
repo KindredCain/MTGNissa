@@ -33,6 +33,7 @@ import {
   type SectionType,
 } from "./model";
 import type { EditorStore } from "./store";
+import { validation_error } from "../ui/feedback";
 import styles from "./decks.module.css";
 import { Icon } from "../ui/Icon";
 import { useVisualViewport } from "../ui/viewport";
@@ -247,7 +248,7 @@ export function Board({
         let moved = false;
         if (drag && event.over && editor) {
           const before = editor.getState().deck;
-          editor
+          const error = editor
             .getState()
             .move(
               drag.section,
@@ -255,6 +256,7 @@ export function Board({
               drag.card.oracle_id,
               drag.quantity,
             );
+          if (error) validation_error(error);
           moved = editor.getState().deck !== before;
         }
         finish(moved);
@@ -570,8 +572,10 @@ function DraggableCard({
   });
   const ref = useRef<HTMLDivElement>(null),
     pointer_inside = useRef(false);
-  const quick = (delta: number) =>
-    editor?.getState().quantity(section, card.oracle_id, delta);
+  const quick = (delta: number) => {
+    const error = editor?.getState().quantity(section, card.oracle_id, delta);
+    if (error) validation_error(error);
+  };
   return (
     <div
       ref={ref}

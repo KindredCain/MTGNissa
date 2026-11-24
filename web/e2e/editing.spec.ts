@@ -3,6 +3,67 @@ import { mock_api } from "./mock-api";
 import { context, uuid } from "../src/test/fixtures";
 import { context_card, with_summary } from "../src/decks/model";
 
+for (const operation of ["quantity", "add", "move"] as const) {
+  test(`store validation feedback is presented once for ${operation}`, async ({
+    page,
+  }) => {
+    const state = await mock_api(page);
+    if (operation === "add")
+      state.deck.sections[1]!.cards = [context_card(context(2), 4294967295)];
+    else if (operation === "quantity")
+      state.deck.sections[1]!.cards[0]!.quantity = 4294967295;
+    else state.deck.sections[2]!.cards = [context_card(context(), 4294967295)];
+    state.deck = with_summary(state.deck);
+    await page.goto("/decks/1/edit");
+    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
+    const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
+    if (operation === "add") {
+      await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
+      await modal.getByRole("button", { name: "搜索", exact: true }).click();
+      await modal.getByRole("button", { name: "加入", exact: true }).click();
+    } else {
+      const source = page.getByRole("button", {
+        name: `测试卡牌 1，${operation === "quantity" ? 4294967295 : 2} 张`,
+        exact: true,
+      });
+      await source.hover({ position: { x: 70, y: 12 } });
+      if (operation === "quantity")
+        await page
+          .getByRole("button", { name: "增加测试卡牌 1", exact: true })
+          .click();
+      else {
+        const region = page.locator("section").filter({
+          has: page.getByRole("heading", { name: "备牌", exact: true }),
+        });
+        const source_box = (await source.boundingBox())!,
+          target = (await region.boundingBox())!;
+        await page.mouse.move(source_box.x + 75, source_box.y + 90);
+        await page.mouse.down();
+        await page.mouse.move(source_box.x + 81, source_box.y + 90);
+        await page.mouse.move(target.x + 420, target.y + 24, { steps: 8 });
+        await page.mouse.up();
+      }
+    }
+    const error = page.getByRole("dialog", { name: "操作失败", exact: true });
+    await expect(error).toBeVisible();
+    await expect(error).toContainText("单张卡牌数量不能超过 4,294,967,295。");
+    await error.getByRole("button", { name: "关闭", exact: true }).click();
+    await expect(error).toHaveCount(0);
+    if (operation === "add")
+      await modal.getByRole("button", { name: "×", exact: true }).click();
+    await expect(
+      page.getByRole("button", {
+        name: `测试卡牌 ${operation === "add" ? 2 : 1}，4294967295 张`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    if (operation === "move")
+      await expect(
+        page.getByRole("button", { name: "测试卡牌 1，2 张", exact: true }),
+      ).toBeVisible();
+  });
+}
+
 for (const kind of ["add", "error", "leave"] as const) {
   test(`modal ${kind} blocks background cover Escape`, async ({ page }) => {
     await mock_api(page);
@@ -873,6 +934,83 @@ test("reentering the editor refreshes contexts while one session reuses them", a
     page.getByRole("button", { name: "数量不足", exact: true }),
   ).toBeVisible();
 });
+
+for (const cached of [false, true]) {
+  test(`editor entry loading waits for success and recovers on browser reload, cached=${cached}`, async ({
+    page,
+  }) => {
+    const state = await mock_api(page);
+    if (cached) {
+      await page.goto("/decks/1");
+      await expect(
+        page.getByRole("heading", { name: state.deck.name, exact: true }),
+      ).toBeVisible();
+    }
+    state.deck = with_summary({
+      ...state.deck,
+      name: "后端最新卡组",
+      sections: state.deck.sections.map((section) => ({
+        ...section,
+        cards: section.cards.map((card) => ({ ...card, quantity: 5 })),
+      })),
+    });
+    let fail = true,
+      release!: () => void;
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/api\/v1\/decks\/1$/, async (route) => {
+      if (fail) {
+        await route.fulfill({
+          status: 503,
+          json: {
+            status: 503,
+            data: null,
+            error: { code: "dependency_unavailable", message: "unavailable" },
+            request_id: "test",
+          },
+        });
+      } else {
+        await pending;
+        await route.fallback();
+      }
+    });
+    if (cached)
+      await page.getByRole("link", { name: "编辑卡组", exact: true }).click();
+    else await page.goto("/decks/1/edit");
+    const error = page.getByRole("dialog", { name: "操作失败", exact: true }),
+      name = page.getByRole("textbox", { name: "卡组名称", exact: true }),
+      save = page.getByRole("button", { name: "保存卡组", exact: true });
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await expect(error).toBeVisible();
+      await error.getByRole("button", { name: "关闭", exact: true }).click();
+      await expect(name).toHaveCount(0);
+      await expect(save).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "重新加载卡组", exact: true }),
+      ).toHaveCount(0);
+      expect(state.save_body).toBeUndefined();
+      if (attempt === 0) await page.reload();
+    }
+    fail = false;
+    await page.reload();
+    await expect(page.getByLabel("加载中", { exact: true })).toBeVisible();
+    await expect(name).toHaveCount(0);
+    await expect(save).toHaveCount(0);
+    release();
+    await expect(name).toHaveValue("后端最新卡组");
+    await expect(
+      page.getByRole("button", { name: "测试卡牌 1，5 张", exact: true }),
+    ).toBeVisible();
+    await save.click();
+    await expect(page).toHaveURL("/decks/1");
+    expect(state.save_body?.name).toBe("后端最新卡组");
+    expect(
+      state.save_body?.sections.find((section) => section.type === "mainboard")
+        ?.cards[0]?.quantity,
+    ).toBe(5);
+  });
+}
 
 test("background detail refresh preserves the in-memory draft until reload", async ({
   page,

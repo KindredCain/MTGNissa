@@ -1,7 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
-import type { Query } from "@tanstack/react-query";
+import type { Query, QueryCacheNotifyEvent } from "@tanstack/react-query";
 import { mock_api } from "./mock-api";
 import { card, deck, detail, uuid } from "../src/test/fixtures";
+
+type DeleteEffects = {
+  detail_removed: boolean;
+  decks_invalidated: boolean;
+  logs_invalidated: boolean;
+};
+type DeleteWindow = typeof window & { delete_effects?: DeleteEffects };
+type InvalidationWindow = typeof window & { invalidated_queries?: string[] };
 
 async function scroll_body(page: Page, top: number) {
   const expected = await page.evaluate((value) => {
@@ -82,6 +90,19 @@ for (const action of ["create", "copy-list", "copy-detail"] as const) {
           },
         });
       });
+      let release_logs!: () => void;
+      if (destination === "leave") {
+        const pending_logs = new Promise<void>((resolve) => {
+          release_logs = resolve;
+        });
+        await page.route(
+          "**/api/v1/operation_logs/summary?**",
+          async (route) => {
+            await pending_logs;
+            await route.fallback();
+          },
+        );
+      }
       await page.goto(origin);
       await expect(
         page.getByRole("button", {
@@ -102,6 +123,14 @@ for (const action of ["create", "copy-list", "copy-detail"] as const) {
         await query_client.fetchInfiniteQuery(
           decks_options(new URLSearchParams()),
         );
+        const invalidated: string[] = [];
+        (window as InvalidationWindow).invalidated_queries = invalidated;
+        query_client
+          .getQueryCache()
+          .subscribe((event: QueryCacheNotifyEvent) => {
+            if (event.type === "updated" && event.action.type === "invalidate")
+              invalidated.push(event.query.queryHash);
+          });
       });
       if (action === "copy-list")
         await page.getByRole("button", { name: "更多卡组操作" }).click();
@@ -137,28 +166,42 @@ for (const action of ["create", "copy-list", "copy-detail"] as const) {
           .selectOption("name_asc");
         await expect(page).toHaveURL("/decks?sort=name_asc");
       }
+      const targets = await page.evaluate(async () => {
+        const path = "/src/api/query.ts";
+        const { query_client } = await import(/* @vite-ignore */ path);
+        return {
+          lists: query_client
+            .getQueryCache()
+            .findAll({ queryKey: ["decks", "list"] })
+            .map((query: Query) => query.queryHash),
+          logs: query_client
+            .getQueryCache()
+            .findAll({ queryKey: ["operation_logs"] })
+            .map((query: Query) => query.queryHash),
+        };
+      });
+      expect(targets.lists.length).toBeGreaterThan(0);
+      if (destination !== "stay")
+        expect(targets.logs.length).toBeGreaterThan(0);
+      const expected = [
+        ...targets.lists,
+        ...(destination === "stay" ? [] : targets.logs),
+      ];
       release();
       await expect
-        .poll(async () =>
-          page.evaluate(async (check_logs) => {
-            const path = "/src/api/query.ts";
-            const { query_client } = await import(/* @vite-ignore */ path);
-            const lists = query_client
-              .getQueryCache()
-              .findAll({ queryKey: ["decks", "list"] });
-            const logs = query_client
-              .getQueryCache()
-              .findAll({ queryKey: ["operation_logs"] });
-            return (
-              lists.length > 0 &&
-              lists.every((query: Query) => query.state.isInvalidated) &&
-              (!check_logs ||
-                (logs.length > 0 &&
-                  logs.every((query: Query) => query.state.isInvalidated)))
-            );
-          }, destination !== "stay"),
+        .poll(() =>
+          page.evaluate((hashes) => {
+            const invalidated =
+              (window as InvalidationWindow).invalidated_queries ?? [];
+            return hashes.every((hash) => invalidated.includes(hash));
+          }, expected),
         )
         .toBe(true);
+      if (destination === "leave") {
+        // A fetch finishing after invalidation may legitimately mark the cache fresh.
+        release_logs();
+        await expect(page.locator("tbody tr")).toHaveCount(1);
+      }
       if (destination === "stay") {
         await expect(page).toHaveURL("/decks/2/edit");
         await expect(
@@ -174,6 +217,179 @@ for (const action of ["create", "copy-list", "copy-detail"] as const) {
             .count(),
         ).toBe(0);
       }
+    });
+  }
+}
+
+for (const origin of ["list", "detail"] as const) {
+  for (const outcome of ["stay", "leave", "return", "failure"] as const) {
+    test(`pending delete from ${origin} respects ${outcome}`, async ({
+      page,
+    }) => {
+      await mock_api(page);
+      let release!: () => void;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route("**/api/v1/decks/1/delete", async (route) => {
+        await pending;
+        await route.fulfill(
+          outcome === "failure"
+            ? {
+                status: 503,
+                json: {
+                  status: 503,
+                  data: null,
+                  error: {
+                    code: "dependency_unavailable",
+                    message: "unavailable",
+                  },
+                  request_id: "test",
+                },
+              }
+            : {
+                json: {
+                  status: 200,
+                  data: { deck_id: "1", deleted: true },
+                  error: null,
+                  request_id: "test",
+                },
+              },
+        );
+      });
+      await page.goto("/sets");
+      async function enter_origin() {
+        await page
+          .getByRole("navigation", { name: "主导航" })
+          .getByRole("link", { name: "卡组", exact: true })
+          .click();
+        await expect(
+          page.getByRole("link", { name: "查看测试卡组", exact: true }),
+        ).toBeVisible();
+        if (origin === "detail")
+          await page
+            .getByRole("link", { name: "查看测试卡组", exact: true })
+            .click();
+        await expect(
+          page.getByRole("button", {
+            name: origin === "list" ? "更多卡组操作" : "删除卡组",
+            exact: true,
+          }),
+        ).toBeVisible();
+      }
+      await enter_origin();
+      await page.evaluate(async () => {
+        const query_path = "/src/api/query.ts";
+        const client_path = "/src/api/client.ts";
+        const { query_client } = await import(/* @vite-ignore */ query_path);
+        const { api } = await import(/* @vite-ignore */ client_path);
+        await query_client.fetchQuery({
+          queryKey: ["decks", "detail", "1"],
+          queryFn: () =>
+            api.get("/api/v1/decks/{deck_id}", undefined, {
+              path: { deck_id: "1" },
+            }),
+        });
+        await query_client.fetchQuery({
+          queryKey: ["operation_logs", "summary", { page: 1 }],
+          queryFn: () => api.get("/api/v1/operation_logs/summary", { page: 1 }),
+        });
+        const effects: DeleteEffects = {
+          detail_removed: false,
+          decks_invalidated: false,
+          logs_invalidated: false,
+        };
+        (window as DeleteWindow).delete_effects = effects;
+        query_client
+          .getQueryCache()
+          .subscribe((event: QueryCacheNotifyEvent) => {
+            const key = event.query.queryKey;
+            if (
+              event.type === "removed" &&
+              key[0] === "decks" &&
+              key[1] === "detail" &&
+              key[2] === "1"
+            )
+              effects.detail_removed = true;
+            if (
+              event.type === "updated" &&
+              event.action.type === "invalidate"
+            ) {
+              if (key[0] === "decks") effects.decks_invalidated = true;
+              if (key[0] === "operation_logs") effects.logs_invalidated = true;
+            }
+          });
+      });
+      if (origin === "list")
+        await page
+          .getByRole("button", { name: "更多卡组操作", exact: true })
+          .click();
+      await page.getByRole("button", { name: "删除卡组", exact: true }).click();
+      const requested = page.waitForRequest((request) =>
+        request.url().endsWith("/api/v1/decks/1/delete"),
+      );
+      await page
+        .getByRole("dialog", { name: "删除卡组？", exact: true })
+        .getByRole("button", { name: "删除卡组", exact: true })
+        .click();
+      await requested;
+      if (outcome === "leave" || outcome === "return") {
+        await page.goBack();
+        await expect(page).toHaveURL(origin === "list" ? "/sets" : "/decks");
+        if (origin === "detail") {
+          await page
+            .getByRole("navigation", { name: "主导航" })
+            .getByRole("link", { name: "卡牌中心", exact: true })
+            .click();
+          await expect(page).toHaveURL("/sets");
+        }
+        await expect(
+          page.getByRole("heading", { name: "全部卡牌", exact: true }),
+        ).toBeVisible();
+        if (outcome === "return") await enter_origin();
+      }
+      release();
+      if (outcome === "failure") {
+        const error = page.getByRole("dialog", {
+          name: "操作失败",
+          exact: true,
+        });
+        await expect(error).toBeVisible();
+        await error.getByRole("button", { name: "关闭", exact: true }).click();
+        expect(
+          await page.evaluate(() => (window as DeleteWindow).delete_effects),
+        ).toEqual({
+          detail_removed: false,
+          decks_invalidated: false,
+          logs_invalidated: false,
+        });
+      } else {
+        await expect
+          .poll(() =>
+            page.evaluate(() => (window as DeleteWindow).delete_effects),
+          )
+          .toEqual({
+            detail_removed: true,
+            decks_invalidated: true,
+            logs_invalidated: true,
+          });
+      }
+      await expect(page).toHaveURL(
+        outcome === "stay"
+          ? "/decks"
+          : outcome === "leave"
+            ? "/sets"
+            : origin === "list"
+              ? "/decks"
+              : "/decks/1",
+      );
+      if (outcome === "failure")
+        await expect(
+          page.getByRole(origin === "list" ? "link" : "heading", {
+            name: origin === "list" ? "查看测试卡组" : "测试卡组",
+            exact: true,
+          }),
+        ).toBeVisible();
     });
   }
 }

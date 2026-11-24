@@ -291,7 +291,10 @@ function Candidate({
             ])
           ).get(item.card.printing_uuid)!;
         session.assert_active();
-        editor.getState().add(context_card(context, quantity), quantity);
+        const error = editor
+          .getState()
+          .add(context_card(context, quantity), quantity);
+        if (error) validation_error(error);
       }),
     onSettled: () => {
       gate.current = false;
