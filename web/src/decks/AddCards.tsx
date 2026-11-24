@@ -53,7 +53,8 @@ export function AddCards({
 }) {
   const client = useQueryClient(),
     search_gate = useRef(false),
-    revision = useRef(0);
+    revision = useRef(0),
+    close_timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searching, setSearching] = useState(false);
   const adding = useStore(session.tasks, (state) =>
     state.items.some((task) => task.kind === "add"),
@@ -94,6 +95,11 @@ export function AddCards({
     const id = setTimeout(() => setSuggestion(input.trim()), 250);
     return () => clearTimeout(id);
   }, [input]);
+  useEffect(() => cancel_suggestion_close, []);
+  function cancel_suggestion_close() {
+    if (close_timer.current !== null) clearTimeout(close_timer.current);
+    close_timer.current = null;
+  }
   const enough =
     (suggestion.match(/[A-Za-z]/g)?.length ?? 0) >= 3 ||
     (suggestion.match(/\p{Script=Han}/gu)?.length ?? 0) >= 2;
@@ -143,7 +149,18 @@ export function AddCards({
           submit(input);
         }}
       >
-        <div className={styles.addSearchField}>
+        <div
+          className={styles.addSearchField}
+          onFocus={cancel_suggestion_close}
+          onBlur={(event) => {
+            if (event.currentTarget.contains(event.relatedTarget)) return;
+            cancel_suggestion_close();
+            close_timer.current = setTimeout(() => {
+              close_timer.current = null;
+              setShow(false);
+            }, 150);
+          }}
+        >
           <svg
             className={styles.addSearchIcon}
             viewBox="0 0 24 24"
@@ -166,7 +183,6 @@ export function AddCards({
               setShow(true);
             }}
             onFocus={() => setShow(true)}
-            onBlur={() => setTimeout(() => setShow(false), 150)}
           />
           {show &&
             enough &&

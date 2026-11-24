@@ -108,7 +108,13 @@ function Editor({ initial: loaded }: { initial: Deck }) {
   useEffect(() => {
     if (!cover) return;
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setCover(false);
+      if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        document.querySelector('[role="dialog"]')
+      )
+        return;
+      setCover(false);
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);

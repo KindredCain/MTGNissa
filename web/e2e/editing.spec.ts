@@ -3,6 +3,170 @@ import { mock_api } from "./mock-api";
 import { context, uuid } from "../src/test/fixtures";
 import { context_card, with_summary } from "../src/decks/model";
 
+for (const kind of ["add", "error", "leave"] as const) {
+  test(`modal ${kind} blocks background cover Escape`, async ({ page }) => {
+    await mock_api(page);
+    await page.goto("/decks/1/edit");
+    const cover = page.getByRole("button", {
+      name: "选择封面",
+      exact: true,
+      includeHidden: true,
+    });
+    await cover.click();
+    await expect(cover).toHaveAttribute("aria-pressed", "true");
+
+    if (kind === "add") {
+      await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
+      const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
+      await expect(modal).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(modal).toBeVisible();
+      await expect(cover).toHaveAttribute("aria-pressed", "true");
+
+      await modal.getByRole("button", { name: "搜索", exact: true }).click();
+      await modal.getByRole("spinbutton").fill("0");
+      await modal.getByRole("button", { name: "加入", exact: true }).click();
+      const error = page.getByRole("dialog", { name: "操作失败", exact: true });
+      await expect(error).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(error).toBeVisible();
+      await expect(cover).toHaveAttribute("aria-pressed", "true");
+      await error.getByRole("button", { name: "关闭", exact: true }).click();
+      await modal.getByRole("button", { name: "×", exact: true }).click();
+    } else {
+      await page
+        .getByRole("textbox", { name: "卡组名称", exact: true })
+        .fill(kind === "error" ? "" : "未保存名称");
+      if (kind === "error")
+        await page
+          .getByRole("button", { name: "保存卡组", exact: true })
+          .click();
+      else await page.getByRole("link", { name: "卡组", exact: true }).click();
+      const modal = page.getByRole("dialog", {
+        name: kind === "error" ? "操作失败" : "离开卡组编辑？",
+        exact: true,
+      });
+      await expect(modal).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(modal).toBeVisible();
+      await expect(cover).toHaveAttribute("aria-pressed", "true");
+      await modal
+        .getByRole("button", {
+          name: kind === "error" ? "关闭" : "继续编辑",
+          exact: true,
+        })
+        .click();
+    }
+
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page).toHaveURL("/decks/1/edit");
+    await cover.evaluate((button) => {
+      button.addEventListener("keydown", (event) => event.preventDefault(), {
+        once: true,
+      });
+      button.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Escape",
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    await expect(cover).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Escape");
+    await expect(cover).toHaveAttribute("aria-pressed", "false");
+  });
+}
+
+for (const confirmation of ["Enter", "Space", "pointer"] as const) {
+  test(`add-card suggestions retain internal focus and confirm with ${confirmation}`, async ({
+    page,
+  }) => {
+    await mock_api(page);
+    const searches: string[] = [];
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === "/api/v1/decks/1/cards/search")
+        searches.push(url.searchParams.get("q") ?? "");
+    });
+    await page.route("**/api/v1/decks/1/cards/name_suggestions?**", (route) =>
+      route.fulfill({
+        json: {
+          status: 200,
+          data: {
+            items: [
+              { printed_name: "Alpha First" },
+              { printed_name: "Alpha Second" },
+            ],
+          },
+          error: null,
+          request_id: "test",
+        },
+      }),
+    );
+    await page.goto("/decks/1/edit");
+    await page.clock.install();
+    await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
+    const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
+    const input = modal.getByRole("textbox", { name: "搜索加入卡组的卡牌" });
+    const first = modal.getByRole("button", {
+      name: "Alpha First",
+      exact: true,
+    });
+    const second = modal.getByRole("button", {
+      name: "Alpha Second",
+      exact: true,
+    });
+    await input.fill("Alpha");
+    await expect(first).toBeVisible();
+    await input.press("Tab");
+    await expect(first).toBeFocused();
+    await page.clock.runFor(300);
+    await expect(first).toBeFocused();
+    await first.press("Tab");
+    await expect(second).toBeFocused();
+    await second.press("Shift+Tab");
+    await expect(first).toBeFocused();
+    await first.press("Shift+Tab");
+    await expect(input).toBeFocused();
+    await page.clock.runFor(300);
+    await expect(first).toBeVisible();
+    expect(searches).toEqual([]);
+    await input.press("Tab");
+    await first.press("Tab");
+    await second.press("Tab");
+    await expect(
+      modal.getByRole("button", { name: "搜索", exact: true }),
+    ).toBeFocused();
+    await input.focus();
+    await page.clock.runFor(300);
+    await expect(first).toBeVisible();
+    await input.press("Tab");
+    await first.press("Tab");
+    await second.press("Tab");
+    await page.clock.runFor(300);
+    await expect(
+      modal.getByRole("button", { name: "搜索", exact: true }),
+    ).toBeFocused();
+    await expect(first).toHaveCount(0);
+    await input.focus();
+    await expect(second).toBeVisible();
+    if (confirmation === "pointer") await second.click();
+    else {
+      await input.press("Tab");
+      await first.press("Tab");
+      await second.press(confirmation === "Space" ? "Space" : "Enter");
+    }
+    await expect(input).toHaveValue("Alpha Second");
+    await expect.poll(() => searches).toEqual(["Alpha Second"]);
+    await expect(first).toHaveCount(0);
+    await expect(second).toHaveCount(0);
+    await expect(
+      modal.getByRole("button", { name: "测试卡牌 2", exact: true }),
+    ).toBeVisible();
+  });
+}
+
 test("invalid add quantities use the shared error dialog without adding cards", async ({
   page,
 }) => {
