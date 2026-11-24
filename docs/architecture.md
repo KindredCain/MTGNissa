@@ -90,9 +90,11 @@ MTGNissa Docker 容器
 
 业务 SQL 统一放在 `internal/store` 包内，按业务分文件和 Store 类型；不再以 HTTP 路径或数据库名称将不同业务的全部 SQL 集中到一个 `AppStore`。卡牌、系列、Token、收藏、愿望单、卡组和日志查询或写入分别归入对应存储实现。`store` 不引用 `cards`、`sets`、`tokens`、`collection` 等 Service 包。
 
-`internal/model` 保存跨层使用的业务模型、查询参数、分页及汇总结果，供 Service、Store 和 HTTP 映射共同使用。HTTP 请求与响应 DTO 继续留在 `internal/httpapi`，通用信封留在 `internal/httpresponse`；`internal/appdata` 的数据库实体和迁移，以及 `internal/carddata` 的导入、解析、转换模型均保留原位。仅在实现内部使用的 SQL 扫描行、分组键和游标编码结构不进入共用业务模型。
+`internal/model` 保存共享业务模型及其查询参数和结果。类型按职责归属，跨层使用本身不要求移入 `model`；Store 专属查询参数可由 Store 定义并供 Service 使用。HTTP DTO、持久化实体和导入模型分别留在 `internal/httpapi`、`internal/appdata` 和 `internal/carddata`，实现细节留在所属模块。
 
-依赖方向为 `httpapi -> 业务 Service -> store`，Service 和 Store 都可引用 `model`；`model` 不反向引用 Service 或 Store。业务变更、版本选择、详情组织和跨业务编排由 Service 负责；Store 负责 SQL 查询、扫描与基础映射、锁定及持久化，也可封装系列语言和层级等查询结果整理。跨层传递的业务数据放在 `model`。分层调整应保留合并查询、批量处理和一致性快照，避免增加数据库往返、全量数据累计或重复计算。Service 按现有 API 模块组织流程，`/cards/{printing_uuid}/collection_adjustments` 和 `/cards/{printing_uuid}/wishlist_state` 继续由 `cards.Service` 编排，分别调用收藏和愿望单存储能力。
+依赖方向为 `httpapi -> 业务 Service -> store`，Service 和 Store 都可引用 `model`；`model` 不反向引用 Service 或 Store。业务变更、版本选择、详情组织和跨业务编排由 Service 负责；Store 负责 SQL 查询、扫描与基础映射、锁定及持久化，也可封装系列语言和层级等查询结果整理。分层调整应保留合并查询、批量处理和一致性快照，避免不必要的数据库往返、读取和重复计算。Service 按现有 API 模块组织流程，`/cards/{printing_uuid}/collection_adjustments` 和 `/cards/{printing_uuid}/wishlist_state` 继续由 `cards.Service` 编排，分别调用收藏和愿望单存储能力。
+
+查询方案按真实数据规模下的整体成本取舍，兼顾数据库负载、应用内存和网络传输；性能改写以验证结果为依据。
 
 Service 决定事务包含哪些业务步骤，`store.AppTransactions` 封装开启、提交与回滚。写入通过 `WithAppTx` 回调取得绑定到同一个 `sqlx.Tx` 的 `AppTx`，各业务存储不自行提交，也不在事务中改用普通 DB 连接。业务变更及其操作日志由 Service 在同一回调中组合，任何一步失败均回滚。需要串行更新同一资源时，在事务中锁定对应记录，再读取和修改其关联数据；规范化后的业务状态未变化时，不更新数据、更新时间或操作日志。
 

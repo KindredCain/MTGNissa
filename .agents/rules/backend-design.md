@@ -4,7 +4,8 @@
 
 - Follow the dependency direction `httpapi -> business Service -> store`. Stores must not depend on Service packages; shared models must not depend on either layer.
 - Keep HTTP protocol adaptation in `internal/httpapi`. Services own business rules and coordination across business capabilities. Stores own SQL, scanning and basic mapping, locking, persistence, and necessary query-result organization.
-- Keep HTTP DTOs in `internal/httpapi`, shared business models, query parameters, and results in `internal/model`, and persistence entities in `internal/appdata`. Keep import models in `internal/carddata`; implementation-only scan rows, grouping keys, and cursor encoding structures stay in their owning implementation.
+- Keep HTTP DTOs in `internal/httpapi`, shared business models and their query parameters and results in `internal/model`, persistence entities in `internal/appdata`, and import models in `internal/carddata`.
+- Place types by responsibility, not merely because they cross a layer boundary. Store-specific query parameters and pagination positions may stay in `store` and be used by Services. Keep implementation-only scan rows, grouping keys, and cursor encoding structures in their owning implementation; do not move types into `model` solely for uniformity.
 - Follow existing module patterns. Give shared abstractions a clear responsibility and actual reuse need; do not add layers or split packages speculatively.
 - Reuse existing capabilities before adding dependencies. Add a third-party dependency only for a clear benefit, and avoid frameworks or tools with overlapping responsibilities.
 
@@ -20,7 +21,10 @@
 - Prefer `goqu` when dynamic query composition is complex. Parameterized handwritten SQL is appropriate for fixed structures and a small number of controlled optional conditions; use `sqlx.In` when only the number of `IN` values changes.
 - Choose SQL tools by composition complexity and maintenance cost, not endpoint names or statement length. Do not rewrite SQL into a Builder merely for uniformity.
 - Bind input values as parameters. Resolve dynamic table names, columns, operators, and sort directions through internal controlled mappings; never interpolate user text directly into SQL.
-- Prefer batch and set-based queries. Preserve existing combined queries during refactoring; avoid per-item follow-up queries, excessive reads, and repeated computation.
+- Prefer batch and set-based queries. Preserve existing combined queries during refactoring; avoid unnecessary per-item follow-up queries, reads, and repeated computation.
+- Choose database and application work by end-to-end cost at realistic data sizes, considering latency, database CPU and temporary tables, application memory, network transfer, and database compatibility. Do not assume that fewer returned rows or moving more work into SQL makes a query faster.
+- Materializing and reusing an intermediate ID set is allowed when it avoids repeated expensive matching. Assess its size, memory and transfer cost, and SQL parameter limits; keep endpoint pagination and current-page metadata loading intact. Do not classify an intermediate ID set alone as a defect.
+- For performance-motivated query rewrites, compare execution plans and representative timings on supported database versions. Without that evidence, report a potential optimization rather than an established bottleneck or a required rewrite.
 
 ## Transactions and consistency
 
