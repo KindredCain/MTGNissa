@@ -25,6 +25,7 @@ import (
 	"mtgnissa/internal/sets"
 	"mtgnissa/internal/store"
 	"mtgnissa/internal/tokens"
+	"mtgnissa/internal/ui"
 	"mtgnissa/internal/wishlist"
 )
 
@@ -91,6 +92,7 @@ func BuildWithConfig(ctx context.Context, configPath string) (*Application, erro
 	}
 	router := httpapi.New(httpapi.Dependencies{
 		Logger:      log,
+		UI:          ui.Handler(),
 		Health:      health.Handler{Card: dbs.Card.DB, App: dbs.App.DB},
 		Loader:      manager,
 		LoadEnabled: cfg.LoadEnabled,

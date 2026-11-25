@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"log/slog"
+	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,6 +16,7 @@ import (
 // Dependencies contains runtime settings and services used by the HTTP router.
 type Dependencies struct {
 	Logger        *slog.Logger
+	UI            http.Handler
 	Health        health.Handler
 	Loader        cardDataLoader
 	LoadEnabled   bool
@@ -67,15 +70,22 @@ func New(deps Dependencies) *gin.Engine {
 	api.GET("/decks/:deck_id/cards/name_suggestions", rejectUnknownQueryParameters("q"), deckNameSuggestions(deps.Decks))
 	api.POST("/decks/:deck_id/card_contexts", requireJSONContentType(), rejectUnknownQueryParameters(), deckCardContexts(deps.Decks))
 
-	registerFallbackRoutes(router)
+	registerFallbackRoutes(router, deps.UI)
 	return router
 }
 
-func registerFallbackRoutes(router *gin.Engine) {
+func registerFallbackRoutes(router *gin.Engine, frontend http.Handler) {
 	router.NoMethod(func(c *gin.Context) {
 		httpresponse.WriteAppError(c, apperror.New(apperror.CodeMethodNotAllowed, "method not allowed"))
 	})
 	router.NoRoute(func(c *gin.Context) {
+		requestPath := c.Request.URL.Path
+		reserved := requestPath == "/api" || strings.HasPrefix(requestPath, "/api/") ||
+			requestPath == "/health" || strings.HasPrefix(requestPath, "/health/")
+		if frontend != nil && !reserved {
+			frontend.ServeHTTP(c.Writer, c.Request)
+			return
+		}
 		httpresponse.WriteAppError(c, apperror.New(apperror.CodeNotFound, "route not found"))
 	})
 }

@@ -18,6 +18,16 @@ corepack pnpm dev
 $env:API_PROXY_TARGET = 'http://127.0.0.1:8081'
 ```
 
+## 构建
+
+在 `web` 目录执行：
+
+```powershell
+corepack pnpm build
+```
+
+构建产物输出到 `dist/`。Vite 构建不执行类型检查，类型检查使用 `corepack pnpm typecheck`。
+
 ## 浏览器访问兼容
 
 支持 localhost HTTP、域名 HTTPS、IP 加端口 HTTP、普通域名 HTTP 及 IP 加端口 HTTPS。HTTPS 证书须受浏览器信任并匹配访问的域名或 IP；证书及监听配置在整包部署阶段处理。

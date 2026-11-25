@@ -3,7 +3,7 @@
 ## Layers and models
 
 - Follow the dependency direction `httpapi -> business Service -> store`. Stores must not depend on Service packages; shared models must not depend on either layer.
-- Keep HTTP protocol adaptation in `internal/httpapi`. Services own business rules and coordination across business capabilities. Stores own SQL, scanning and basic mapping, locking, persistence, and necessary query-result organization.
+- Keep business API protocol adaptation in `internal/httpapi`; frontend embedding and static HTTP serving belong to `internal/ui`, injected by the startup layer. Services own business rules and coordination across business capabilities. Stores own SQL, scanning and basic mapping, locking, persistence, and necessary query-result organization.
 - Keep HTTP DTOs in `internal/httpapi`, shared business models and their query parameters and results in `internal/model`, persistence entities in `internal/appdata`, and import models in `internal/carddata`.
 - Place types by responsibility, not merely because they cross a layer boundary. Store-specific query parameters and pagination positions may stay in `store` and be used by Services. Keep implementation-only scan rows, grouping keys, and cursor encoding structures in their owning implementation; do not move types into `model` solely for uniformity.
 - Follow existing module patterns. Give shared abstractions a clear responsibility and actual reuse need; do not add layers or split packages speculatively.

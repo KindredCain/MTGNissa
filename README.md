@@ -6,6 +6,19 @@ MTGNissa 是一个面向个人部署的万智牌管理 Web 服务。
 
 服务采用 Go HTTP 服务和双 MySQL 数据源，支持个人数据库自动迁移，以及从固定目录全量加载卡牌数据。Card DB 在日常业务中只读，显式启用的数据加载功能可以全量替换其固定白名单表；App DB 保存收藏、愿望单、卡组和操作日志。
 
+## 构建
+
+在仓库根目录执行：
+
+```powershell
+cd web
+corepack pnpm install --frozen-lockfile
+cd ..
+node scripts/build.mjs
+```
+
+构建产物输出到 `bin/`。
+
 ## 部署
 
 推荐复制 [`config.example.yaml`](config.example.yaml) 到部署主机，并以只读方式挂载：
@@ -69,6 +82,25 @@ GET /api/v1/card_data/load/{task_id}
 ```
 
 卡牌加载是维护接口，只操作 Card DB，不写入个人数据库，也不计入用户操作日志。粗检边界、原子换表和安全限制见功能需求文档。
+
+## 本地调试
+
+配置好数据库连接后，在仓库根目录启动后端（`config.yaml` 替换为实际配置文件路径）：
+
+```powershell
+go run ./cmd/server -config config.yaml
+```
+
+另开终端启动前端：
+
+```powershell
+cd web
+corepack pnpm dev
+```
+
+访问 `http://127.0.0.1:5173`，默认代理到后端 `http://127.0.0.1:8080`。
+
+整包调试时，运行 `.\bin\mtgnissa.exe -config config.yaml`，按实际监听地址访问。
 
 ## 文档索引
 

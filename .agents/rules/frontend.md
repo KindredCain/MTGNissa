@@ -54,6 +54,7 @@
 - Generate frontend API types from the approved OpenAPI 3.1 contract and reuse generated DTO and enum types. Do not maintain duplicate handwritten API types or manually edit `src/api/schema.d.ts`. When an interface changes, synchronize its contract and callers, then run `corepack pnpm generate:api` and `corepack pnpm check:contract` from `web`.
 - Treat frontend validation as user feedback only. The Go backend remains authoritative for business validation.
 - In development, proxy `/api` and `/health` from Vite to the Go service. In production, build static assets for embedding into the Go binary; do not require a Node.js production process.
+- Keep frontend source in `web` and Go resource hosting in `internal/ui`. Use `node scripts/build.mjs` from the repository root for a complete build: check and build the frontend, replace the generated `internal/ui/dist`, and compile with `-tags embed_ui`. Default Go builds remain backend-only for Vite development and tests.
 - Ensure browser-history deep links can be refreshed by keeping `/api` and `/health` outside the SPA fallback and returning the frontend entry point for unmatched frontend routes.
 - Use Vitest and React Testing Library for component behavior, MSW for API scenarios, and Playwright for end-to-end browser coverage.
 - Keep Playwright desktop coverage for `1280 x 720`, `1366 x 768`, and `1440 x 900`.

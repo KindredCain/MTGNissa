@@ -115,6 +115,10 @@ Service 决定事务包含哪些业务步骤，`store.AppTransactions` 封装开
 
 前端源代码统一放置在根目录 `web`。开发环境由 Vite Dev Server 提供页面，并把 `/api` 和 `/health` 代理到 Go 服务；生产环境执行 Vite 构建，由 Go `embed` 嵌入静态产物并与 API 同源提供。Go 服务必须为非 `/api`、非 `/health` 且未命中静态文件的浏览器路由返回前端 `index.html`，保证详情页等深层路由可以直接访问和刷新。生产部署不依赖独立 Node.js 进程。
 
+Go 资源嵌入和页面托管归 `internal/ui`，由启动层通过 `http.Handler` 注入路由。根目录执行 `node scripts/build.mjs`，依次完成前端类型与契约检查、Vite 构建、把 `web/dist` 同步到 `internal/ui/dist`，再以 `-tags embed_ui` 编译 Go。嵌入构建必须包含 `dist/index.html`，缺失时编译失败。普通 Go 构建不嵌入页面，可在全新检出后直接进行后端开发和测试，并由 Vite 提供页面。
+
+页面托管只接受 GET、HEAD；未命中的无扩展名页面路径回退 `index.html`，缺失静态文件、`/assets` 下的缺失路径、目录及隐藏路径返回 404，不列出目录。入口和静态文件使用 `Cache-Control: no-cache`，避免部署后继续使用旧版本。`/api`、`/health` 及各自子路径始终由后端处理，不回退 HTML；全局请求 ID 和访问日志同样覆盖前端请求。
+
 基础交互组件使用 Radix UI Primitives 封装为项目内部组件，视觉样式仍以原型和项目设计令牌为准，不直接引入带有完整视觉体系的组件库。卡组统计图表使用 Apache ECharts，并按页面进行代码拆分；图表通过容器尺寸而不是固定视口尺寸决定宽度。首版卡组分区移动使用 dnd-kit 实现拖拽，不提供按钮、菜单或键盘等非拖拽换区方式；非拖拽换区入口列入后续版本计划。
 
 ### 查询与列表状态
@@ -275,7 +279,8 @@ mtgnissa/
 │   ├── database/
 │   ├── health/
 │   ├── httpapi/
-│   └── httpresponse/
+│   ├── httpresponse/
+│   └── ui/                 # Go 页面托管与构建时嵌入的 dist
 ├── migrations/
 │   ├── app/
 │   └── embed.go
@@ -300,7 +305,7 @@ mtgnissa/
 - `/health/live`
 - `/health/ready`
 
-HTTP 响应采用“固定响应信封、业务错误类型、HTTP 层统一映射、边界日志”四层结构。`internal/apperror` 定义与 HTTP 无关的稳定错误码、安全文案、字段或行级详情及仅供日志使用的底层 `Cause`；`internal/httpresponse` 把错误码集中映射为 HTTP 状态并生成统一信封。Handler 和中间件成功时只能调用 `WriteJSON`，失败时只能调用 `WriteAppError`；实际写入错误信封的 `writeError` 保持为包内实现，不允许业务代码直接调用 Gin 的 JSON 输出。数据库模型不得直接作为响应 DTO，底层 SQL、堆栈、文件系统路径和原始异常对象不得进入客户端响应。
+API 响应采用“固定响应信封、业务错误类型、HTTP 层统一映射、边界日志”四层结构。`internal/apperror` 定义与 HTTP 无关的稳定错误码、安全文案、字段或行级详情及仅供日志使用的底层 `Cause`；`internal/httpresponse` 把错误码集中映射为 HTTP 状态并生成统一信封。API Handler 和中间件成功时只能调用 `WriteJSON`，失败时只能调用 `WriteAppError`；实际写入错误信封的 `writeError` 保持为包内实现，不允许业务代码直接调用 Gin 的 JSON 输出。此格式约束只适用于 `/api` 及其子路径；健康检查当前保留既有信封，`internal/ui` 使用标准 HTTP 文件响应。数据库模型不得直接作为响应 DTO，底层 SQL、堆栈、文件系统路径和原始异常对象不得进入客户端响应。
 
 请求边界只记录一次错误日志，并携带请求 ID、方法、路径、状态码、错误码、耗时和底层 `Cause`；普通成功请求记录信息日志，可预期的 4xx 拒绝记录警告日志，5xx 与依赖故障记录错误日志。后台任务查询成功但任务执行失败时仍返回 HTTP 200，执行错误保留在 `data.error`，不进入顶层 HTTP `error`。
 
