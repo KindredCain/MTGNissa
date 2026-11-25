@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	_ "time/tzdata"
 
 	"mtgnissa/internal/bootstrap"
 	"mtgnissa/internal/config"
