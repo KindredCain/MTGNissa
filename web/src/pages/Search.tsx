@@ -24,7 +24,10 @@ export function Component() {
   return (
     <>
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
-      <main className={`${pageStyles.content} ${styles.resultsMain}`}>
+      <main
+        className={`${pageStyles.content} ${styles.resultsMain}`}
+        data-card-grid-page
+      >
         <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
           <Link to="/sets">卡牌中心</Link>
           <Icon name="chevron-right" size={13} />

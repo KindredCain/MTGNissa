@@ -1,5 +1,6 @@
 import * as Popover from "@radix-ui/react-popover";
 import * as Checkbox from "@radix-ui/react-checkbox";
+import * as SelectPrimitive from "@radix-ui/react-select";
 import {
   useEffect,
   useLayoutEffect,
@@ -133,25 +134,58 @@ export function Select({
   disabled?: boolean;
   icon?: IconName;
 }) {
+  const [trigger, setTrigger] = useState<HTMLButtonElement | null>(null);
   return (
-    <label className={`${styles.select} ${icon ? styles.selectWithIcon : ""}`}>
-      <span className={styles.srOnly}>{label}</span>
-      {icon && <Icon name={icon} className={styles.selectLeadingIcon} />}
-      <select
+    <SelectPrimitive.Root
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled}
+    >
+      <SelectPrimitive.Trigger
+        ref={setTrigger}
         aria-label={label}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
+        className={styles.select}
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {prefix}
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <Icon name="chevron-down" className={styles.selectChevron} />
-    </label>
+        {icon && <Icon name={icon} className={styles.selectLeadingIcon} />}
+        <span className={styles.selectValue}>
+          {prefix}
+          <SelectPrimitive.Value />
+        </span>
+        <SelectPrimitive.Icon className={styles.selectChevron}>
+          <Icon name="chevron-down" />
+        </SelectPrimitive.Icon>
+      </SelectPrimitive.Trigger>
+      <SelectPrimitive.Portal
+        container={trigger?.closest('[role="dialog"]') ?? undefined}
+      >
+        <SelectPrimitive.Content
+          className={styles.selectMenu}
+          position="popper"
+          align="start"
+          sideOffset={6}
+          collisionPadding={8}
+        >
+          <SelectPrimitive.Viewport className={styles.selectViewport}>
+            {options.map((option) => (
+              <SelectPrimitive.Item
+                key={option.value}
+                value={option.value}
+                className={styles.selectItem}
+              >
+                <SelectPrimitive.ItemText>
+                  {option.label}
+                </SelectPrimitive.ItemText>
+                <SelectPrimitive.ItemIndicator
+                  className={styles.selectIndicator}
+                >
+                  <Icon name="check" size={13} />
+                </SelectPrimitive.ItemIndicator>
+              </SelectPrimitive.Item>
+            ))}
+          </SelectPrimitive.Viewport>
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    </SelectPrimitive.Root>
   );
 }
 export function MultiSelect({
@@ -314,7 +348,7 @@ export function LoadMore({
       function accepts(event: Event) {
         if (!(event.target instanceof Element)) return false;
         const floating = event.target.closest(
-          '[role="dialog"], [role="tooltip"]',
+          '[role="dialog"], [role="tooltip"], [role="listbox"]',
         );
         return !floating || floating.contains(scroller);
       }
@@ -323,6 +357,11 @@ export function LoadMore({
         // Modal scroll locks can prevent overscroll while the wheel still expresses retry intent.
         armed = (event as WheelEvent).deltaY > 0;
         retry();
+      }
+      function scrollbar_down() {
+        armed = true;
+        retry();
+        armed = false;
       }
       function keydown(event: Event) {
         if (!accepts(event)) return;
@@ -357,6 +396,7 @@ export function LoadMore({
         previous_top = next_top;
       }
       scroller.addEventListener("wheel", wheel, { passive: true });
+      scroller.addEventListener("scrollbar-scroll-down", scrollbar_down);
       scroller.addEventListener("keydown", keydown);
       scroller.addEventListener("pointerdown", pointerdown);
       scroller.addEventListener("scroll", scroll, { passive: true });
@@ -364,6 +404,7 @@ export function LoadMore({
       document.addEventListener("pointercancel", pointerup);
       return () => {
         scroller.removeEventListener("wheel", wheel);
+        scroller.removeEventListener("scrollbar-scroll-down", scrollbar_down);
         scroller.removeEventListener("keydown", keydown);
         scroller.removeEventListener("pointerdown", pointerdown);
         scroller.removeEventListener("scroll", scroll);
@@ -375,7 +416,7 @@ export function LoadMore({
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) request();
       },
-      { root, rootMargin: "400px" },
+      { root: root ?? document.body, rootMargin: "400px" },
     );
     observer.observe(node);
     return () => observer.disconnect();

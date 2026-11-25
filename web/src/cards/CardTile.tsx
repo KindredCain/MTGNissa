@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ReactNode, type Ref } from "react";
 import { Link } from "react-router";
 import { CardImage } from "./CardImage";
 import type { Card } from "./model";
@@ -39,9 +39,15 @@ export function CardTile({
     </article>
   );
 }
-export function CardGrid({ cards }: { cards: Card[] }) {
+export function CardGrid({
+  cards,
+  grid_ref,
+}: {
+  cards: Card[];
+  grid_ref?: Ref<HTMLDivElement>;
+}) {
   return (
-    <div className={styles.grid}>
+    <div className={styles.grid} ref={grid_ref}>
       {cards.map((card) => (
         <CardTile key={card.printing_uuid} card={card} />
       ))}

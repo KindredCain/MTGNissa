@@ -1,0 +1,171 @@
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 230px;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid #d7dbd6;
+  border-radius: 7px;
+  background: white;
+}
+.field:focus-within {
+  outline: 2px solid #42a277;
+  outline-offset: 3px;
+}
+.field label {
+  color: #7a8580;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: text;
+}
+.field input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+}
+.field input:focus-visible {
+  outline: none;
+}
+.field .trigger {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  color: #69766f;
+  background: transparent;
+}
+.trigger:hover {
+  background: #f0f2ee;
+}
+.popover {
+  z-index: 70;
+  padding: 12px;
+  max-height: var(--radix-popover-content-available-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 8px 24px #18201d22;
+}
+.calendar {
+  position: relative;
+  width: 252px;
+}
+.caption {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-bottom: 8px;
+}
+.captionLabel {
+  font-size: 13px;
+  font-weight: 600;
+}
+.nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 4px;
+}
+.navButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #f0f2ee;
+}
+.grid {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.calendar .weekday {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+  text-align: center;
+}
+.calendar .week:nth-child(n) {
+  background: transparent;
+}
+.calendar .day {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  text-align: center;
+}
+.dayButton {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: 2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1;
+}
+.dayButton:hover {
+  background: #edf4ef;
+}
+.today:not(.selected):not(.rangeAnchor) .dayButton {
+  border-color: #bfcbc3;
+  color: var(--green);
+}
+.selected .dayButton,
+.rangeAnchor .dayButton {
+  background: var(--green);
+  color: white;
+  font-weight: 600;
+}
+.calendar .rangeMiddle {
+  background: #e3eee7;
+}
+.calendar .rangeStart {
+  background: linear-gradient(to right, transparent 50%, #e3eee7 50%);
+}
+.calendar .rangeEnd {
+  background: linear-gradient(to left, transparent 50%, #e3eee7 50%);
+}
+.calendar .rangeSingle {
+  background: transparent;
+}
+.outside {
+  opacity: 0.4;
+}
+.outside.rangeAnchor,
+.outside.selected,
+.outside.rangeMiddle {
+  opacity: 1;
+}
+.disabled {
+  opacity: 0.3;
+}
+.hidden {
+  visibility: hidden;
+}

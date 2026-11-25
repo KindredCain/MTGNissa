@@ -134,6 +134,7 @@
   gap: 7px;
   background: var(--orange);
   border-color: var(--orange);
+  color: #17251c;
 }
 .heading {
   display: flex;
@@ -152,4 +153,85 @@
   background: white;
   border-radius: 10px;
   padding: 20px;
+}
+
+:global(#root:has([data-card-grid-page])) {
+  min-width: 276px;
+}
+:global(#root:has([data-card-grid-page])) .nav {
+  min-width: 0;
+}
+:global(#root:has([data-card-grid-page])) .pageHeader,
+:global([data-card-grid-page]) {
+  padding-right: clamp(16px, 4vw, 40px);
+  padding-left: clamp(16px, 4vw, 40px);
+}
+:global([data-card-grid-page] [data-toolbar]) {
+  flex-wrap: wrap;
+}
+:global([data-card-grid-page] [data-toolbar]) > * {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+:global([data-card-grid-page]) .breadcrumb > a {
+  flex-shrink: 0;
+}
+:global([data-card-grid-page]) .breadcrumb > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  :global(#root:has([data-card-grid-page])) {
+    --nav-height: 112px;
+  }
+  :global(#root:has([data-card-grid-page])) .nav {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 24px;
+    padding: 12px 24px;
+    align-content: center;
+  }
+  :global(#root:has([data-card-grid-page])) .nav > nav {
+    height: 36px;
+    justify-self: end;
+  }
+  :global(#root:has([data-card-grid-page])) .right {
+    grid-column: 1 / -1;
+    margin-left: 0;
+    min-width: 0;
+  }
+  :global(#root:has([data-card-grid-page])) .right form {
+    width: auto;
+    flex: 1;
+  }
+  :global(#root:has([data-card-grid-page])) .right > span {
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 600px) {
+  :global(#root:has([data-card-grid-page])) {
+    --nav-height: 144px;
+  }
+  :global(#root:has([data-card-grid-page])) .nav {
+    grid-template-columns: 1fr;
+    grid-template-rows: 28px 28px 36px;
+    padding: 12px 16px;
+  }
+  :global(#root:has([data-card-grid-page])) .nav > nav {
+    height: 28px;
+    justify-self: start;
+  }
+  :global(#root:has([data-card-grid-page])) .pageHeader {
+    height: auto;
+    min-height: 100px;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
 }

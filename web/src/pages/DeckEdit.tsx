@@ -68,7 +68,7 @@ function Editor({ initial }: { initial: Deck }) {
     [session] = useState(() => new EditingSession()),
     state = useStore(editor),
     [source, setSource] = useState(initial.source_text),
-    [expanded, setExpanded] = useState(true),
+    [expanded, setExpanded] = useState(false),
     [add, setAdd] = useState(false),
     [stats, setStats] = useState(false),
     [cover, setCover] = useState(false);
@@ -216,8 +216,8 @@ function Editor({ initial }: { initial: Deck }) {
       >
         <header className={styles.header}>
           <div>
-            <div className={styles.nameField}>
-              <div className={styles.nameText}>
+            <label className={styles.nameField}>
+              <span className={styles.nameText}>
                 <span aria-hidden="true">{state.deck.name || " "}</span>
                 <input
                   className={styles.nameInput}
@@ -225,7 +225,7 @@ function Editor({ initial }: { initial: Deck }) {
                   value={state.deck.name}
                   onChange={(event) => state.name(event.target.value)}
                 />
-              </div>
+              </span>
               <svg
                 className={styles.namePencil}
                 width="15"
@@ -240,7 +240,7 @@ function Editor({ initial }: { initial: Deck }) {
               >
                 <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L9 17l-4 1 1-4Z" />
               </svg>
-            </div>
+            </label>
             <p>
               共 {state.deck.summary.counted_total} 张 · 收集率{" "}
               {Math.round(state.deck.summary.collection_rate * 100)}%

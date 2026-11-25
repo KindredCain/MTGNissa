@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(5, 244px);
+  grid-template-columns: repeat(auto-fill, 244px);
   gap: 20px 35px;
   align-items: start;
 }
@@ -160,6 +160,9 @@
   display: inline-flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
 }
 .mergeToggle {
   display: inline-flex;
@@ -245,9 +248,4 @@
   height: 1px;
   flex: 1;
   background: #d5dbd2;
-}
-@media (max-width: 1439px) {
-  .grid {
-    grid-template-columns: repeat(4, 244px);
-  }
 }

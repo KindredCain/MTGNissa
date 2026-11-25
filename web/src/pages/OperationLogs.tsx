@@ -11,6 +11,8 @@ import { Modal, validation_error } from "../ui/feedback";
 import { Pagination, Skeleton, Toolbar, useURLState } from "../ui/controls";
 import styles from "./logs.module.css";
 import { Icon, type IconName } from "../ui/Icon";
+import { DateInput } from "../ui/DateInput";
+import { parse_date } from "../ui/date";
 const action_icons = {
   add_card: { icon: "plus", color: "#247650" },
   remove_card: { icon: "minus", color: "#a64a43" },
@@ -101,7 +103,7 @@ export function Component() {
         title="操作日志"
         description="查看收藏、愿望单与卡组的变更记录"
       />
-      <main className={pageStyles.content}>
+      <main className={`${pageStyles.content} ${styles.page}`}>
         <Toolbar count={`共 ${list.data?.total_items ?? 0} 条汇总`}>
           <DateFilter
             key={JSON.stringify([query.start_date, query.end_date])}
@@ -111,42 +113,50 @@ export function Component() {
             onSubmit={(start, end) => void change(start, end, 1)}
           />
         </Toolbar>
-        <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>操作类型</th>
-              <th>操作次数</th>
-              <th className={styles.detailCell} aria-label="明细" />
-            </tr>
-          </thead>
-          <tbody>
-            {list.data?.items.map((item) => (
-              <tr key={`${item.operation_date}:${item.action_type}`}>
-                <td>{date_label(item.operation_date)}</td>
-                <td>
-                  <button
-                    className={styles.typeLink}
-                    onClick={() => setDetail(item)}
-                  >
-                    <ActionIcon action={item.action_type} />
-                    {action_names[item.action_type]}
-                  </button>
-                </td>
-                <td>{item.count} 条</td>
-                <td className={styles.detailCell}>
-                  <button
-                    className={styles.detailLink}
-                    aria-label={`查看${date_label(item.operation_date, false)}${action_names[item.action_type]}明细`}
-                    onClick={() => setDetail(item)}
-                  >
-                    <Icon name="chevron-right" size={15} />
-                  </button>
-                </td>
+        <div className={styles.tableFrame}>
+          <table className={`${styles.table} ${styles.summaryTable}`}>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>操作类型</th>
+                <th className={styles.number}>操作次数</th>
+                <th className={styles.detailCell} aria-label="明细" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.data?.items.map((item) => (
+                <tr
+                  key={`${item.operation_date}:${item.action_type}`}
+                  onClick={() => setDetail(item)}
+                >
+                  <td className={styles.date}>
+                    {date_label(item.operation_date, false)}
+                    <span className={styles.weekday}>
+                      {new Intl.DateTimeFormat("zh-CN", {
+                        weekday: "long",
+                        timeZone: "UTC",
+                      }).format(new Date(`${item.operation_date}T12:00:00Z`))}
+                    </span>
+                  </td>
+                  <td>
+                    <button className={styles.typeLink}>
+                      <ActionIcon action={item.action_type} />
+                      {action_names[item.action_type]}
+                    </button>
+                  </td>
+                  <td className={`${styles.number} ${styles.count}`}>
+                    {item.count} 条
+                  </td>
+                  <td className={styles.detailCell}>
+                    <span className={styles.detailLink} aria-hidden="true">
+                      <Icon name="chevron-right" size={15} />
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {list.isPending && <Skeleton />}
         <Pagination
           summary
@@ -182,39 +192,28 @@ function DateFilter({
       className={styles.dates}
       onSubmit={(event) => {
         event.preventDefault();
-        if (
-          Array.from(event.currentTarget.querySelectorAll("input")).some(
-            (input) => !input.validity.valid,
-          )
-        ) {
+        if ([start, end].some((value) => value !== "" && !parse_date(value))) {
           validation_error("请输入完整有效的日期。");
           return;
         }
         onSubmit(start, end);
       }}
     >
-      <label>
-        开始日期
-        <span className={styles.dateInput}>
-          <input
-            type="date"
-            value={start}
-            onChange={(event) => setStart(event.target.value)}
-          />
-          <Icon name="calendar-days" className={styles.dateIcon} />
-        </span>
-      </label>
-      <label>
-        结束日期
-        <span className={styles.dateInput}>
-          <input
-            type="date"
-            value={end}
-            onChange={(event) => setEnd(event.target.value)}
-          />
-          <Icon name="calendar-days" className={styles.dateIcon} />
-        </span>
-      </label>
+      <DateInput
+        label="开始日期"
+        value={start}
+        onChange={setStart}
+        range={{ start, end, target: "start" }}
+      />
+      <span className={styles.dateSeparator} aria-hidden="true">
+        —
+      </span>
+      <DateInput
+        label="结束日期"
+        value={end}
+        onChange={setEnd}
+        range={{ start, end, target: "end" }}
+      />
       <button disabled={pending}>查询</button>
     </form>
   );
@@ -278,19 +277,25 @@ function Detail({
       close_label="×"
     >
       <div className={styles.tableArea}>
-        <table>
+        <table className={`${styles.table} ${styles.detailTable}`}>
+          <colgroup>
+            <col className={styles.timeColumn} />
+            <col />
+            {card_log && <col className={styles.printingColumn} />}
+            {quantity_log && <col className={styles.quantityColumn} />}
+          </colgroup>
           <thead>
             <tr>
               <th>操作时间</th>
               <th>{card_log ? "卡牌" : "卡组名称"}</th>
               {card_log && <th>印刷信息</th>}
-              {quantity_log && <th>数量变化</th>}
+              {quantity_log && <th className={styles.number}>数量变化</th>}
             </tr>
           </thead>
           <tbody>
             {list.data?.items.map((item) => (
               <tr key={item.operation_id}>
-                <td>
+                <td className={styles.time}>
                   {new Intl.DateTimeFormat("zh-CN", {
                     timeZone: app.data?.timezone ?? "UTC",
                     hour: "2-digit",
@@ -299,11 +304,14 @@ function Detail({
                     hour12: false,
                   }).format(new Date(item.occurred_at))}
                 </td>
-                <td>
+                <td
+                  className={styles.name}
+                  title={item.kind === "card" ? item.card.name : item.deck.name}
+                >
                   {item.kind === "card" ? item.card.name : item.deck.name}
                 </td>
                 {item.kind === "card" && (
-                  <td>
+                  <td className={styles.printing}>
                     {item.card.set_code} · {item.card.collector_number} ·{" "}
                     {language_name(item.card.language)}
                     {quantity_log && item.card.finish !== null
@@ -313,11 +321,11 @@ function Detail({
                 )}
                 {quantity_log && item.kind === "card" && (
                   <td
-                    className={
-                      (item.card?.quantity_delta ?? 0) > 0
+                    className={`${styles.number} ${styles.quantity} ${
+                      (item.card.quantity_delta ?? 0) > 0
                         ? styles.positive
                         : styles.negative
-                    }
+                    }`}
                   >
                     {(item.card?.quantity_delta ?? 0) > 0 ? "+" : ""}
                     {item.card?.quantity_delta}

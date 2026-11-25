@@ -6,6 +6,7 @@ import { language_name } from "../shared/display-names";
 import { PageHeader, pageStyles } from "../app/Layout";
 import { CardGrid } from "../cards/CardTile";
 import { CardImage } from "../cards/CardImage";
+import { useCardBatch } from "../cards/useCardBatch";
 import { CardFilters } from "../cards/filters";
 import { filter_cards, type Card } from "../cards/model";
 import {
@@ -56,7 +57,7 @@ function SetCards({
   return (
     <>
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
-      <main className={pageStyles.content}>
+      <main className={pageStyles.content} data-card-grid-page>
         <div className={pageStyles.breadcrumb}>
           <Link to="/sets">卡牌中心</Link>
           <Icon name="chevron-right" size={13} />
@@ -88,16 +89,16 @@ function SetCards({
   );
 }
 function SetCardResults({ cards }: { cards: Card[] }) {
-  const [visible, setVisible] = useState(30);
+  const { visible, grid_ref, show_more } = useCardBatch();
   return (
     <>
-      <CardGrid cards={cards.slice(0, visible)} />
+      <CardGrid cards={cards.slice(0, visible)} grid_ref={grid_ref} />
       <LoadMore
         loaded_count={Math.min(visible, cards.length)}
         end_label="已显示全部卡牌"
         has_more={visible < cards.length}
         loading={false}
-        load={() => setVisible((current) => current + 30)}
+        load={show_more}
       />
     </>
   );
@@ -107,7 +108,7 @@ export function TokenComponent() {
   return <Tokens key={set_code} set_code={set_code} />;
 }
 function Tokens({ set_code }: { set_code: string }) {
-  const [visible, setVisible] = useState(30);
+  const { visible, grid_ref, show_more } = useCardBatch();
   const list = useQuery({
     queryKey: ["tokens", set_code],
     queryFn: ({ signal }) =>
@@ -116,7 +117,10 @@ function Tokens({ set_code }: { set_code: string }) {
   return (
     <>
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
-      <main className={`${pageStyles.content} ${styles.resultsMain}`}>
+      <main
+        className={`${pageStyles.content} ${styles.resultsMain}`}
+        data-card-grid-page
+      >
         <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
           <Link to="/sets">全部卡牌</Link>
           <Icon name="chevron-right" size={13} />
@@ -128,7 +132,7 @@ function Tokens({ set_code }: { set_code: string }) {
         {list.isPending ? (
           <Skeleton cards />
         ) : (
-          <div className={styles.grid}>
+          <div className={styles.grid} ref={grid_ref}>
             {list.data?.items.slice(0, visible).map((item) => (
               <TokenTile key={item.token_uuid} item={item} />
             ))}
@@ -139,7 +143,7 @@ function Tokens({ set_code }: { set_code: string }) {
           end_label="已显示全部 Token"
           has_more={visible < (list.data?.items.length ?? 0)}
           loading={false}
-          load={() => setVisible((current) => current + 30)}
+          load={show_more}
         />
       </main>
     </>

@@ -54,12 +54,15 @@ test("sort names remain scoped to their pages and match the current parameter va
       name: scene.control,
       exact: true,
     });
-    await expect(select).toHaveValue(scene.initial);
-    await expect(select.locator("option:checked")).toContainText(
-      scene.initial_name,
-    );
-    await select.selectOption({ label: `排序：${scene.target_name}` });
-    await expect(select).toHaveValue(scene.target);
+    await expect(select).toContainText(scene.initial_name);
+    await select.click();
+    await expect(
+      page.getByRole("option", { name: scene.initial_name, exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    await page
+      .getByRole("option", { name: scene.target_name, exact: true })
+      .click();
+    await expect(select).toContainText(scene.target_name);
     await expect
       .poll(() => new URL(page.url()).searchParams.get("sort"))
       .toBe(scene.target);

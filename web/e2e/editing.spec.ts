@@ -15,7 +15,6 @@ for (const operation of ["quantity", "add", "move"] as const) {
     else state.deck.sections[2]!.cards = [context_card(context(), 4294967295)];
     state.deck = with_summary(state.deck);
     await page.goto("/decks/1/edit");
-    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
     const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
     if (operation === "add") {
       await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
@@ -288,10 +287,6 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
       ];
       state.deck = with_summary(state.deck);
       await page.goto(route);
-      if (route.endsWith("/edit"))
-        await page
-          .getByRole("button", { name: "卡组代码", exact: false })
-          .click();
       const first = page.getByRole("button", {
           name: "测试卡牌 1，2 张",
           exact: true,
@@ -425,6 +420,18 @@ test("editor pencil follows the name without overflowing long names", async ({
     Math.abs(icon_box.x - input_box.x - input_box.width - 8),
   ).toBeLessThanOrEqual(1);
   expect(icon_box.width).toBe(15);
+  for (const position of [
+    { x: field_box.width - 5, y: field_box.height / 2 },
+    {
+      x: icon_box.x - field_box.x + icon_box.width / 2,
+      y: field_box.height / 2,
+    },
+    { x: 5, y: field_box.height / 2 },
+  ]) {
+    await name.blur();
+    await field.click({ position });
+    await expect(name).toBeFocused();
+  }
   await field.screenshot({ path: testInfo.outputPath("name-pencil.png") });
   await name.fill("长名称".repeat(85));
   const long_icon = (await pencil.boundingBox())!,
@@ -445,7 +452,6 @@ test("editor keeps one expanded card and clears the previous fixed selection", a
     context_card(context(3), 1),
   );
   await page.goto("/decks/1/edit");
-  await page.getByRole("button", { name: "卡组代码", exact: false }).click();
   const first = page.getByRole("button", {
       name: "测试卡牌 1，2 张",
       exact: true,
@@ -559,9 +565,8 @@ for (const quantity of [0, 3, 10]) {
       await expect(draws).toBeDisabled();
       for (const button of await area.getByRole("button").all())
         await expect(button).toBeDisabled();
-      await area
-        .getByRole("combobox", { name: "概率分组" })
-        .selectOption("produced");
+      await area.getByRole("combobox", { name: "概率分组" }).click();
+      await page.getByRole("option", { name: "产费颜色", exact: true }).click();
       await expect(area.locator("tbody tr td:last-child")).toHaveText(
         Array(7).fill("0.00%"),
       );
@@ -616,7 +621,6 @@ for (const removal of ["leave", "blank", "other", "same"] as const) {
       context_card(context(3), 1),
     ];
     await page.goto("/decks/1/edit");
-    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
     const first = page.getByRole("button", { name: /测试卡牌 1，\d 张/ }),
       minus = page.getByRole("button", { name: "减少测试卡牌 1", exact: true }),
       plus = page.getByRole("button", { name: "增加测试卡牌 1", exact: true });
@@ -666,7 +670,6 @@ for (const restore of [false, true]) {
     const state = await mock_api(page);
     state.deck.sections[1]!.cards = [context_card(context(1), 1)];
     await page.goto("/decks/1/edit");
-    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
     const card = page.getByRole("button", { name: /测试卡牌 1，\d 张/ });
     await card.click({ position: { x: 70, y: 12 } });
     await page
@@ -734,6 +737,7 @@ for (const outcome of ["success", "failure"] as const) {
       );
     });
     await page.goto("/decks/1/edit");
+    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
     await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
     const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
     await modal.getByRole("button", { name: "搜索", exact: true }).click();
@@ -1019,6 +1023,7 @@ test("background detail refresh preserves the in-memory draft until reload", asy
   await page.goto("/decks/1/edit");
   const name = page.getByRole("textbox", { name: "卡组名称", exact: true });
   const source = page.getByRole("textbox", { name: "卡组代码", exact: true });
+  await page.getByRole("button", { name: "卡组代码", exact: false }).click();
   await name.fill("未保存名称");
   await source.fill("未读取的输入");
   await page.getByRole("button", { name: "测试卡牌 1，2 张" }).hover();
@@ -1070,6 +1075,7 @@ test("background detail refresh preserves the in-memory draft until reload", asy
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
   await expect(name).toHaveValue("后端的新名称");
+  await page.getByRole("button", { name: "卡组代码", exact: false }).click();
   await expect(source).toHaveValue(state.deck.source_text);
   await expect(
     page.getByRole("button", { name: "测试卡牌 1，2 张" }),
@@ -1106,7 +1112,6 @@ test("quick drag moves one copy and held drag moves the whole source stack", asy
   ]) {
     state.deck.sections[1]!.cards[0]!.quantity = quantity;
     await page.goto("/decks/1/edit");
-    await page.getByRole("button", { name: "卡组代码", exact: false }).click();
     const source = page.getByRole("button", {
       name: `测试卡牌 1，${quantity} 张`,
     });

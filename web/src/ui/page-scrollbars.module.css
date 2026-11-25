@@ -1,0 +1,67 @@
+.scrollbar {
+  appearance: none;
+  position: fixed;
+  z-index: 45;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  touch-action: none;
+  cursor: default;
+}
+.vertical {
+  width: 10px;
+  writing-mode: vertical-lr;
+  direction: ltr;
+}
+.horizontal {
+  height: 10px;
+}
+.scrollbar::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.scrollbar::-moz-range-track {
+  background: transparent;
+}
+.scrollbar::-moz-range-progress {
+  background: transparent;
+}
+.scrollbar::-webkit-slider-thumb {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: var(--scrollbar-color);
+}
+.scrollbar::-moz-range-thumb {
+  border: 0;
+  border-radius: 999px;
+  background: var(--scrollbar-color);
+}
+.vertical::-webkit-slider-thumb {
+  width: 6px;
+  height: var(--thumb-size);
+}
+.vertical::-moz-range-thumb {
+  width: 6px;
+  height: var(--thumb-size);
+}
+.horizontal::-webkit-slider-thumb {
+  width: var(--thumb-size);
+  height: 6px;
+}
+.horizontal::-moz-range-thumb {
+  width: var(--thumb-size);
+  height: 6px;
+}
+.scrollbar:hover::-webkit-slider-thumb,
+.scrollbar:focus-visible::-webkit-slider-thumb {
+  background: var(--scrollbar-color-active);
+}
+.scrollbar:hover::-moz-range-thumb,
+.scrollbar:focus-visible::-moz-range-thumb {
+  background: var(--scrollbar-color-active);
+}
+.scrollbar:focus-visible {
+  outline-offset: -1px;
+}

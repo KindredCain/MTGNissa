@@ -1,3 +1,7 @@
+.page {
+  max-width: 1440px;
+  margin-inline: auto;
+}
 .layout {
   display: grid;
   grid-template-columns: 350px minmax(300px, 1fr) 310px;
@@ -202,14 +206,14 @@
 .languagePanel h3 {
   margin-bottom: 10px;
 }
-.languagePanel select {
+.languagePanel :global([role="combobox"]) {
   height: 35px;
 }
 .languageSelect {
   position: relative;
 }
-.languageSelect select {
-  padding-right: 100px;
+.languageSelect :global([role="combobox"]) > span:first-of-type {
+  padding-right: 80px;
 }
 .languageSelect > small {
   position: absolute;
@@ -230,12 +234,17 @@
   color: var(--muted);
   margin-bottom: 8px;
 }
-.aside select {
+.aside :global([role="combobox"]) {
   width: 100%;
 }
 .versions {
   height: 151px;
-  overflow-y: scroll;
+  overflow-y: auto;
+  --scrollbar-thumb: transparent;
+}
+.versions:hover,
+.versions:focus-within {
+  --scrollbar-thumb: var(--scrollbar-color);
 }
 .versions article {
   min-height: 47px;

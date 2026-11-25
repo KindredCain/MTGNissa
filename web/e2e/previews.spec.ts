@@ -107,10 +107,6 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     );
     state.deck = with_summary(state.deck);
     await page.goto(route);
-    if (route.endsWith("/edit"))
-      await page
-        .getByRole("button", { name: "卡组代码", exact: false })
-        .click();
     const first = page.getByRole("button", {
       name: "测试卡牌 1，2 张",
       exact: true,

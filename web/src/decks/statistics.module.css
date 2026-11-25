@@ -10,6 +10,13 @@
   padding: 150px 0;
 }
 .drawer {
+  --select-background: #203b2b;
+  --select-color: #c6d6cb;
+  --select-border: #3b5846;
+  --select-accent: #a8d5b8;
+  --select-selected: #2e4d39;
+  --select-highlighted: #294432;
+  --select-selected-highlighted: #355b43;
   position: relative;
   margin-left: max(38px, calc(100% - 1080px));
   width: 1080px;
@@ -25,7 +32,7 @@
   transform: translateX(0);
 }
 .drawer[data-motion="closing"] {
-  transform: translateX(calc(100% + 38px));
+  transform: translateX(100%);
 }
 @media (prefers-reduced-motion: reduce) {
   .drawer {
@@ -169,7 +176,7 @@
 .moduleTitle h3 {
   margin: 0;
 }
-.moduleTitle select {
+.moduleTitle :global([role="combobox"]) {
   background: #203b2b;
   border-color: #3b5846;
   color: #c6d6cb;

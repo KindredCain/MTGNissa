@@ -54,6 +54,10 @@ export default function Statistics({
     );
     return () => cancelAnimationFrame(frame);
   }, []);
+  useLayoutEffect(() => {
+    if (motion === "closing" && drawer.current?.getAnimations().length === 0)
+      close();
+  }, [motion, close]);
   const [curves, setCurves] = useState<Grouping>("type"),
     [prob, setProb] = useState<Grouping>("type"),
     [distribution, setDistribution] = useState<Grouping>("type"),
@@ -99,8 +103,13 @@ export default function Statistics({
             right: "auto",
             bottom: "auto",
           }}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setMotion("closing");
+          onPointerDown={(event) => {
+            if (
+              event.button === 0 &&
+              event.target === event.currentTarget &&
+              !drawer.current?.querySelector('[role="listbox"]')
+            )
+              setMotion("closing");
           }}
         >
           <Dialog.Content
@@ -108,7 +117,6 @@ export default function Statistics({
             className={styles.drawer}
             data-motion={motion}
             aria-describedby={undefined}
-            onPointerDownOutside={() => setMotion("closing")}
             onCloseAutoFocus={(event) => {
               event.preventDefault();
               trigger_ref.current?.focus({ preventScroll: true });

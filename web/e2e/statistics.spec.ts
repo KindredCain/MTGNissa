@@ -104,16 +104,24 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
       const exit = await drawer.evaluate((element) => {
         const animation = element.getAnimations()[0];
         animation.currentTime = 10000;
-        const left = element
+        const bookmark = element
           .querySelector("button")!
-          .getBoundingClientRect().left;
+          .getBoundingClientRect();
+        const left = element.getBoundingClientRect().left;
         const overlay = element.parentElement!;
         const right =
           overlay.getBoundingClientRect().left + overlay.clientWidth;
         animation.finish();
-        return { left, right };
+        return {
+          left,
+          right,
+          bookmark_left: bookmark.left,
+          bookmark_right: bookmark.right,
+        };
       });
-      expect(exit.left).toBeGreaterThanOrEqual(exit.right - 1);
+      expect(exit.left).toBeCloseTo(exit.right, 1);
+      expect(exit.bookmark_left).toBeCloseTo(exit.right - origin.width, 1);
+      expect(exit.bookmark_right).toBeCloseTo(exit.right, 1);
       await expect(drawer).toHaveCount(0);
       await expect(trigger).toBeVisible();
       await expect(trigger).toBeFocused();

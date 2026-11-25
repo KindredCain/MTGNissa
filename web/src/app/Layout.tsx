@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { SearchInput } from "../ui/controls";
 import styles from "./layout.module.css";
 import { BodyScrollRestoration } from "./BodyScrollRestoration";
+import { PageScrollbars } from "../ui/PageScrollbars";
 export function Layout() {
   const navigate = useNavigate(),
     location = useLocation();
@@ -24,6 +25,7 @@ export function Layout() {
   return (
     <>
       <BodyScrollRestoration />
+      <PageScrollbars />
       <header className={styles.nav}>
         <NavLink to="/sets" className={styles.logo}>
           <img src="/assets/kQcrD.svg" alt="" width="24" height="24" /> MTG

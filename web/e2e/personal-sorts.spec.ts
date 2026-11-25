@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mock_api } from "./mock-api";
+import { personal_sort_names } from "../src/shared/display-names";
 
 for (const kind of ["collection", "wishlist"] as const) {
   test(`${kind} sort values follow displayed arrows and retain set grouping behavior`, async ({
@@ -14,25 +15,32 @@ for (const kind of ["collection", "wishlist"] as const) {
     await page.goto(`/${kind}`);
     const sort = page.getByRole("combobox", { name: "排序", exact: true });
     const group = page.getByRole("button", { name: /KLD.*卡拉德许/ });
-    await expect(sort).toHaveValue("set_desc");
+    await expect(sort).toContainText("系列发行 ↓");
     await expect(group).toBeVisible();
     expect(
       requests.some((url) => url.searchParams.get("sort") === "set_desc"),
     ).toBe(true);
-    expect(
-      await sort
-        .locator("option")
-        .evaluateAll((options) =>
-          options.map((option) => (option as HTMLOptionElement).value),
-        ),
-    ).toEqual(["set_desc", "color", "mana_value_asc", "name_asc"]);
+    await sort.click();
+    await expect(page.getByRole("option")).toHaveText([
+      "系列发行 ↓",
+      "颜色",
+      "法术力值 ↑",
+      "名称 ↑",
+    ]);
+    await page.keyboard.press("Escape");
     if (kind === "collection")
       await expect(
         page.getByRole("switch", { name: "合并不同系列" }),
       ).toBeDisabled();
-    for (const value of ["color", "mana_value_asc", "name_asc"]) {
-      await sort.selectOption(value);
-      await expect(sort).toHaveValue(value);
+    for (const value of ["color", "mana_value_asc", "name_asc"] as const) {
+      await sort.click();
+      await page
+        .getByRole("option", {
+          name: personal_sort_names[kind][value],
+          exact: true,
+        })
+        .click();
+      await expect(sort).toContainText(personal_sort_names[kind][value]);
       await expect(page).toHaveURL(new RegExp(`sort=${value}`));
       await expect(group).toHaveCount(0);
       expect(
@@ -45,7 +53,8 @@ for (const kind of ["collection", "wishlist"] as const) {
         await expect(merge).toBeChecked();
       }
     }
-    await sort.selectOption("set_desc");
+    await sort.click();
+    await page.getByRole("option", { name: "系列发行 ↓", exact: true }).click();
     await expect(page).toHaveURL(/sort=set_desc/);
     await expect(group).toBeVisible();
     if (kind === "collection") {
@@ -60,10 +69,10 @@ for (const kind of ["collection", "wishlist"] as const) {
       }
     }
     await page.goBack();
-    await expect(sort).toHaveValue("name_asc");
+    await expect(sort).toContainText("名称 ↑");
     await expect(group).toHaveCount(0);
     await page.goForward();
-    await expect(sort).toHaveValue("set_desc");
+    await expect(sort).toContainText("系列发行 ↓");
     await expect(group).toBeVisible();
   });
 }

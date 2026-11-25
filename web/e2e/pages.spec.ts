@@ -99,11 +99,11 @@ for (const entry of ["language", "set"] as const) {
         });
       });
       await page.goto(`/cards/${uuid(1)}`);
-      if (entry === "language")
-        await page
-          .getByRole("combobox", { name: "当前系列语言" })
-          .selectOption(uuid(2));
-      else await page.getByRole("link", { name: "日文", exact: true }).click();
+      if (entry === "language") {
+        await page.getByRole("combobox", { name: "当前系列语言" }).click();
+        await page.getByRole("option", { name: "日文", exact: true }).click();
+      } else
+        await page.getByRole("link", { name: "日文", exact: true }).click();
       try {
         await requested;
         await expect(page).toHaveURL(`/cards/${uuid(1)}`);
@@ -417,9 +417,8 @@ test("series navigation, local filters and desktop card columns", async ({
   await page.getByRole("heading", { name: "全部卡牌" }).click();
   await expect(page).toHaveURL(/mana_value=1/);
   await expect(page.locator("article")).toHaveCount(6);
-  await page
-    .getByRole("combobox", { name: "排序" })
-    .selectOption("collector_number_desc");
+  await page.getByRole("combobox", { name: "排序" }).click();
+  await page.getByRole("option", { name: "收藏编号 ↓", exact: true }).click();
   await expect(
     page.locator("article").first().getByRole("link"),
   ).toHaveAttribute("aria-label", "查看测试卡牌 41");
@@ -663,12 +662,27 @@ test("deck editor imports atomically, preserves names and warns before leaving",
 }) => {
   const state = await mock_api(page);
   await page.goto("/decks/1/edit");
+  const code_header = page.getByRole("button", {
+    name: "卡组代码",
+    exact: true,
+  });
+  const code = page.getByRole("textbox", { name: "卡组代码", exact: true });
+  await expect(code_header).toHaveAttribute("aria-expanded", "false");
+  await expect(code).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "读取卡组配置" })).toHaveCount(
+    0,
+  );
+  await code_header.click();
   await page
     .getByRole("textbox", { name: "卡组名称", exact: true })
     .fill("未保存名称");
   await page
     .getByRole("textbox", { name: "卡组代码", exact: true })
     .fill("Deck\n3 Test Card 2");
+  await code_header.click();
+  await expect(code).toHaveCount(0);
+  await code_header.click();
+  await expect(code).toHaveValue("Deck\n3 Test Card 2");
   state.fail_context = true;
   await page.getByRole("button", { name: "读取卡组配置" }).click();
   await expect(page.getByRole("dialog")).toContainText("发生意外错误");
@@ -1044,31 +1058,26 @@ test("incomplete log dates use the shared error dialog without querying", async 
   const initial_requests = requests.length;
   const error = page.getByRole("dialog", { name: "操作失败", exact: true });
   for (const label of ["开始日期", "结束日期"]) {
-    const input = page.getByLabel(label);
-    await input.fill("2026-10-01");
-    await input.press("ArrowLeft");
-    await input.press("Backspace");
-    expect(
-      await input.evaluate(
-        (element: HTMLInputElement) => element.validity.badInput,
-      ),
-    ).toBe(true);
-    await page.getByRole("button", { name: "查询", exact: true }).click();
-    await expect(error).toBeVisible();
-    await expect(error).toContainText("请输入完整有效的日期。");
-    expect(requests).toHaveLength(initial_requests);
-    await expect(page).toHaveURL(/\/operation_logs$/);
-    await error.getByRole("button", { name: "关闭", exact: true }).click();
+    const input = page.getByLabel(label, { exact: true });
+    for (const value of ["2026-10-", "2026-02-30", "not-a-date"]) {
+      await input.fill(value);
+      await page.getByRole("button", { name: "查询", exact: true }).click();
+      await expect(error).toBeVisible();
+      await expect(error).toContainText("请输入完整有效的日期。");
+      expect(requests).toHaveLength(initial_requests);
+      await expect(page).toHaveURL(/\/operation_logs$/);
+      await error.getByRole("button", { name: "关闭", exact: true }).click();
+    }
     await input.fill("");
   }
-  await page.getByLabel("开始日期").fill("2026-10-31");
-  await page.getByLabel("结束日期").fill("2026-10-01");
+  await page.getByLabel("开始日期", { exact: true }).fill("2026-10-31");
+  await page.getByLabel("结束日期", { exact: true }).fill("2026-10-01");
   await page.getByRole("button", { name: "查询", exact: true }).click();
   await expect(error).toContainText("开始日期不能晚于结束日期。");
   expect(requests).toHaveLength(initial_requests);
   await error.getByRole("button", { name: "关闭", exact: true }).click();
-  await page.getByLabel("开始日期").fill("");
-  await page.getByLabel("结束日期").fill("");
+  await page.getByLabel("开始日期", { exact: true }).fill("");
+  await page.getByLabel("结束日期", { exact: true }).fill("");
   await page.getByRole("button", { name: "查询", exact: true }).click();
   await expect(page).toHaveURL(/\/operation_logs\?page=1$/);
   await expect(error).toHaveCount(0);
@@ -1078,7 +1087,7 @@ test("incomplete log dates use the shared error dialog without querying", async 
 
 test("log date inputs follow history and only submit on query", async ({
   page,
-}) => {
+}, testInfo) => {
   await mock_api(page);
   await page.route("**/api/v1/operation_logs/summary?**", (route) => {
     if (!new URL(route.request().url()).searchParams.has("start_date"))
@@ -1106,8 +1115,8 @@ test("log date inputs follow history and only submit on query", async ({
       requests.push(request.url());
   });
   await page.goto("/operation_logs");
-  const start = page.getByLabel("开始日期"),
-    end = page.getByLabel("结束日期");
+  const start = page.getByLabel("开始日期", { exact: true }),
+    end = page.getByLabel("结束日期", { exact: true });
   await expect(page.locator("tbody tr")).not.toHaveCount(0);
   const initial_requests = requests.length;
   await start.fill("2026-10-01");
@@ -1130,6 +1139,8 @@ test("log date inputs follow history and only submit on query", async ({
   await page.goForward();
   await expect(start).toHaveValue("2026-10-01");
   await expect(end).toHaveValue("2026-10-31");
+  await start.focus();
+  await page.screenshot({ path: testInfo.outputPath("date-filter.png") });
 });
 test("logs use read-only snapshots and retain summary when closing details", async ({
   page,

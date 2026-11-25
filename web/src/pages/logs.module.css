@@ -1,42 +1,84 @@
+.page :global([data-toolbar]) {
+  padding: 20px 0 12px;
+}
 .dates {
   display: flex;
-  gap: 16px;
+  gap: 9px;
   align-items: center;
 }
-.dates label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.dateSeparator {
+  color: #7a8580;
   font-size: 12px;
 }
-.dates input {
-  height: 36px;
-  font-size: 12px;
-  background: white;
-}
-.dateInput {
-  display: inline-flex;
-  position: relative;
-}
-.dateInput input::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  margin: 0;
-}
-.dateIcon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #69766f;
-}
-.dates button {
+.dates > button {
   width: 72px;
   height: 34px;
   padding: 0;
+  flex-shrink: 0;
+  background: #f0f2ee;
+  border-color: #d6dbd6;
+  color: var(--ink);
   font-size: 12px;
+  font-weight: 500;
+}
+.tableFrame {
+  overflow: hidden;
+  border: 1px solid #d7dbd6;
+  border-radius: 10px;
+  background: white;
+}
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.table th {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.table td {
+  height: 52px;
+  padding: 0 16px;
+  border-bottom: 0;
+  border-top: 1px solid #e5e8e4;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+.table tbody tr:nth-child(n) {
+  background: white;
+}
+.summaryTable th:first-child {
+  width: 300px;
+}
+.summaryTable th:nth-child(3) {
+  width: 120px;
+}
+.summaryTable tbody tr {
+  cursor: pointer;
+}
+.summaryTable tbody tr:hover,
+.summaryTable tbody tr:focus-within {
+  background: #f0f5f1;
+}
+.date {
+  white-space: nowrap;
+  font-weight: 500;
+}
+.weekday {
+  margin-left: 10px;
+  color: #89938e;
+  font-size: 11px;
+  font-weight: 400;
+}
+.table .number {
+  text-align: right;
+}
+.count {
+  color: #53615a;
+  font-weight: 600;
 }
 .typeLink {
   display: inline-flex;
@@ -48,6 +90,7 @@
   padding: 0;
   border-radius: 0;
   font-size: 12px;
+  font-weight: 500;
 }
 .actionIcon {
   width: 24px;
@@ -59,8 +102,7 @@
   flex-shrink: 0;
 }
 .detailCell {
-  width: 58px;
-  padding: 0 16px 0 0;
+  width: 48px;
   text-align: right;
 }
 .detailLink {
@@ -79,13 +121,15 @@
   height: 650px;
   max-height: calc(100dvh - 32px);
   padding: 0;
+  background: var(--paper);
+  border: 1px solid #d7dbd6;
 }
 .detail :global([data-modal-title]) {
   height: 64px;
   padding: 0 20px;
 }
 .detail :global([data-modal-title]) h2 {
-  font-size: 17px;
+  font-size: 19px;
   margin: 0;
 }
 .detail :global([data-modal-title]) > button {
@@ -95,7 +139,7 @@
   padding: 0;
 }
 .detail :global([data-pagination]) {
-  height: 86px;
+  height: 82px;
   flex-shrink: 0;
   padding: 12px 20px 38px;
 }
@@ -104,16 +148,47 @@
   flex: 1;
   overflow-y: auto;
   margin: 0 20px;
+  border: 1px solid #d7dbd6;
+  border-radius: 9px;
+  background: white;
 }
-.tableArea th {
-  height: 40px;
-  padding: 10px 14px;
-  line-height: 18px;
+.detailTable th {
+  padding: 0 14px;
 }
-.tableArea td {
+.detailTable td {
   height: 46px;
   padding: 8px 14px;
-  line-height: 18px;
+  border-top: 0;
+  border-bottom: 1px solid #e5e8e4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detailTable tbody tr:nth-child(10) td {
+  border-bottom: 0;
+}
+.timeColumn {
+  width: 108px;
+}
+.printingColumn {
+  width: 310px;
+}
+.quantityColumn {
+  width: 100px;
+}
+.time,
+.printing {
+  color: #69766f;
+  font-size: 11px;
+}
+.time {
+  white-space: nowrap;
+}
+.name {
+  font-weight: 500;
+}
+.quantity {
+  font-weight: 700;
 }
 .positive {
   color: #277c4d;

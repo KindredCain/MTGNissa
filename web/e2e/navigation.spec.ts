@@ -161,9 +161,8 @@ for (const action of ["create", "copy-list", "copy-detail"] as const) {
         }
       } else if (action === "create") {
         // Filtering the current page must not count as leaving it.
-        await page
-          .getByRole("combobox", { name: "卡组排序" })
-          .selectOption("name_asc");
+        await page.getByRole("combobox", { name: "卡组排序" }).click();
+        await page.getByRole("option", { name: "名称 ↑", exact: true }).click();
         await expect(page).toHaveURL("/decks?sort=name_asc");
       }
       const targets = await page.evaluate(async () => {
@@ -483,14 +482,23 @@ for (const action of ["language", "version"] as const) {
     ).toBeVisible();
     const position = await scroll_body(page, 500);
     expect(position).toBe(500);
-    if (action === "language")
+    if (action === "language") {
       await page
         .getByRole("combobox", { name: "当前系列语言" })
-        .evaluate((element: HTMLSelectElement, id) => {
-          element.value = id;
-          element.dispatchEvent(new Event("change", { bubbles: true }));
-        }, uuid(2));
-    else
+        .evaluate((element: HTMLButtonElement) => {
+          element.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+          );
+        });
+      await page
+        .getByRole("option", { name: "日文", exact: true })
+        .evaluate((element: HTMLElement) => {
+          element.focus({ preventScroll: true });
+          element.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+          );
+        });
+    } else
       await page
         .getByRole("link", { name: "日文", exact: true })
         .evaluate((element: HTMLAnchorElement) => element.click());
@@ -547,9 +555,8 @@ test("list filters still reset to top and history restores the previous list pos
     page.getByRole("link", { name: "查看测试卡牌 1", exact: true }),
   ).toBeVisible();
   const position = await scroll_body(page, 700);
-  await page
-    .getByRole("combobox", { name: "排序", exact: true })
-    .selectOption("name_desc");
+  await page.getByRole("combobox", { name: "排序", exact: true }).click();
+  await page.getByRole("option", { name: "名称 ↓", exact: true }).click();
   await expect(page).toHaveURL(/sort=name_desc/);
   await expect.poll(() => page.evaluate(() => document.body.scrollTop)).toBe(0);
   await page.goBack();

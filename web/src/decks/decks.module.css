@@ -264,6 +264,7 @@
   gap: 8px;
   font-size: 22px;
   font-weight: 700;
+  cursor: text;
 }
 .nameText {
   position: relative;

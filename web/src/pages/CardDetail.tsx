@@ -64,7 +64,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
   const data = query.data;
   if (!data)
     return (
-      <main className={pageStyles.content}>
+      <main className={`${pageStyles.content} ${styles.page}`}>
         {query.isPending && <Skeleton />}
       </main>
     );
@@ -81,7 +81,7 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
     ),
     shortage = Math.max(0, demand - data.logical_collection.total_quantity);
   return (
-    <main className={pageStyles.content}>
+    <main className={`${pageStyles.content} ${styles.page}`}>
       <div className={pageStyles.breadcrumb}>
         <Link
           to={`/sets/${encodeURIComponent(card.set.code)}/cards?language=${encodeURIComponent(card.language.code)}`}
@@ -287,7 +287,12 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             <h3>
               其他系列版本 <small>共 {data.other_versions.length} 个版本</small>
             </h3>
-            <div className={styles.versions}>
+            <div
+              className={styles.versions}
+              role="region"
+              aria-label="其他系列版本"
+              tabIndex={0}
+            >
               {data.other_versions.map((version) => (
                 <article
                   key={`${version.set.code}:${version.collector_number}`}

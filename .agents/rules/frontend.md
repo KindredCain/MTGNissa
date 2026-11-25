@@ -35,7 +35,7 @@
 
 ## Mobile compatibility constraints
 
-- The initial release continues to follow the approved desktop behavior: five card columns at `1440 px`, four at `1366 px` and `1280 px`, and whole-page horizontal scrolling below `1280 px`. Do not invent or ship an unapproved phone layout.
+- Card-grid pages (ordinary and Token Set cards, global search, collection, wishlist) adapt column counts to available width without shrinking cards or enforcing a desktop minimum width. Other pages retain a `1280 px` minimum and whole-page horizontal scrolling below it. Do not introduce unrelated mobile layouts.
 - Mobile compatibility constraints remain in force to preserve future adaptation; they do not require mobile pages or device-specific tests in the initial release. Keep shared data hooks, domain state, mutations, and validation separate from presentation.
 - Do not use the User-Agent to select layouts. Use CSS media or container queries for layout and input capability queries or event APIs for interaction differences.
 - Prefer Pointer Events for pointer interaction. Do not bind core behavior only to mouse events.
