@@ -169,7 +169,7 @@ Go 资源嵌入和页面托管归 `internal/ui`，由启动层通过 `http.Handl
 
 普通具体语言版本查询使用 `mtgnissa_card_printing -> mtgnissa_card -> 翻译或 Oracle 数据`，通过 `card_uuid` 关联基础卡面；业务入口为 `printing_uuid = mtgnissa_card_printing.uuid`，多牌面使用同一印刷、同一语言主牌面的 UUID，完整牌面随同返回。基础卡面 `uuid` 用于卡面与翻译关联，`oracle_id` 用于逻辑卡身份。卡面 Oracle 翻译经 `card_oracle_translation_mapping` 关联，不能假设基础卡表有 `face_oracle_id`。
 
-全局搜索命中、卡组代码解析、逻辑卡聚合与统计及 Oracle 查询可直接使用 `mtgnissa_card`。全局搜索在 Oracle 层组合条件，有名称条件时保留命中版本，完整摘要仅按当前页批量读取。Token 直接使用 `mtgnissa_token`，不进入普通卡语言、详情、收藏、愿望单、卡组或全局搜索链路。系列以 `mtgnissa_set.code` 为业务标识，层级唯一依据 `parent_code`。
+全局搜索命中、卡组代码解析、逻辑卡聚合与统计及 Oracle 查询可直接使用 `mtgnissa_card`。全局搜索在 Oracle 层组合条件，AND 按输入顺序生成并过滤候选，OR 保留分支；有名称条件时保留命中版本，无名称时在筛选后选择代表版本，完整摘要仅按当前页批量读取。Token 直接使用 `mtgnissa_token`，不进入普通卡语言、详情、收藏、愿望单、卡组或全局搜索链路。系列以 `mtgnissa_set.code` 为业务标识，层级唯一依据 `parent_code`。
 
 图片由后端解析为 `CardImageDTO`，前端不拼接地址；语言印刷缺少图片 ID 时仅图片来源回退基础卡图，不能改变业务 UUID、语言、分组、路由或个人状态。历史日志直接读取文字及身份快照，不以当前 Card DB 重新补齐或改写，也不保存或返回卡图。
 

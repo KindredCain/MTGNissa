@@ -542,7 +542,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 - `mode` 为 `syntax` 或 `name`。
 - 只有完整识别首版语法时才使用 `syntax`；否则将完整输入按风味名或任意语言印刷名模糊查询并返回 `name`，不得返回语法错误。
 - 名称模式及语法 `name:` 对 `mtgnissa_card.flavor_name` 或任意语言的 `mtgnissa_card_printing.printed_name` 作文字包含匹配；语言印刷通过 `card_uuid = mtgnissa_card.uuid` 关联，只保留非空 `oracle_id`。
-- 每个原子条件分别计算 Oracle 集合：牌面属性由任一牌面满足即可，印刷属性由任一印刷满足即可。隐式 `AND`、`OR` 及括号在 Oracle 层组合，不要求同一牌面或印刷满足全部条件。名称候选仅由满足组合表达式的分支贡献。
+- 各原子条件在 Oracle 层独立判断：牌面属性由任一牌面满足即可，印刷属性由任一印刷满足即可。隐式 `AND`、`OR` 及括号在 Oracle 层组合，不要求同一牌面或印刷满足全部条件。名称候选仅由满足组合表达式的分支贡献。
 - 结果按所选主牌面英文名不区分大小写 A–Z、`oracle_id ASC` 排序并分页；游标编码该复合位置，`oracle_id` 作为只读属性返回。同一 Oracle 只返回一项。
 - 展示版本优先选印刷名命中，多个命中按语言行 `uuid ASC` 取首项并保留语言；否则选风味名命中，按基础卡面 `uuid ASC` 取首项。副牌面命中归一到同印刷、同语言主牌面。无名称条件，或 OR 中仅由非名称分支命中时，代表基础印刷仍按 `scryfall_id ASC` 选择。
 - 单面主牌面为 `face_index = -1`，多牌面为 `0`。未指定命中语言时，语言入口按 `scryfall_language.sort_order ASC, language_code ASC, uuid ASC` 选取。有名称条件时卡图与详情使用同一语言印刷，图片缺失按普通规则回退；无名称条件时保持基础印刷卡图。缺少主牌面语言入口返回 `503 dependency_unavailable`，不以基础卡面 UUID 代替 `printing_uuid`。

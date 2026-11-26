@@ -125,35 +125,7 @@ func searchRepresentativeSources(oracleIDs []string) *goqu.SelectDataset {
 }
 
 func searchOracleSet(node *model.SearchExpression) (*goqu.SelectDataset, error) {
-	if node == nil {
-		return nil, fmt.Errorf("missing search expression")
-	}
-	if node.Kind == "and" || node.Kind == "or" {
-		left, err := searchOracleSet(node.Left)
-		if err != nil {
-			return nil, err
-		}
-		right, err := searchOracleSet(node.Right)
-		if err != nil {
-			return nil, err
-		}
-		if node.Kind == "and" {
-			return mysqlDialect.From(left.As("left_set")).
-				Join(right.As("right_set"), goqu.On(goqu.I("left_set.oracle_id").Eq(goqu.I("right_set.oracle_id")))).
-				Select(goqu.I("left_set.oracle_id")).Distinct().Prepared(true), nil
-		}
-		return left.Union(right).Prepared(true), nil
-	}
-	if node.Kind != "atom" {
-		return nil, fmt.Errorf("unknown search expression %q", node.Kind)
-	}
-	predicate, err := searchCondition(node.Condition)
-	if err != nil {
-		return nil, err
-	}
-	// Each atom gets its own face/printing scope; conjunction never joins face predicates.
-	return mysqlDialect.From(goqu.T("mtgnissa_card").As("f")).Select(goqu.I("f.oracle_id")).Distinct().
-		Where(goqu.I("f.oracle_id").IsNotNull(), goqu.I("f.oracle_id").Neq(""), predicate).Prepared(true), nil
+	return searchCandidates(node, false)
 }
 
 func searchCondition(c model.SearchCondition) (exp.Expression, error) {

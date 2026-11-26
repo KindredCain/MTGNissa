@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/doug-martin/goqu/v9/exp"
 	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/model"
@@ -20,45 +21,33 @@ func containsSearchName(node *model.SearchExpression) bool {
 }
 
 func searchNamedOracleSet(node *model.SearchExpression) (*goqu.SelectDataset, error) {
-	if !containsSearchName(node) {
-		hits, err := searchOracleSet(node)
-		if err != nil {
-			return nil, err
-		}
-		return mysqlDialect.From(hits.As("hits")).Select(goqu.I("hits.oracle_id"),
-			goqu.L("NULL").As("flavor_uuid"), goqu.L("NULL").As("printing_uuid")).Prepared(true), nil
+	return searchCandidates(node, true)
+}
+
+func searchNameOracleSet(condition model.SearchCondition) *goqu.SelectDataset {
+	pattern := "%" + escapeLike(condition.Value) + "%"
+	base := mysqlDialect.From(goqu.T("mtgnissa_card").As("f")).
+		Where(goqu.I("f.oracle_id").IsNotNull(), goqu.I("f.oracle_id").Neq(""))
+	flavorNames := base.Select(goqu.I("f.oracle_id"), goqu.MIN(goqu.I("f.uuid")).As("flavor_uuid"), goqu.L("NULL").As("printing_uuid")).
+		Where(goqu.I("f.flavor_name").IsNotNull(), goqu.L("? LIKE ? ESCAPE '='", goqu.I("f.flavor_name"), pattern)).GroupBy(goqu.I("f.oracle_id"))
+	printedNames := base.Join(goqu.T("mtgnissa_card_printing").As("p"), goqu.On(goqu.I("f.uuid").Eq(goqu.I("p.card_uuid")))).
+		Select(goqu.I("f.oracle_id"), goqu.L("NULL").As("flavor_uuid"), goqu.MIN(goqu.I("p.uuid")).As("printing_uuid")).
+		Where(goqu.L("? LIKE ? ESCAPE '='", goqu.I("p.printed_name"), pattern)).GroupBy(goqu.I("f.oracle_id"))
+	return groupSearchNameMatches(flavorNames.UnionAll(printedNames))
+}
+
+func searchCandidateNameVersions(condition model.SearchCondition, guard exp.Expression) (*goqu.SelectDataset, *goqu.SelectDataset) {
+	pattern := "%" + escapeLike(condition.Value) + "%"
+	base := mysqlDialect.From(goqu.T("mtgnissa_card").As("f")).
+		Where(goqu.I("f.oracle_id").Eq(goqu.I("candidate.oracle_id"))).Limit(1)
+	if guard != nil {
+		base = base.Where(guard)
 	}
-	if node.Kind == "atom" {
-		pattern := "%" + escapeLike(node.Condition.Value) + "%"
-		base := mysqlDialect.From(goqu.T("mtgnissa_card").As("f")).
-			Where(goqu.I("f.oracle_id").IsNotNull(), goqu.I("f.oracle_id").Neq(""))
-		flavorNames := base.Select(goqu.I("f.oracle_id"), goqu.MIN(goqu.I("f.uuid")).As("flavor_uuid"), goqu.L("NULL").As("printing_uuid")).
-			Where(goqu.I("f.flavor_name").IsNotNull(), goqu.L("? LIKE ? ESCAPE '='", goqu.I("f.flavor_name"), pattern)).GroupBy(goqu.I("f.oracle_id"))
-		printedNames := base.Join(goqu.T("mtgnissa_card_printing").As("p"), goqu.On(goqu.I("f.uuid").Eq(goqu.I("p.card_uuid")))).
-			Select(goqu.I("f.oracle_id"), goqu.L("NULL").As("flavor_uuid"), goqu.MIN(goqu.I("p.uuid")).As("printing_uuid")).
-			Where(goqu.L("? LIKE ? ESCAPE '='", goqu.I("p.printed_name"), pattern)).GroupBy(goqu.I("f.oracle_id"))
-		return groupSearchNameMatches(flavorNames.UnionAll(printedNames)), nil
-	}
-	if node.Kind != "and" && node.Kind != "or" {
-		return nil, fmt.Errorf("unknown search expression %q", node.Kind)
-	}
-	left, err := searchNamedOracleSet(node.Left)
-	if err != nil {
-		return nil, err
-	}
-	right, err := searchNamedOracleSet(node.Right)
-	if err != nil {
-		return nil, err
-	}
-	if node.Kind == "or" {
-		return groupSearchNameMatches(left.UnionAll(right)), nil
-	}
-	// Only successful branches contribute a version; AND still intersects Oracle identities.
-	return mysqlDialect.From(left.As("left_set")).
-		Join(right.As("right_set"), goqu.On(goqu.I("left_set.oracle_id").Eq(goqu.I("right_set.oracle_id")))).
-		Select(goqu.I("left_set.oracle_id"),
-			goqu.L("COALESCE(LEAST(?, ?), ?, ?)", goqu.I("left_set.flavor_uuid"), goqu.I("right_set.flavor_uuid"), goqu.I("left_set.flavor_uuid"), goqu.I("right_set.flavor_uuid")).As("flavor_uuid"),
-			goqu.L("COALESCE(LEAST(?, ?), ?, ?)", goqu.I("left_set.printing_uuid"), goqu.I("right_set.printing_uuid"), goqu.I("left_set.printing_uuid"), goqu.I("right_set.printing_uuid")).As("printing_uuid")).Prepared(true), nil
+	flavor := base.Select(goqu.MIN(goqu.I("f.uuid"))).
+		Where(goqu.I("f.flavor_name").IsNotNull(), goqu.L("? LIKE ? ESCAPE '='", goqu.I("f.flavor_name"), pattern))
+	printing := base.Join(goqu.T("mtgnissa_card_printing").As("p"), goqu.On(goqu.I("f.uuid").Eq(goqu.I("p.card_uuid")))).
+		Select(goqu.MIN(goqu.I("p.uuid"))).Where(goqu.L("? LIKE ? ESCAPE '='", goqu.I("p.printed_name"), pattern))
+	return flavor, printing
 }
 
 func groupSearchNameMatches(matches *goqu.SelectDataset) *goqu.SelectDataset {

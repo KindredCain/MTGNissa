@@ -184,7 +184,7 @@ func TestGlobalSearchCombinesIndependentOracleSetsBeforeRepresentativeSelection(
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Count(query, "SELECT DISTINCT `f`.`oracle_id`") != 2 || !strings.Contains(query, "`left_set`.`oracle_id` = `right_set`.`oracle_id`") {
+	if strings.Count(query, "SELECT DISTINCT `f`.`oracle_id`") != 1 || !strings.Contains(query, "SELECT 1 FROM `mtgnissa_card` AS `f`") || !strings.Contains(query, "`f`.`oracle_id` = `candidate`.`oracle_id`") || !strings.Contains(query, "LIMIT ?)) IS NOT NULL") {
 		t.Fatalf("different faces were forced into one scope: %s", query)
 	}
 	if strings.Contains(query, "scryfall_id") || strings.Contains(query, "GROUP BY") || strings.Contains(query, "mtgnissa_card_printing") {
@@ -262,10 +262,14 @@ func TestGlobalSearchNameSourcesCombineWithOtherOracleConditions(t *testing.T) {
 			t.Fatal(err)
 		}
 		query, _, err := hits.ToSQL()
-		if err != nil || strings.Count(query, "`f`.`oracle_id` IS NOT NULL") != 3 || strings.Count(query, " LIKE ") != 2 {
+		oracleScopes := 3
+		if kind == "and" {
+			oracleScopes = 2
+		}
+		if err != nil || strings.Count(query, "`f`.`oracle_id` IS NOT NULL") != oracleScopes || strings.Count(query, " LIKE ") != 2 {
 			t.Fatalf("name/%s composition lost independent Oracle matching: %s error=%v", kind, query, err)
 		}
-		if kind == "and" && !strings.Contains(query, "`left_set`.`oracle_id` = `right_set`.`oracle_id`") {
+		if kind == "and" && !strings.Contains(query, "`f`.`oracle_id` = `candidate`.`oracle_id`") {
 			t.Fatalf("name conjunction must intersect Oracle sets: %s", query)
 		}
 	}
@@ -317,6 +321,287 @@ func TestGlobalSearchUsesExactKeywordsTagsSetNamesAndFixedIsTypes(t *testing.T) 
 		}
 		if test.Condition.Field == "otag" && (strings.Contains(query, "LIKE") || strings.Contains(query, "weight") || strings.Contains(query, "aliases") || strings.Contains(query, "oracle_tag_relation")) {
 			t.Fatalf("tag query exceeded exact label matching: %s", query)
+		}
+	}
+}
+
+func TestMatchedSearchKeepsVersionsOnlyFromSuccessfulBranches(t *testing.T) {
+	name := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Value: "Miku"}}
+	set := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "set", Value: "SLD"}}
+	color := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 16}}
+	expression := &model.SearchExpression{Kind: "or", Left: &model.SearchExpression{Kind: "and", Left: name, Right: set}, Right: color}
+	if !containsSearchName(expression) || containsSearchName(color) || containsSearchName(nil) {
+		t.Fatal("name detection changed the non-name search path")
+	}
+	hits, err := searchNamedOracleSet(expression)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query, args, err := searchMatchedRepresentatives(hits).ToSQL()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fragment := range []string{
+		"`f`.`oracle_id` = `candidate`.`oracle_id`",
+		"MIN(`name_matches`.`printing_uuid`)",
+		"NULL AS `printing_uuid`",
+		"`printing`.`uuid` = `matched`.`printing_uuid`",
+		"COALESCE(`printing`.`card_uuid`, `matched`.`flavor_uuid`)",
+		"`matched`.`flavor_uuid` IS NULL",
+		"`matched`.`printing_uuid` IS NULL",
+		"MIN(`fallback`.`scryfall_id`)",
+		"`main`.`face_index` IN",
+		"`main`.`oracle_id` = `matched`.`oracle_id`",
+		"`printing`.`language_code`",
+	} {
+		if !strings.Contains(query, fragment) {
+			t.Fatalf("missing matched-version rule %q: %s", fragment, query)
+		}
+	}
+	if strings.Count(query, " LIKE ") != 2 || strings.Contains(query, "Miku") || strings.Contains(query, "card_translation") {
+		t.Fatalf("name matching was repeated or page summaries were loaded early: %s args=%v", query, args)
+	}
+	for _, expression := range []*model.SearchExpression{nil, {Kind: "unknown"}} {
+		if _, err := searchNamedOracleSet(expression); err == nil {
+			t.Fatal("invalid expression was accepted")
+		}
+	}
+}
+
+func TestMatchedSearchPagesKeepNamesAndOracleTiesStable(t *testing.T) {
+	rows := []searchRepresentativeRow{
+		{Name: "Zulu", OracleID: "four"},
+		{Name: "alpha", OracleID: "two"},
+		{Name: "Beta", OracleID: "three"},
+		{Name: "ALPHA", OracleID: "one"},
+	}
+	var ids []string
+	var position *SearchPosition
+	for {
+		page, more := pageMatchedRepresentatives(append([]searchRepresentativeRow{}, rows...), position, 2)
+		for _, row := range page {
+			ids = append(ids, row.OracleID)
+		}
+		if !more {
+			break
+		}
+		last := page[len(page)-1]
+		position = &SearchPosition{Name: strings.ToLower(last.Name), OracleID: last.OracleID}
+	}
+	if !reflect.DeepEqual(ids, []string{"one", "two", "three", "four"}) {
+		t.Fatalf("cursor skipped or duplicated a logical card: %v", ids)
+	}
+	for _, rows := range [][]searchRepresentativeRow{nil, rows} {
+		page, more := pageMatchedRepresentatives(rows, &SearchPosition{Name: "zzzz", OracleID: "last"}, 2)
+		if len(page) != 0 || more {
+			t.Fatalf("past-end cursor or empty result: page=%v more=%v", page, more)
+		}
+	}
+}
+
+func TestMatchedSearchUsesTheMatchedLanguageAndCanonicalMainEntry(t *testing.T) {
+	main := "main-face"
+	rows := []searchEntryRow{
+		{MainUUID: main, PrintingUUID: "english-front", LanguageCode: "en", LanguageOrder: 1},
+		{MainUUID: main, PrintingUUID: "japanese-front", LanguageCode: "ja", LanguageOrder: 2},
+	}
+	for _, test := range []struct {
+		Language string
+		Expected string
+	}{
+		{"ja", "japanese-front"},
+		{"", "english-front"},
+	} {
+		representatives := []searchRepresentativeRow{{MainUUID: &main, OracleID: "oracle", MatchedLanguageCode: test.Language}}
+		entries, err := selectSearchEntries(representatives, rows)
+		if err != nil || entries[main].PrintingUUID != test.Expected {
+			t.Fatalf("language=%q entries=%v error=%v", test.Language, entries, err)
+		}
+	}
+	for _, representatives := range [][]searchRepresentativeRow{
+		{{MainUUID: &main, MatchedLanguageCode: "zhs"}},
+		{{MainUUID: &main}},
+		{{OracleID: "missing-main"}},
+	} {
+		candidates := rows
+		if representatives[0].MainUUID != nil && representatives[0].MatchedLanguageCode == "" {
+			candidates = nil
+		}
+		if _, err := selectSearchEntries(representatives, candidates); err == nil {
+			t.Fatalf("missing matched language or main entry must not silently change versions: %v", representatives)
+		}
+	}
+}
+
+func TestSearchCandidatesFollowInputOrder(t *testing.T) {
+	name := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Value: `100%_='`}}
+	color := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 16}}
+	for _, test := range []struct {
+		Name       string
+		Left       *model.SearchExpression
+		Right      *model.SearchExpression
+		Correlated int
+	}{
+		{"name_first", name, color, 1},
+		{"color_first", color, name, 2},
+	} {
+		t.Run(test.Name, func(t *testing.T) {
+			hits, err := searchNamedOracleSet(&model.SearchExpression{Kind: "and", Left: test.Left, Right: test.Right})
+			if err != nil {
+				t.Fatal(err)
+			}
+			query, args, err := hits.ToSQL()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Count(query, "`f`.`oracle_id` = `candidate`.`oracle_id`") != test.Correlated || strings.Count(query, " LIKE ") != 2 {
+				t.Fatalf("condition order did not change candidate access: %s", query)
+			}
+			patterns := 0
+			for _, arg := range args {
+				if arg == "%"+escapeLike(name.Condition.Value)+"%" {
+					patterns++
+				}
+			}
+			if patterns != 2 || strings.Contains(query, name.Condition.Value) {
+				t.Fatalf("name parameters were lost or interpolated: %s args=%v", query, args)
+			}
+			if test.Left == name {
+				if !strings.Contains(query, "GROUP BY `name_matches`.`oracle_id`") || !strings.Contains(query, "SELECT 1 FROM `mtgnissa_card` AS `f`") {
+					t.Fatalf("name-first search did not reuse name candidates: %s", query)
+				}
+			} else {
+				for _, fragment := range []string{"SELECT DISTINCT `f`.`oracle_id`", "MIN(`f`.`uuid`)", "MIN(`p`.`uuid`)", "`candidate`.`condition_0_printing`", "`candidate`.`condition_0_flavor`", "`candidate`.`condition_0_match` IS TRUE"} {
+					if !strings.Contains(query, fragment) {
+						t.Fatalf("later name matching lost its version or candidate scope %q: %s", fragment, query)
+					}
+				}
+				if strings.Contains(query, "GROUP BY") {
+					t.Fatalf("later name condition rebuilt a global name set: %s", query)
+				}
+			}
+		})
+	}
+}
+
+func TestSearchCandidatesCorrelateEveryAdditionalCondition(t *testing.T) {
+	color := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 2}}
+	power := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "pow", Operator: ">=", Value: "4"}}
+	mana := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "mv", Operator: "<=", Value: "5"}}
+	for _, named := range []bool{false, true} {
+		first := color
+		if named {
+			first = &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Value: "龙"}}
+		}
+		expression := &model.SearchExpression{Kind: "and", Left: first, Right: &model.SearchExpression{Kind: "and", Left: power, Right: mana}}
+		hits, err := searchCandidates(expression, named)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query, _, err := hits.ToSQL()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Count(query, "SELECT 1 FROM `mtgnissa_card` AS `f`") != 2 || strings.Count(query, "LIMIT ?)) IS NOT NULL") != 2 || strings.Contains(query, "right_set") {
+			t.Fatalf("additional predicates rebuilt independent global sets: %s", query)
+		}
+		if !named && (strings.Contains(query, "printing_uuid") || strings.Contains(query, "scryfall_id")) {
+			t.Fatalf("unnamed filtering selected a representative too early: %s", query)
+		}
+	}
+}
+
+func TestSearchCandidatesMergeAllSuccessfulNameConditions(t *testing.T) {
+	first := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Value: "Miku"}}
+	second := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Value: "Performer"}}
+	color := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 2}}
+	for _, start := range []*model.SearchExpression{first, {Kind: "and", Left: color, Right: first}} {
+		hits, err := searchNamedOracleSet(&model.SearchExpression{Kind: "and", Left: start, Right: second})
+		if err != nil {
+			t.Fatal(err)
+		}
+		query, args, err := hits.ToSQL()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, fragment := range []string{
+			"COALESCE(LEAST(`candidate`.`flavor_uuid`, `candidate`.`condition_0_flavor`), `candidate`.`flavor_uuid`, `candidate`.`condition_0_flavor`)",
+			"COALESCE(LEAST(`candidate`.`printing_uuid`, `candidate`.`condition_0_printing`), `candidate`.`printing_uuid`, `candidate`.`condition_0_printing`)",
+		} {
+			if !strings.Contains(query, fragment) {
+				t.Fatalf("later name replaced rather than merged the previous version: %s", query)
+			}
+		}
+		for _, value := range []string{"%Miku%", "%Performer%"} {
+			count := 0
+			for _, arg := range args {
+				if arg == value {
+					count++
+				}
+			}
+			if count != 2 {
+				t.Fatalf("name condition was lost or evaluated more than once per source: %s args=%v", query, args)
+			}
+		}
+	}
+}
+
+func TestSearchCandidatesKeepNonNameOrPredicatesIndependent(t *testing.T) {
+	color := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 2}}
+	power := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "pow", Operator: ">=", Value: "4"}}
+	mana := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "mv", Operator: "<=", Value: "5"}}
+	hits, err := searchOracleSet(&model.SearchExpression{Kind: "and", Left: color, Right: &model.SearchExpression{Kind: "or", Left: power, Right: mana}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	query, _, err := hits.ToSQL()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(query, "SELECT DISTINCT `f`.`oracle_id`") != 1 || strings.Count(query, "SELECT 1 FROM `mtgnissa_card` AS `f`") != 2 || !strings.Contains(query, " OR ") || strings.Contains(query, "UNION") {
+		t.Fatalf("parenthesized OR escaped its candidate range or shared a face scope: %s", query)
+	}
+}
+
+func TestSearchCandidatesKeepScopedOrBranchesAndNameVersions(t *testing.T) {
+	name := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Value: "Miku"}}
+	set := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "set", Value: "SLD"}}
+	color := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 16}}
+	power := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "pow", Operator: ">=", Value: "4"}}
+	expression := &model.SearchExpression{Kind: "and", Left: color,
+		Right: &model.SearchExpression{Kind: "or", Left: &model.SearchExpression{Kind: "and", Left: name, Right: set}, Right: power}}
+	hits, err := searchNamedOracleSet(expression)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query, _, err := hits.ToSQL()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fragment := range []string{"`candidate`.`condition_2_match`", "`candidate`.`condition_3_match`", "`candidate`.`condition_4_match`", "CASE  WHEN", " ELSE NULL END AS `condition_1_printing`", " ELSE NULL END AS `condition_0_printing`", " OR ", "COALESCE(LEAST(`candidate`.`printing_uuid`, `candidate`.`condition_0_printing`)"} {
+		if !strings.Contains(query, fragment) {
+			t.Fatalf("scoped OR lost a successful branch/version rule %q: %s", fragment, query)
+		}
+	}
+	if strings.Count(query, "SELECT DISTINCT `f`.`oracle_id`") != 1 || strings.Count(query, " LIKE ") != 2 || strings.Contains(query, "UNION") {
+		t.Fatalf("scoped OR repeated the initial candidate query: %s", query)
+	}
+}
+
+func TestSearchCandidatesRejectInvalidExpressions(t *testing.T) {
+	valid := &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "c", Operator: "=", ColorMask: 2}}
+	for _, expression := range []*model.SearchExpression{
+		nil,
+		{Kind: "unknown"},
+		{Kind: "atom", Condition: model.SearchCondition{Field: "unsupported"}},
+		{Kind: "and", Left: valid},
+		{Kind: "or", Left: valid},
+		{Kind: "and", Left: valid, Right: &model.SearchExpression{Kind: "or", Left: valid}},
+	} {
+		for _, named := range []bool{false, true} {
+			if _, err := searchCandidates(expression, named); err == nil {
+				t.Fatalf("invalid expression accepted: %+v named=%v", expression, named)
+			}
 		}
 	}
 }
