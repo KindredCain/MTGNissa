@@ -25,10 +25,11 @@ type SearchPosition struct {
 }
 
 type searchRepresentativeRow struct {
-	MainUUID *string `db:"main_uuid"`
-	SourceID string  `db:"source_id"`
-	OracleID string  `db:"oracle_id"`
-	Name     string  `db:"name"`
+	MainUUID            *string `db:"main_uuid"`
+	SourceID            string  `db:"source_id"`
+	OracleID            string  `db:"oracle_id"`
+	Name                string  `db:"name"`
+	MatchedLanguageCode string  `db:"matched_language_code"`
 }
 
 type searchEntryRow struct {
@@ -40,7 +41,14 @@ type searchEntryRow struct {
 
 // Search evaluates independent Oracle predicates before selecting and paging representatives.
 func (s *CardStore) Search(ctx context.Context, query model.SearchQuery, position *SearchPosition, pageSize int) ([]model.CardSummary, int64, bool, error) {
-	hits, err := searchOracleSet(query.Expression)
+	named := containsSearchName(query.Expression)
+	var hits *goqu.SelectDataset
+	var err error
+	if named {
+		hits, err = searchNamedOracleSet(query.Expression)
+	} else {
+		hits, err = searchOracleSet(query.Expression)
+	}
 	if err != nil {
 		return nil, 0, false, err
 	}
@@ -49,6 +57,26 @@ func (s *CardStore) Search(ctx context.Context, query model.SearchQuery, positio
 		return nil, 0, false, err
 	}
 	defer tx.Rollback()
+	if named {
+		statement, args, err := searchMatchedRepresentatives(hits).ToSQL()
+		if err != nil {
+			return nil, 0, false, err
+		}
+		var rows []searchRepresentativeRow
+		if err := tx.SelectContext(ctx, &rows, statement, args...); err != nil {
+			return nil, 0, false, err
+		}
+		total := int64(len(rows))
+		rows, more := pageMatchedRepresentatives(rows, position, pageSize)
+		items, err := readMatchedSearchSummaries(ctx, tx, rows)
+		if err != nil {
+			return nil, 0, false, err
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, 0, false, err
+		}
+		return items, total, more, nil
+	}
 	hitSQL, hitArgs, err := hits.ToSQL()
 	if err != nil {
 		return nil, 0, false, err
@@ -130,8 +158,6 @@ func searchOracleSet(node *model.SearchExpression) (*goqu.SelectDataset, error) 
 
 func searchCondition(c model.SearchCondition) (exp.Expression, error) {
 	switch c.Field {
-	case "name":
-		return goqu.L("? LIKE ? ESCAPE '='", goqu.I("f.name"), "%"+escapeLike(c.Value)+"%"), nil
 	case "c", "id":
 		return searchColorCondition(c)
 	case "mv", "pow", "tou", "pt", "loy":
@@ -249,40 +275,14 @@ func searchRepresentatives(matches *goqu.SelectDataset, position *SearchPosition
 
 func readSearchSummaries(ctx context.Context, tx *sqlx.Tx, representatives []searchRepresentativeRow) ([]model.CardSummary, error) {
 	result := make([]model.CardSummary, 0, len(representatives))
-	ids := make([]string, 0, len(representatives))
-	for _, row := range representatives {
-		if row.MainUUID == nil {
-			return nil, fmt.Errorf("search Oracle %s has no representative main face", row.OracleID)
-		}
-		ids = append(ids, *row.MainUUID)
-	}
-	entries := make(map[string]searchEntryRow)
-	for start := 0; start < len(ids); start += 500 {
-		statement, args, err := sqlx.In(`SELECT p.card_uuid AS main_uuid,p.uuid AS printing_uuid,
- l.code AS language_code,l.sort_order AS language_order
- FROM mtgnissa_card_printing p JOIN scryfall_language l ON l.code=p.language_code
- WHERE p.card_uuid IN (?)`, ids[start:min(start+500, len(ids))])
-		if err != nil {
-			return nil, err
-		}
-		var rows []searchEntryRow
-		err = tx.SelectContext(ctx, &rows, statement, args...)
-		if err != nil {
-			return nil, err
-		}
-		for _, row := range rows {
-			if current, exists := entries[row.MainUUID]; !exists || preferredSearchEntry(row, current) {
-				entries[row.MainUUID] = row
-			}
-		}
+	entries, err := readSearchEntries(ctx, tx, representatives)
+	if err != nil {
+		return nil, err
 	}
 	sourceIDs := make([]string, 0, len(representatives))
 	entriesBySource := make(map[string]searchEntryRow, len(representatives))
 	for _, representative := range representatives {
-		entry, ok := entries[*representative.MainUUID]
-		if !ok {
-			return nil, fmt.Errorf("search representative %s has no main-face language entry", *representative.MainUUID)
-		}
+		entry := entries[*representative.MainUUID]
 		sourceIDs = append(sourceIDs, representative.SourceID)
 		entriesBySource[representative.SourceID] = entry
 	}
@@ -324,6 +324,59 @@ func readSearchSummaries(ctx context.Context, tx *sqlx.Tx, representatives []sea
 		result = append(result, card)
 	}
 	return result, nil
+}
+
+func readSearchEntries(ctx context.Context, tx *sqlx.Tx, representatives []searchRepresentativeRow) (map[string]searchEntryRow, error) {
+	ids := make([]string, 0, len(representatives))
+	for _, row := range representatives {
+		if row.MainUUID == nil {
+			return nil, fmt.Errorf("search Oracle %s has no representative main face", row.OracleID)
+		}
+		ids = append(ids, *row.MainUUID)
+	}
+	var candidates []searchEntryRow
+	for start := 0; start < len(ids); start += 500 {
+		statement, args, err := sqlx.In(`SELECT p.card_uuid AS main_uuid,p.uuid AS printing_uuid,
+ l.code AS language_code,l.sort_order AS language_order
+ FROM mtgnissa_card_printing p JOIN scryfall_language l ON l.code=p.language_code
+ WHERE p.card_uuid IN (?)`, ids[start:min(start+500, len(ids))])
+		if err != nil {
+			return nil, err
+		}
+		var rows []searchEntryRow
+		err = tx.SelectContext(ctx, &rows, statement, args...)
+		if err != nil {
+			return nil, err
+		}
+		candidates = append(candidates, rows...)
+	}
+	return selectSearchEntries(representatives, candidates)
+}
+
+func selectSearchEntries(representatives []searchRepresentativeRow, candidates []searchEntryRow) (map[string]searchEntryRow, error) {
+	languages := make(map[string]string, len(representatives))
+	for _, row := range representatives {
+		if row.MainUUID == nil {
+			return nil, fmt.Errorf("search Oracle %s has no representative main face", row.OracleID)
+		}
+		languages[*row.MainUUID] = row.MatchedLanguageCode
+	}
+	entries := make(map[string]searchEntryRow, len(representatives))
+	for _, row := range candidates {
+		language, exists := languages[row.MainUUID]
+		if !exists || language != "" && row.LanguageCode != language {
+			continue
+		}
+		if current, exists := entries[row.MainUUID]; !exists || preferredSearchEntry(row, current) {
+			entries[row.MainUUID] = row
+		}
+	}
+	for _, representative := range representatives {
+		if _, ok := entries[*representative.MainUUID]; !ok {
+			return nil, fmt.Errorf("search representative %s has no main-face language entry", *representative.MainUUID)
+		}
+	}
+	return entries, nil
 }
 
 func preferredSearchEntry(candidate, current searchEntryRow) bool {

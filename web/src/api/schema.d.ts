@@ -113,7 +113,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description Global card-name/syntax search, cursor-paginated by Oracle card. Recognized syntax is executed; unrecognized input falls back as a whole to literal name search and is not a syntax error. Zero matches is a normal 200 with empty items. The backend chooses each representative printing; preserve returned order and do not expand language/printing duplicates. */
+    /** @description Cursor-paginated global search, deduplicated by Oracle. Names use literal substring matching on flavor names or printed names in any language and prefer matched versions. Unsupported syntax falls back as a whole to literal name search. Use the returned version, images and order. Zero matches returns empty items. */
     get: operations["get_search"];
     put?: never;
     post?: never;

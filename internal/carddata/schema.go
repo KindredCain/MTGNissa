@@ -158,6 +158,7 @@ var specs = []spec{
 			idx("idx_mtgnissa_card_oracle_id", "oracle_id"),
 			idx("idx_mtgnissa_card_set_code", "set_code"),
 			idx("idx_mtgnissa_card_name", "name"),
+			idx("idx_mtgnissa_card_flavor_name", "flavor_name", "oracle_id"),
 			idx("idx_mtgnissa_card_released_at", "released_at"),
 			idx("idx_mtgnissa_card_cmc", "cmc"),
 			idx("idx_mtgnissa_card_power_numeric", "power_numeric"),

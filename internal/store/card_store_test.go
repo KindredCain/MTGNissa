@@ -214,6 +214,63 @@ func TestGlobalSearchCombinesIndependentOracleSetsBeforeRepresentativeSelection(
 	}
 }
 
+func TestGlobalSearchNamesMatchFlavorAndAllLanguagePrintings(t *testing.T) {
+	for _, value := range []string{"Miku, the Complete Performer", "饥饿之声弗霖凯", `100%_='\`} {
+		t.Run(value, func(t *testing.T) {
+			hits, err := searchNamedOracleSet(&model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Operator: ":", Value: value}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			query, args, err := hits.ToSQL()
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, fragment := range []string{
+				"`f`.`flavor_name` IS NOT NULL",
+				"`f`.`flavor_name` LIKE ? ESCAPE '='",
+				"`p`.`printed_name` LIKE ? ESCAPE '='",
+				"`f`.`uuid` = `p`.`card_uuid`",
+				"MIN(`f`.`uuid`) AS `flavor_uuid`",
+				"MIN(`p`.`uuid`) AS `printing_uuid`",
+				"GROUP BY `name_matches`.`oracle_id`",
+			} {
+				if !strings.Contains(query, fragment) {
+					t.Fatalf("missing name matching rule %q in %s", fragment, query)
+				}
+			}
+			if strings.Count(query, "`f`.`oracle_id` IS NOT NULL") != 2 || strings.Count(query, " LIKE ") != 2 {
+				t.Fatalf("name sources must exclude missing Oracle identities and deduplicate: %s", query)
+			}
+			if strings.Contains(query, "`f`.`name`") || strings.Contains(query, "language_code") || strings.Contains(query, "card_translation") {
+				t.Fatalf("name matching exceeded flavor and all-language printed names: %s", query)
+			}
+			pattern := "%" + escapeLike(value) + "%"
+			if !reflect.DeepEqual(args, []any{"", pattern, "", pattern}) {
+				t.Fatalf("name values must remain escaped bound parameters: args=%v query=%s", args, query)
+			}
+		})
+	}
+}
+
+func TestGlobalSearchNameSourcesCombineWithOtherOracleConditions(t *testing.T) {
+	for _, kind := range []string{"and", "or"} {
+		expression := &model.SearchExpression{Kind: kind,
+			Left:  &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "name", Operator: ":", Value: "Miku"}},
+			Right: &model.SearchExpression{Kind: "atom", Condition: model.SearchCondition{Field: "mv", Operator: "<=", Value: "8"}}}
+		hits, err := searchNamedOracleSet(expression)
+		if err != nil {
+			t.Fatal(err)
+		}
+		query, _, err := hits.ToSQL()
+		if err != nil || strings.Count(query, "`f`.`oracle_id` IS NOT NULL") != 3 || strings.Count(query, " LIKE ") != 2 {
+			t.Fatalf("name/%s composition lost independent Oracle matching: %s error=%v", kind, query, err)
+		}
+		if kind == "and" && !strings.Contains(query, "`left_set`.`oracle_id` = `right_set`.`oracle_id`") {
+			t.Fatalf("name conjunction must intersect Oracle sets: %s", query)
+		}
+	}
+}
+
 func TestGlobalSearchNumericFieldsExcludeNonnumericValuesWithoutRuntimeCasts(t *testing.T) {
 	for _, field := range []string{"mv", "pow", "tou", "pt", "loy"} {
 		for _, op := range []string{"=", "!=", ">", ">=", "<", "<="} {
