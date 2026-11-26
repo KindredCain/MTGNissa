@@ -1,6 +1,59 @@
 import { test, expect } from "@playwright/test";
 import { mock_api } from "./mock-api";
 
+for (const target of ["start", "end"] as const) {
+  test(`${target} calendar previews the anchor as the same calendar day`, async ({
+    page,
+  }) => {
+    await mock_api(page);
+    let requests = 0;
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname === "/api/v1/operation_logs/summary")
+        requests++;
+    });
+    const url = "/operation_logs?start_date=2026-10-10&end_date=2026-10-20";
+    await page.goto(url);
+    await expect(page.locator("main tbody tr")).toHaveCount(1);
+    const initial = requests;
+    const label = target === "start" ? "开始日期" : "结束日期";
+    const anchor = target === "start" ? "2026-10-20" : "2026-10-10";
+    await page
+      .getByRole("button", { name: `选择${label}`, exact: true })
+      .click();
+    const calendar = page.getByRole("dialog", {
+      name: `${label}日历`,
+      exact: true,
+    });
+    const same_day = calendar.locator(`[data-day="${anchor}"]`);
+    const middle = calendar.locator('[data-day="2026-10-15"]');
+    await same_day.locator("button").hover();
+    await expect(calendar.locator('[class*="rangeMiddle"]')).toHaveCount(0);
+    await expect(same_day).toHaveCSS("background-image", "none");
+    await expect(calendar.locator('[class*="rangeSingle"]')).toHaveCount(1);
+    await expect(page.getByLabel("开始日期", { exact: true })).toHaveValue(
+      "2026-10-10",
+    );
+    await expect(page.getByLabel("结束日期", { exact: true })).toHaveValue(
+      "2026-10-20",
+    );
+    const invalid = target === "start" ? "2026-10-21" : "2026-10-09";
+    await calendar.locator(`[data-day="${invalid}"] button`).hover();
+    await expect(middle).toHaveCSS("background-color", "rgb(227, 238, 231)");
+    const adjacent = target === "start" ? "2026-10-19" : "2026-10-11";
+    await calendar.locator(`[data-day="${adjacent}"] button`).focus();
+    await page.keyboard.press(target === "start" ? "ArrowRight" : "ArrowLeft");
+    await expect(same_day.locator("button")).toBeFocused();
+    await expect(calendar.locator('[class*="rangeMiddle"]')).toHaveCount(0);
+    await expect(same_day).toHaveCSS("background-image", "none");
+    await expect(calendar.locator('[class*="rangeSingle"]')).toHaveCount(1);
+    await page.keyboard.press("Enter");
+    await expect(page.getByLabel(label, { exact: true })).toHaveValue(anchor);
+    await expect(calendar).toHaveCount(0);
+    expect(requests).toBe(initial);
+    await expect(page).toHaveURL(url);
+  });
+}
+
 test("end calendar starts at the start date and previews the shared interval without submitting", async ({
   page,
 }, testInfo) => {

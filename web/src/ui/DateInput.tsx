@@ -44,12 +44,15 @@ export function DateInput({
     range &&
     preview &&
     (!anchor ||
-      (range.target === "end" ? preview >= anchor : preview <= anchor))
+      (range.target === "end"
+        ? format_date(preview) >= format_date(anchor)
+        : format_date(preview) <= format_date(anchor)))
       ? preview
       : undefined;
   const from = range?.target === "start" ? (candidate ?? start) : start;
   const to = range?.target === "end" ? (candidate ?? end) : end;
-  const complete = from && to && from <= to;
+  const complete = from && to && format_date(from) <= format_date(to);
+  const single = complete && format_date(from) === format_date(to);
   return (
     <Popover.Root
       open={open}
@@ -107,11 +110,9 @@ export function DateInput({
               interval_anchor: anchor,
               interval_start: complete ? from : undefined,
               interval_end: complete ? to : undefined,
-              interval_middle: complete
-                ? { after: from, before: to }
-                : undefined,
-              interval_single:
-                complete && from.getTime() === to.getTime() ? from : undefined,
+              interval_middle:
+                complete && !single ? { after: from, before: to } : undefined,
+              interval_single: single ? from : undefined,
             }}
             modifiersClassNames={{
               interval_anchor: styles.rangeAnchor,
