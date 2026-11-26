@@ -389,64 +389,90 @@ func preferredSearchEntry(candidate, current searchEntryRow) bool {
 	return candidate.PrintingUUID < current.PrintingUUID
 }
 
-// DeckSearch pages logical candidates using literal printed-name contains matching.
-func (s *CardStore) DeckSearch(ctx context.Context, query string, position *SearchPosition, pageSize int) ([]model.DeckName, int64, bool, error) {
+// DeckSearch matches printed names once and pages candidates using global display rules.
+func (s *CardStore) DeckSearch(ctx context.Context, query string, exact bool, position *SearchPosition, pageSize int) ([]model.DeckCandidate, int64, bool, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
 		return nil, 0, false, err
 	}
 	defer tx.Rollback()
-	matches := deckSearchMatches(query)
-	statement, args, err := mysqlDialect.From(matches.As("matched")).Select(goqu.COUNT("*")).Prepared(true).ToSQL()
+	statement, args, err := deckSearchRepresentatives(query, exact).ToSQL()
 	if err != nil {
 		return nil, 0, false, err
 	}
-	var total int64
-	if err := tx.GetContext(ctx, &total, statement, args...); err != nil {
-		return nil, 0, false, err
-	}
-	statement, args, err = deckSearchPage(matches, position, pageSize).ToSQL()
-	if err != nil {
-		return nil, 0, false, err
-	}
-	var rows []cardNameRow
+	var rows []searchRepresentativeRow
 	if err := tx.SelectContext(ctx, &rows, statement, args...); err != nil {
 		return nil, 0, false, err
 	}
-	more := len(rows) > pageSize
-	if more {
-		rows = rows[:pageSize]
-	}
-	result := make([]model.DeckName, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, model.DeckName{Name: row.Name, OracleID: row.OracleID})
+	total := int64(len(rows))
+	rows, more := pageMatchedRepresentatives(rows, position, pageSize)
+	items, err := readDeckSearchCandidates(ctx, tx, rows, query != "")
+	if err != nil {
+		return nil, 0, false, err
 	}
 	if err := tx.Commit(); err != nil {
 		return nil, 0, false, err
 	}
-	return result, total, more, nil
+	return items, total, more, nil
 }
 
-func deckSearchMatches(query string) *goqu.SelectDataset {
-	dataset := mysqlDialect.From(goqu.T("mtgnissa_card_printing").As("p")).
+func deckSearchRepresentatives(query string, exact bool) *goqu.SelectDataset {
+	if query == "" {
+		sources := mysqlDialect.From(goqu.T("mtgnissa_card").As("c")).
+			Select(goqu.I("c.oracle_id"), goqu.MIN(goqu.I("c.scryfall_id")).As("source_id")).
+			Where(goqu.I("c.oracle_id").IsNotNull(), goqu.I("c.oracle_id").Neq("")).GroupBy(goqu.I("c.oracle_id"))
+		return searchRepresentatives(sources, nil)
+	}
+	matches := mysqlDialect.From(goqu.T("mtgnissa_card_printing").As("p")).
 		Join(goqu.T("mtgnissa_card").As("c"), goqu.On(goqu.I("c.uuid").Eq(goqu.I("p.card_uuid")))).
-		Join(goqu.T("mtgnissa_card").As("main"), goqu.On(goqu.I("main.scryfall_id").Eq(goqu.I("c.scryfall_id")), goqu.I("main.face_index").In(-1, 0))).
-		Select(goqu.MIN(goqu.I("main.name")).As("name"), goqu.I("main.oracle_id")).
-		Where(goqu.I("main.oracle_id").IsNotNull(), goqu.I("main.oracle_id").Neq("")).GroupBy(goqu.I("main.oracle_id")).Prepared(true)
-	if query != "" {
-		dataset = dataset.Where(goqu.L("? LIKE ? ESCAPE '='", goqu.I("p.printed_name"), "%"+escapeLike(query)+"%"))
+		Select(goqu.I("c.oracle_id"), goqu.L("NULL").As("flavor_uuid"), goqu.MIN(goqu.I("p.uuid")).As("printing_uuid")).
+		Where(goqu.I("c.oracle_id").IsNotNull(), goqu.I("c.oracle_id").Neq("")).GroupBy(goqu.I("c.oracle_id"))
+	if exact {
+		matches = matches.Where(goqu.I("p.printed_name").Eq(query))
+	} else {
+		matches = matches.Where(goqu.L("? LIKE ? ESCAPE '='", goqu.I("p.printed_name"), "%"+escapeLike(query)+"%"))
 	}
-	return dataset
+	return searchMatchedRepresentatives(matches)
 }
 
-func deckSearchPage(matches *goqu.SelectDataset, position *SearchPosition, pageSize int) *goqu.SelectDataset {
-	name := goqu.L("LOWER(matched.name) COLLATE utf8mb4_bin")
-	oracle := goqu.I("matched.oracle_id")
-	dataset := mysqlDialect.From(matches.As("matched")).Select(goqu.I("matched.name"), oracle).Prepared(true)
-	if position != nil {
-		dataset = dataset.Where(goqu.Or(name.Gt(position.Name), goqu.And(name.Eq(position.Name), oracle.Gt(position.OracleID))))
+func readDeckSearchCandidates(ctx context.Context, tx *sqlx.Tx, representatives []searchRepresentativeRow, matched bool) ([]model.DeckCandidate, error) {
+	entries, err := readSearchEntries(ctx, tx, representatives)
+	if err != nil {
+		return nil, err
 	}
-	return dataset.Order(name.Asc(), oracle.Asc()).Limit(uint(pageSize + 1))
+	ids := make([]string, 0, len(representatives))
+	for _, row := range representatives {
+		ids = append(ids, entries[*row.MainUUID].PrintingUUID)
+	}
+	candidates := make(map[string]model.DeckCandidate, len(ids))
+	for start := 0; start < len(ids); start += 500 {
+		statement, args, err := sqlx.In(printingQuery+" WHERE p.uuid IN (?)", ids[start:min(start+500, len(ids))])
+		if err != nil {
+			return nil, err
+		}
+		var rows []faceRow
+		if err := tx.SelectContext(ctx, &rows, statement, args...); err != nil {
+			return nil, err
+		}
+		if !matched {
+			for i := range rows {
+				rows[i].ImageID = rows[i].SourceID
+			}
+		}
+		for _, group := range groupFaces(rows) {
+			card, faces := summarize(group)
+			candidates[card.PrintingUUID] = model.DeckCandidate{Card: card, Faces: faces}
+		}
+	}
+	result := make([]model.DeckCandidate, 0, len(representatives))
+	for i, row := range representatives {
+		candidate, ok := candidates[ids[i]]
+		if !ok || candidate.Card.OracleID == nil || *candidate.Card.OracleID != row.OracleID {
+			return nil, fmt.Errorf("deck search candidate identity is unavailable")
+		}
+		result = append(result, candidate)
+	}
+	return result, nil
 }
 
 // DeckNameSuggestions returns at most five case-insensitively distinct printed names.

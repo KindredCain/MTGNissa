@@ -352,7 +352,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description Read-only literal printed-name search for add-card candidates. No minimum query length; blank input queries all supported candidates. Only cards with Oracle identity are included; backend deduplicates by Oracle and orders by English name case-insensitively then Oracle identity. Results are cursor-paginated and lightweight, without editing context. Fetch uncached context on first add; the backend selects representative printings. */
+    /** @description Read-only printed-name search for add-card candidates, using substring matching by default or whole-name equality with exact=true. Blank input queries all supported candidates. Results are deduplicated by Oracle and use global-search display rules, preserving matched versions and languages. Fetch uncached context on first add to select the personal deck version and obtain editing data. */
     get: operations["get_decks_deck_id_cards_search"];
     put?: never;
     post?: never;
@@ -369,7 +369,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** @description Read-only prefix-name suggestions, at most five unique names. The backend queries only when trimmed input contains at least three ASCII letters or two Unicode Han characters; otherwise returns 200 with empty items. Suggestions do not replace formal add-card search results or mutate a deck. */
+    /** @description Read-only prefix-name suggestions, at most five unique names. The backend queries only when trimmed input contains at least three ASCII letters or two Unicode Han characters; otherwise returns 200 with empty items. Clicking a suggestion submits its complete printed name to candidate search with exact=true. */
     get: operations["get_decks_deck_id_cards_name_suggestions"];
     put?: never;
     post?: never;
@@ -2619,6 +2619,8 @@ export interface operations {
   get_decks_deck_id_cards_search: {
     parameters: {
       query?: {
+        /** @description Use case-insensitive whole-name equality when true; otherwise use literal substring matching. Suggestion clicks submit true. Blank q remains unfiltered. Cursors are bound to this mode. */
+        exact?: boolean;
         /** @description After trimming, q may contain at most 512 Unicode characters; blank input means no name filter. NUL is rejected. The length rule applies after trimming, so a raw maxLength is intentionally not imposed. */
         q?: string;
         /** @description Opaque cursor returned by the same endpoint; do not parse or modify it. It is bound to the submitted query/filter/sort/merge conditions. Discard it when conditions change. Null next_cursor means completion. An invalid or mismatched cursor returns 400 invalid_cursor. */

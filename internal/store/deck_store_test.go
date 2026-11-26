@@ -57,32 +57,41 @@ func TestDeckListSQLPagination(t *testing.T) {
 	}
 }
 
-func TestDeckSearchSQLPagination(t *testing.T) {
-	matches := deckSearchMatches("50%_=")
-	position := &SearchPosition{Name: "same", OracleID: "00000000-0000-0000-0000-000000000007"}
-	query, args, err := deckSearchPage(matches, position, 50).ToSQL()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, fragment := range []string{
-		"GROUP BY `main`.`oracle_id`) AS `matched` WHERE",
-		"LOWER(matched.name) COLLATE utf8mb4_bin > ?",
-		"LOWER(matched.name) COLLATE utf8mb4_bin = ?",
-		"`matched`.`oracle_id` > ?",
-		"ORDER BY LOWER(matched.name) COLLATE utf8mb4_bin ASC, `matched`.`oracle_id` ASC LIMIT ?",
-	} {
-		if !strings.Contains(query, fragment) {
-			t.Fatalf("missing %q in %s", fragment, query)
+func TestDeckSearchSQLMatching(t *testing.T) {
+	for _, exact := range []bool{false, true} {
+		query, args, err := deckSearchRepresentatives("50%_=", exact).ToSQL()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, fragment := range []string{"MIN(`p`.`uuid`)", "GROUP BY `c`.`oracle_id`", "`c`.`oracle_id` IS NOT NULL", "`main`.`face_index` IN", "`printing`.`language_code`"} {
+			if !strings.Contains(query, fragment) {
+				t.Fatalf("missing matched version rule %q: %s", fragment, query)
+			}
+		}
+		if strings.Contains(query, "COUNT(") || strings.Contains(query, "flavor_name") || strings.Contains(query, "card_translation") || strings.Contains(query, "LIMIT") {
+			t.Fatalf("matching must only collect lightweight candidates once: %s", query)
+		}
+		value := "%50=%=_==%"
+		if exact {
+			value = "50%_="
+			if strings.Contains(query, " LIKE ") || !strings.Contains(query, "`p`.`printed_name` = ?") {
+				t.Fatalf("suggestion click must match the whole printed name: %s", query)
+			}
+		} else if strings.Count(query, " LIKE ") != 1 {
+			t.Fatalf("manual contains matching must occur once: %s", query)
+		}
+		found := false
+		for _, arg := range args {
+			if arg == value {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("missing bound name value %q: %#v", value, args)
 		}
 	}
-	if args[len(args)-1] != int64(51) {
-		t.Fatalf("lookahead limit: %#v", args)
-	}
-	query, args, err = mysqlDialect.From(matches.As("matched")).Select(goqu.COUNT("*")).Prepared(true).ToSQL()
-	if err != nil || strings.Contains(query, "LIMIT") || strings.Contains(query, "ORDER BY") || strings.Contains(query, "matched.name") {
-		t.Fatalf("total must count distinct candidates before the boundary: %s %#v %v", query, args, err)
-	}
-	if args[len(args)-1] != "%50=%=_==%" {
-		t.Fatalf("literal name match: %#v", args)
+	query, _, err := deckSearchRepresentatives("", false).ToSQL()
+	if err != nil || strings.Contains(query, "printed_name") || !strings.Contains(query, "MIN(`c`.`scryfall_id`)") {
+		t.Fatalf("blank search must retain the global default representative: %s error=%v", query, err)
 	}
 }

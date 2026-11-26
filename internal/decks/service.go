@@ -267,13 +267,17 @@ func (s *Service) CardContexts(ctx context.Context, id uint64, ids []string) ([]
 	return result, nil
 }
 
-// SearchCards returns logical candidates selected from printed-name contains matches.
+// SearchCards returns matched printing previews without selecting personal deck versions.
 func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckSearchParams) (model.DeckCandidatePage, error) {
 	if _, err := s.identity(ctx, id); err != nil {
 		return model.DeckCandidatePage{}, safeError(err)
 	}
 	params.Query = strings.TrimSpace(params.Query)
-	fingerprint := cursorFingerprint("deck_cards", id, strings.ToLower(params.Query), "")
+	mode := "contains"
+	if params.Exact {
+		mode = "exact"
+	}
+	fingerprint := cursorFingerprint("deck_cards", id, strings.ToLower(params.Query), mode)
 	var position *store.SearchPosition
 	if params.Cursor != "" {
 		decoded, err := decodeCursor(params.Cursor, fingerprint, "deck_cards")
@@ -282,34 +286,18 @@ func (s *Service) SearchCards(ctx context.Context, id uint64, params model.DeckS
 		}
 		position = &store.SearchPosition{Name: decoded.Name, OracleID: decoded.OracleID}
 	}
-	names, total, more, err := s.cards.DeckSearch(ctx, params.Query, position, s.pageSize)
+	items, total, more, err := s.cards.DeckSearch(ctx, params.Query, params.Exact, position, s.pageSize)
 	if err != nil {
 		return model.DeckCandidatePage{}, safeError(err)
 	}
-	page := model.DeckCandidatePage{Items: []model.DeckCandidate{}, Total: total}
+	page := model.DeckCandidatePage{Items: items, Total: total}
 	if more {
-		last := names[len(names)-1]
+		last := items[len(items)-1].Card
 		cursor, err := encodeCursor("deck_cards", fingerprint, cursorPosition{Name: strings.ToLower(last.Name), OracleID: *last.OracleID})
 		if err != nil {
 			return model.DeckCandidatePage{}, safeError(err)
 		}
 		page.NextCursor = &cursor
-	}
-	oracles := []string{}
-	for _, name := range names {
-		oracles = append(oracles, *name.OracleID)
-	}
-	personal, err := s.personal(ctx, id, oracles)
-	if err != nil {
-		return model.DeckCandidatePage{}, safeError(err)
-	}
-	data, err := s.display(ctx, oracles, personal.PrintingStates, false)
-	if err != nil {
-		return model.DeckCandidatePage{}, safeError(err)
-	}
-	for _, oracle := range oracles {
-		card := data[oracle]
-		page.Items = append(page.Items, model.DeckCandidate{Card: card.Card, Faces: card.Faces})
 	}
 	return page, nil
 }

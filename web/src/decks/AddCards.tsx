@@ -26,15 +26,25 @@ const quantity_schema = z.object({
 });
 function candidate_options(
   deck_id: string,
-  submitted: { q: string; revision: number } | null,
+  submitted: { q: string; exact: boolean; revision: number } | null,
 ) {
   return infiniteQueryOptions({
-    queryKey: ["deck_candidates", deck_id, submitted?.q, submitted?.revision],
+    queryKey: [
+      "deck_candidates",
+      deck_id,
+      submitted?.q,
+      submitted?.exact,
+      submitted?.revision,
+    ],
     initialPageParam: null as string | null,
     queryFn: ({ pageParam, signal }) =>
       api.get(
         "/api/v1/decks/{deck_id}/cards/search",
-        { q: submitted?.q, cursor: pageParam ?? undefined },
+        {
+          q: submitted?.q,
+          exact: submitted?.exact,
+          cursor: pageParam ?? undefined,
+        },
         { path: { deck_id }, signal },
       ),
     getNextPageParam: (last) => last.next_cursor ?? undefined,
@@ -65,6 +75,7 @@ export function AddCards({
     [show, setShow] = useState(false),
     [submitted, setSubmitted] = useState<{
       q: string;
+      exact: boolean;
       revision: number;
     } | null>(null),
     [scroll_root, setScrollRoot] = useState<HTMLDivElement | null>(null);
@@ -79,14 +90,24 @@ export function AddCards({
     anchor: HTMLElement;
   }>();
   const list = useInfiniteQuery({
-    queryKey: ["deck_candidates", deck_id, submitted?.q, submitted?.revision],
+    queryKey: [
+      "deck_candidates",
+      deck_id,
+      submitted?.q,
+      submitted?.exact,
+      submitted?.revision,
+    ],
     initialPageParam: null as string | null,
     enabled: submitted !== null,
     placeholderData: keepPreviousData,
     queryFn: ({ pageParam, signal }) =>
       api.get(
         "/api/v1/decks/{deck_id}/cards/search",
-        { q: submitted?.q, cursor: pageParam ?? undefined },
+        {
+          q: submitted?.q,
+          exact: submitted?.exact,
+          cursor: pageParam ?? undefined,
+        },
         { path: { deck_id }, signal },
       ),
     getNextPageParam: (last) => last.next_cursor ?? undefined,
@@ -113,12 +134,12 @@ export function AddCards({
         { path: { deck_id }, signal },
       ),
   });
-  async function submit(q: string) {
+  async function submit(q: string, exact = false) {
     if (search_gate.current) return;
     search_gate.current = true;
     setSearching(true);
     setShow(false);
-    const next = { q: q.trim(), revision: ++revision.current };
+    const next = { q: q.trim(), exact, revision: ++revision.current };
     try {
       await client.fetchInfiniteQuery(candidate_options(deck_id, next));
       setSubmitted(next);
@@ -196,7 +217,7 @@ export function AddCards({
                     onPointerDown={(event) => event.preventDefault()}
                     onClick={() => {
                       setInput(item.printed_name);
-                      submit(item.printed_name);
+                      submit(item.printed_name, true);
                     }}
                   >
                     {item.printed_name}

@@ -143,11 +143,14 @@ for (const confirmation of ["Enter", "Space", "pointer"] as const) {
     page,
   }) => {
     await mock_api(page);
-    const searches: string[] = [];
+    const searches: { q: string; exact: string | null }[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
       if (url.pathname === "/api/v1/decks/1/cards/search")
-        searches.push(url.searchParams.get("q") ?? "");
+        searches.push({
+          q: url.searchParams.get("q") ?? "",
+          exact: url.searchParams.get("exact"),
+        });
     });
     await page.route("**/api/v1/decks/1/cards/name_suggestions?**", (route) =>
       route.fulfill({
@@ -218,14 +221,87 @@ for (const confirmation of ["Enter", "Space", "pointer"] as const) {
       await second.press(confirmation === "Space" ? "Space" : "Enter");
     }
     await expect(input).toHaveValue("Alpha Second");
-    await expect.poll(() => searches).toEqual(["Alpha Second"]);
+    await expect
+      .poll(() => searches)
+      .toEqual([{ q: "Alpha Second", exact: "true" }]);
     await expect(first).toHaveCount(0);
     await expect(second).toHaveCount(0);
     await expect(
       modal.getByRole("button", { name: "测试卡牌 2", exact: true }),
     ).toBeVisible();
+    await modal.getByRole("button", { name: "搜索", exact: true }).click();
+    await expect
+      .poll(() => searches)
+      .toEqual([
+        { q: "Alpha Second", exact: "true" },
+        { q: "Alpha Second", exact: "false" },
+      ]);
   });
 }
+
+test("candidate preview defers personal version selection until first add", async ({
+  page,
+}) => {
+  await mock_api(page);
+  const selected = context(2);
+  const candidate_id = uuid(99);
+  const requested: string[][] = [];
+  await page.route("**/api/v1/decks/1/cards/search?**", (route) =>
+    route.fulfill({
+      json: {
+        status: 200,
+        data: {
+          items: [
+            {
+              card: {
+                ...selected.card,
+                printing_uuid: candidate_id,
+                display_name: "搜索候选版本",
+              },
+              faces: selected.faces,
+            },
+          ],
+          total: 1,
+          next_cursor: null,
+        },
+        error: null,
+        request_id: "test",
+      },
+    }),
+  );
+  await page.route("**/api/v1/decks/1/card_contexts", (route) => {
+    requested.push(route.request().postDataJSON().printing_uuids);
+    return route.fulfill({
+      json: {
+        status: 200,
+        data: {
+          items: [{ ...selected, requested_printing_uuid: candidate_id }],
+        },
+        error: null,
+        request_id: "test",
+      },
+    });
+  });
+  await page.goto("/decks/1/edit");
+  await page.getByRole("button", { name: "增加卡牌", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "增加卡牌", exact: true });
+  await modal.getByRole("button", { name: "搜索", exact: true }).click();
+  await expect(
+    modal.getByRole("button", { name: "搜索候选版本", exact: true }),
+  ).toBeVisible();
+  expect(requested).toEqual([]);
+  const add = modal.getByRole("button", { name: "加入", exact: true });
+  await add.click();
+  await expect(add).toBeEnabled();
+  expect(requested).toEqual([[candidate_id]]);
+  await add.click();
+  await expect(add).toBeEnabled();
+  expect(requested).toEqual([[candidate_id]]);
+  await modal.getByRole("button", { name: "×", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "测试卡牌 2，2 张", exact: true }),
+  ).toBeVisible();
+});
 
 test("invalid add quantities use the shared error dialog without adding cards", async ({
   page,

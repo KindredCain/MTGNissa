@@ -198,7 +198,7 @@
 | printed_text | LONGTEXT NULL | 该语言印刷规则文字。 | 优先取 `cards[].foreignData[].text`；外层补充行取 `cards[].printedText`，缺失时回退 `cards[].text` |
 | printed_type_line | VARCHAR(512) NULL | 该语言印刷类别行。 | 优先取 `cards[].foreignData[].type`；外层补充行取 `cards[].printedType`，缺失时回退 `cards[].type` |
 
-索引：唯一索引 `(card_uuid, language_code)`；普通索引分别为 `(scryfall_id)`、`(language_code)`、`(printed_name)`。`printed_name` 使用完整字段的普通非唯一索引，不指定索引前缀长度，用于自动名称联想的 `q%` 查询；正式搜索由用户点击搜索按钮或联想项主动触发，查询频率较低，直接使用 `printed_name LIKE '%q%'`，不要求额外设计搜索索引或搜索引擎。
+索引：唯一索引 `(card_uuid, language_code)`；普通索引分别为 `(scryfall_id)`、`(language_code)`、`(printed_name)`。`printed_name` 使用完整字段的普通非唯一索引，不指定索引前缀长度，用于名称联想的 `q%` 查询及联想点击后的完整名称等值查询；手动搜索使用 `printed_name LIKE '%q%'`。
 
 ## 3. 翻译表
 

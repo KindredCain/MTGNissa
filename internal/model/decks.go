@@ -173,9 +173,10 @@ type DeckIdentity struct {
 	Name string
 }
 
-// DeckSearchParams contains the printed name query and its continuation cursor.
+// DeckSearchParams contains the printed name query, match mode, and continuation cursor.
 type DeckSearchParams struct {
 	Query  string
+	Exact  bool
 	Cursor string
 }
 

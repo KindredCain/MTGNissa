@@ -78,6 +78,17 @@ func validateDeckQuery(query url.Values, fields ...string) error {
 	return nil
 }
 
+func parseDeckSearchQuery(query url.Values) (model.DeckSearchParams, error) {
+	params := model.DeckSearchParams{Query: strings.TrimSpace(query.Get("q")), Exact: query.Get("exact") == "true", Cursor: query.Get("cursor")}
+	if err := validateDeckQuery(query, "q", "exact", "cursor"); err != nil {
+		return params, err
+	}
+	if query.Has("exact") && !oneOf(query.Get("exact"), "true", "false") {
+		return params, validationError("exact", "must_be_true_or_false")
+	}
+	return params, nil
+}
+
 func getDecks(service deckService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		params, err := parseDeckQuery(c.Request.URL.Query())
@@ -311,12 +322,12 @@ func searchDeckCards(service deckService) gin.HandlerFunc {
 			httpresponse.WriteAppError(c, err)
 			return
 		}
-		query := c.Request.URL.Query()
-		if err := validateDeckQuery(query, "q", "cursor"); err != nil {
+		params, err := parseDeckSearchQuery(c.Request.URL.Query())
+		if err != nil {
 			httpresponse.WriteAppError(c, err)
 			return
 		}
-		page, err := service.SearchCards(c.Request.Context(), id, model.DeckSearchParams{Query: strings.TrimSpace(query.Get("q")), Cursor: query.Get("cursor")})
+		page, err := service.SearchCards(c.Request.Context(), id, params)
 		if err != nil {
 			httpresponse.WriteAppError(c, err)
 			return

@@ -66,7 +66,7 @@ func New(deps Dependencies) *gin.Engine {
 	api.POST("/decks/:deck_id/delete", rejectUnknownQueryParameters(), deleteDeck(deps.Decks))
 	api.POST("/decks/:deck_id/copies", rejectUnknownQueryParameters(), copyDeck(deps.Decks))
 	api.POST("/decks/:deck_id/parse_code", requireJSONContentType(), rejectUnknownQueryParameters(), parseDeckCode(deps.Decks))
-	api.GET("/decks/:deck_id/cards/search", rejectUnknownQueryParameters("q", "cursor"), searchDeckCards(deps.Decks))
+	api.GET("/decks/:deck_id/cards/search", rejectUnknownQueryParameters("q", "exact", "cursor"), searchDeckCards(deps.Decks))
 	api.GET("/decks/:deck_id/cards/name_suggestions", rejectUnknownQueryParameters("q"), deckNameSuggestions(deps.Decks))
 	api.POST("/decks/:deck_id/card_contexts", requireJSONContentType(), rejectUnknownQueryParameters(), deckCardContexts(deps.Decks))
 
