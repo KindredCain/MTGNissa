@@ -47,7 +47,7 @@ func (s *Service) ParseCode(ctx context.Context, id uint64, source string) (mode
 	name, lines, issues := parseLines(source)
 	names := []string{}
 	for _, line := range lines {
-		names = append(names, strings.ToLower(line.Name))
+		names = append(names, strings.ToLower(codeMainName(line.Name)))
 		if line.FallbackName != "" {
 			names = append(names, strings.ToLower(line.FallbackName))
 		}
@@ -56,45 +56,8 @@ func (s *Service) ParseCode(ctx context.Context, id uint64, source string) (mode
 	if err != nil {
 		return model.ParsedDeck{}, safeError(err)
 	}
-	byName := map[string]map[string]model.DeckName{}
-	for _, card := range resolved {
-		key := strings.ToLower(card.Name)
-		if byName[key] == nil {
-			byName[key] = map[string]model.DeckName{}
-		}
-		oracle := ""
-		if card.OracleID != nil {
-			oracle = *card.OracleID
-		}
-		byName[key][oracle] = card
-	}
-	entries := []model.SavedDeckCard{}
-	entryLines := []codeLine{}
-	for _, line := range lines {
-		matches := byName[strings.ToLower(line.Name)]
-		if len(matches) == 0 && line.FallbackName != "" {
-			matches = byName[strings.ToLower(line.FallbackName)]
-		}
-		reason := ""
-		switch len(matches) {
-		case 0:
-			reason = "card_not_found"
-		case 1:
-			if _, unsupported := matches[""]; unsupported {
-				reason = "deck_card_not_supported"
-			}
-		default:
-			reason = "card_name_not_unique"
-		}
-		if reason != "" {
-			issues = append(issues, apperror.Detail{Line: line.Line, Reason: reason, Input: line.Name})
-			continue
-		}
-		for oracle, match := range matches {
-			entries = append(entries, model.SavedDeckCard{Section: line.Section, OracleID: oracle, Name: match.Name, Quantity: line.Quantity})
-			entryLines = append(entryLines, line)
-		}
-	}
+	entries, entryLines, nameIssues := resolveCodeLines(lines, resolved)
+	issues = append(issues, nameIssues...)
 	oracles := deckOracles([]model.SavedDeck{{Cards: entries}})
 	personal, err := s.personal(ctx, id, oracles)
 	if err != nil {
@@ -143,6 +106,50 @@ func (s *Service) ParseCode(ctx context.Context, id uint64, source string) (mode
 	return result, nil
 }
 
+func resolveCodeLines(lines []codeLine, resolved []model.DeckName) ([]model.SavedDeckCard, []codeLine, []apperror.Detail) {
+	byName := map[string]map[string]model.DeckName{}
+	for _, card := range resolved {
+		key := strings.ToLower(card.MatchedName)
+		if byName[key] == nil {
+			byName[key] = map[string]model.DeckName{}
+		}
+		oracle := ""
+		if card.OracleID != nil {
+			oracle = *card.OracleID
+		}
+		byName[key][oracle] = card
+	}
+	entries := []model.SavedDeckCard{}
+	entryLines := []codeLine{}
+	issues := []apperror.Detail{}
+	for _, line := range lines {
+		matches := byName[strings.ToLower(codeMainName(line.Name))]
+		if len(matches) == 0 && line.FallbackName != "" {
+			matches = byName[strings.ToLower(line.FallbackName)]
+		}
+		reason := ""
+		switch len(matches) {
+		case 0:
+			reason = "card_not_found"
+		case 1:
+			if _, unsupported := matches[""]; unsupported {
+				reason = "deck_card_not_supported"
+			}
+		default:
+			reason = "card_name_not_unique"
+		}
+		if reason != "" {
+			issues = append(issues, apperror.Detail{Line: line.Line, Reason: reason, Input: line.Name})
+			continue
+		}
+		for oracle, match := range matches {
+			entries = append(entries, model.SavedDeckCard{Section: line.Section, OracleID: oracle, Name: match.Name, Quantity: line.Quantity})
+			entryLines = append(entryLines, line)
+		}
+	}
+	return entries, entryLines, issues
+}
+
 func validateCode(source string) error {
 	if strings.TrimSpace(source) == "" || !utf8.ValidString(source) || strings.ContainsRune(source, 0) {
 		return fieldError("source_text", "must_be_nonblank_utf8_without_nul")
@@ -155,6 +162,11 @@ func validateCode(source string) error {
 
 func normalizeLines(source string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(source, "\r\n", "\n"), "\r", "\n")
+}
+
+func codeMainName(name string) string {
+	main, _, _ := strings.Cut(name, "//")
+	return strings.TrimSpace(main)
 }
 
 func parseLines(source string) (*string, []codeLine, []apperror.Detail) {
@@ -204,12 +216,13 @@ func parseLines(source string) (*string, []codeLine, []apperror.Detail) {
 		cardName := strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(match[2]), "*F*"))
 		cardName = printingSuffixPattern.ReplaceAllString(cardName, "")
 		cardName = strings.TrimSpace(cardName)
-		if cardName == "" {
+		lookupName := codeMainName(cardName)
+		if lookupName == "" {
 			issues = append(issues, apperror.Detail{Line: i + 1, Reason: "card_not_found", Input: line})
 			continue
 		}
-		fallback := collectorSuffixPattern.ReplaceAllString(cardName, "")
-		if fallback == cardName {
+		fallback := collectorSuffixPattern.ReplaceAllString(lookupName, "")
+		if fallback == lookupName {
 			fallback = ""
 		}
 		result = append(result, codeLine{Line: i + 1, Section: section, Name: cardName, FallbackName: fallback, Quantity: quantity})
@@ -235,7 +248,11 @@ func standardCode(deck model.SavedDeck, data map[string]model.DeckCardData) stri
 		headings := map[string]string{"commander": "Commander", "mainboard": "Deck", "sideboard": "Sideboard", "maybeboard": "Maybeboard"}
 		lines := []string{headings[section]}
 		for _, card := range cards {
-			lines = append(lines, strconv.FormatUint(card.Quantity, 10)+" "+card.Name)
+			name := card.Name
+			if data[card.OracleID].Card.Layout != "split" {
+				name = codeMainName(name)
+			}
+			lines = append(lines, strconv.FormatUint(card.Quantity, 10)+" "+name)
 		}
 		blocks = append(blocks, strings.Join(lines, "\n"))
 	}

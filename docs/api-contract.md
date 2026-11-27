@@ -926,6 +926,7 @@ counted_total
 - 后端必须把非空 `cover_printing_uuid` 解析为对应 `oracle_id`，并确认该逻辑卡同时存在于本次 `sections` 解析出的任一分区中，可以来自指挥官、主牌、备牌或备选区。封面逻辑卡不在本次卡组内容中时返回 `422 validation_failed`，`details[].field` 为 `cover_printing_uuid`、`reason` 为 `cover_card_not_in_deck`，不得自动改选其他牌或部分保存。前端删除封面逻辑卡在全部分区中的最后一条记录时必须把本地 `cover_printing_uuid` 同步清为 `null`。
 - `sections[].cards[]` 和顶层 `cover_printing_uuid` 都只提交后端此前返回的具体卡牌 `printing_uuid`，由后端解析并验证对应 `oracle_id`。这些具体印刷标识不会作为 `deck_card` 或封面的持久化身份，也不承诺保存后继续展示该具体印刷。后端验证全部标识仍有效且具有 `oracle_id`，再按当前名称和真实分区内容生成标准 `source_text`，并把封面解析结果保存为 `deck.cover_oracle_id`；请求不接受客户端提供任何 `oracle_id`。成功响应中的展示 `printing_uuid` 仍由后端按统一展示版本规则重新选择，因此可以与保存请求提交的值不同。这是卡组不保存具体印刷版本的有意产品行为。
 - 保存请求中的 `cover_printing_uuid` 不存在或已经失效时返回 `422 card_reference_invalid`，`details[].field` 为 `cover_printing_uuid`；记录存在但没有 `oracle_id` 时返回 `422 deck_card_not_supported` 并使用同一字段路径。任一失败都不允许部分保存。
+- 标准代码中的拼牌（`layout = split`）使用完整英文牌名，其他牌使用主牌面英文名。
 - 保存请求中任一 `printing_uuid` 不存在或已经失效时返回 `422 card_reference_invalid`，以 `sections[n].cards[m].printing_uuid` 定位；记录存在但没有 `oracle_id` 时返回 `422 deck_card_not_supported` 并使用相同字段路径。任一失败都不允许部分保存。
 - 保存前，后端必须按与 `can_be_commander` 相同的权威规则重新校验 `commander` 分区中的每张牌。任一牌不符合“传奇生物、传奇鹏洛客或传奇载具”条件时返回 `422 validation_failed`，以 `sections[n].cards[m].printing_uuid` 定位，并在该明细中返回 `reason: "commander_card_not_eligible"`；不得自动移入主牌，也不得部分保存。客户端回传内容不能绕过该校验。
 - 不检查客户端读取卡组后的数据库状态，也不判断提交内容是否来自旧页面。同一 App DB 事务中锁定目标卡组、替换 `deck_card` 并更新名称、封面逻辑卡和标准代码；并发保存按取得目标卡组写锁的顺序串行执行，最后一次成功提交的完整编辑态成为当前权威状态。
@@ -1015,7 +1016,7 @@ counted_total
 }
 ```
 
-失败不得返回部分解析结果。成功时固定返回四个分区且空分区为 `[]`；顺序与输入文本无关，固定为 `commander`、`mainboard`、`sideboard`、`maybeboard`。输入代码可以省略 `Commander` 段，解析结果中的 `commander.cards` 此时为 `[]`，不得因为没有指挥官而报错。卡牌行中的 Set 代码、收藏编号和 `*F*` 被有意忽略，不能指定具体印刷、语言或工艺；后端直接按 `mtgnissa_card` 的标准英文名称、数量和分区解析逻辑卡，再按统一规则选择展示版本并返回主牌面 `printing_uuid`。命中记录没有 `oracle_id` 时整次返回 `422 deck_parse_failed`，以原代码行定位并返回 `reason: "deck_card_not_supported"`，不把 UUID 当作 Oracle 身份保存。`Commander` 分区中的每张牌都按 `can_be_commander` 同一规则校验；不符合资格时整次解析失败，对应行的 `reason` 为 `commander_card_not_eligible`，不返回或应用部分解析结果。
+失败不得返回部分解析结果。成功时固定返回四个分区且空分区为 `[]`；顺序与输入文本无关，固定为 `commander`、`mainboard`、`sideboard`、`maybeboard`。输入代码可以省略 `Commander` 段，解析结果中的 `commander.cards` 此时为 `[]`，不得因为没有指挥官而报错。卡牌行中的 Set 代码、收藏编号和 `*F*` 被有意忽略，不能指定具体印刷、语言或工艺；卡名取首个 `//` 前的内容并去除首尾空白，在 `mtgnissa_card` 主牌面（`face_index IN (-1,0)`）按 `name` 或 `face_name` 不区分大小写等值匹配，并按 Oracle 去重，再按统一规则选择展示版本并返回主牌面 `printing_uuid`。命中记录没有 `oracle_id` 时整次返回 `422 deck_parse_failed`，以原代码行定位并返回 `reason: "deck_card_not_supported"`，不把 UUID 当作 Oracle 身份保存。`Commander` 分区中的每张牌都按 `can_be_commander` 同一规则校验；不符合资格时整次解析失败，对应行的 `reason` 为 `commander_card_not_eligible`，不返回或应用部分解析结果。
 
 响应 `name` 类型为 `string | null`。代码中存在合法、非空且未超出长度上限的 `About`／`Name ` 行时返回解析出的规范化名称；没有 `Name ` 行，或 `Name ` 后为空白、超出长度上限时返回 `null`。`null` 表示“未提供有效的名称覆盖”，前端必须保留读取前的当前名称输入值，不得把名称设为 `null`，也不得清空或回退为已保存名称。名称元数据无效不得影响卡牌解析，也不得导致整次解析失败。
 

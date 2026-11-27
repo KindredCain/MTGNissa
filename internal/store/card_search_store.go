@@ -13,11 +13,6 @@ import (
 	"mtgnissa/internal/model"
 )
 
-type cardNameRow struct {
-	Name     string  `db:"name"`
-	OracleID *string `db:"oracle_id"`
-}
-
 // SearchPosition is the decoded compound name and Oracle boundary of a card page.
 type SearchPosition struct {
 	Name     string

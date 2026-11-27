@@ -193,10 +193,11 @@ type DeckCandidatePage struct {
 	NextCursor *string
 }
 
-// DeckName identifies a canonical English card name and its optional Oracle identity.
+// DeckName links a matched English name to its canonical name and optional Oracle identity.
 type DeckName struct {
-	Name     string
-	OracleID *string
+	MatchedName string
+	Name        string
+	OracleID    *string
 }
 
 // ParsedDeckCard contains the selected display printing and parsed section quantity.

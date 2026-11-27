@@ -21,6 +21,18 @@ type deckTagRow struct {
 	Label    string `db:"label"`
 }
 
+type deckNameRow struct {
+	MatchedName string  `db:"matched_name"`
+	Name        string  `db:"canonical_name"`
+	OracleID    *string `db:"oracle_id"`
+}
+
+const deckNamesQuery = `SELECT name AS matched_name,name AS canonical_name,NULLIF(oracle_id,'') AS oracle_id
+ FROM mtgnissa_card WHERE face_index IN (-1,0) AND name IN (?)
+ UNION
+ SELECT face_name AS matched_name,name AS canonical_name,NULLIF(oracle_id,'') AS oracle_id
+ FROM mtgnissa_card WHERE face_index IN (-1,0) AND face_name IN (?)`
+
 // DeckReferences resolves only valid main-face printing IDs without replacing their identities.
 func (s *CardStore) DeckReferences(ctx context.Context, ids []string) (map[string]model.DeckCardData, error) {
 	tx, err := s.db.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
@@ -118,21 +130,21 @@ func (s *CardTx) DeckTags(ctx context.Context, oracles []string) (map[string][]s
 	return result, nil
 }
 
-// DeckNames resolves exact canonical English names without using printing-language names.
+// DeckNames matches English card and main-face names while retaining canonical names.
 func (s *CardStore) DeckNames(ctx context.Context, names []string) ([]model.DeckName, error) {
 	result := []model.DeckName{}
 	for start := 0; start < len(names); start += 500 {
-		query, args, err := sqlx.In(`SELECT name,NULLIF(oracle_id,'') AS oracle_id FROM mtgnissa_card
- WHERE name IN (?) AND face_index IN (-1,0) GROUP BY name,oracle_id ORDER BY name,oracle_id`, names[start:min(start+500, len(names))])
+		batch := names[start:min(start+500, len(names))]
+		query, args, err := sqlx.In(deckNamesQuery, batch, batch)
 		if err != nil {
 			return nil, err
 		}
-		var rows []cardNameRow
+		var rows []deckNameRow
 		if err := s.db.SelectContext(ctx, &rows, query, args...); err != nil {
 			return nil, err
 		}
 		for _, row := range rows {
-			result = append(result, model.DeckName{Name: row.Name, OracleID: row.OracleID})
+			result = append(result, model.DeckName{MatchedName: row.MatchedName, Name: row.Name, OracleID: row.OracleID})
 		}
 	}
 	return result, nil

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/doug-martin/goqu/v9"
+	"github.com/jmoiron/sqlx"
 
 	"mtgnissa/internal/model"
 )
@@ -27,6 +28,34 @@ func TestPrintingReferenceCapturesQueryMetadata(t *testing.T) {
 	ref = newPrintingRef(model.CardSummary{}, now)
 	if ref.OracleID != nil || ref.ReleasedAt != nil || ref.SetReleasedAt != nil || ref.ColorsMask != 0 || ref.CollectorSortKey == nil || !ref.IsReal {
 		t.Fatalf("nullable metadata=%+v", ref)
+	}
+}
+
+func TestDeckCodeNameSQLMatchesIndexedNamesAndReturnsCanonicalNames(t *testing.T) {
+	names := []string{"Sol Ring", "Fell the Profane", "Y'shtola, Night's Blessed", "%_=literal"}
+	query, args, err := sqlx.In(deckNamesQuery, names, names)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fragment := range []string{
+		"name AS matched_name,name AS canonical_name",
+		"face_name AS matched_name,name AS canonical_name",
+		"name IN (?, ?, ?, ?)",
+		"face_name IN (?, ?, ?, ?)",
+		"NULLIF(oracle_id,'') AS oracle_id",
+	} {
+		if !strings.Contains(query, fragment) {
+			t.Fatalf("missing code name matching rule %q: %s", fragment, query)
+		}
+	}
+	want := []any{"Sol Ring", "Fell the Profane", "Y'shtola, Night's Blessed", "%_=literal", "Sol Ring", "Fell the Profane", "Y'shtola, Night's Blessed", "%_=literal"}
+	if !reflect.DeepEqual(args, want) || strings.Count(query, "face_index IN (-1,0)") != 2 || strings.Count(query, "UNION") != 1 || strings.Contains(query, "UNION ALL") {
+		t.Fatalf("batch values, face scopes or deduplication changed: query=%s args=%v", query, args)
+	}
+	for _, fragment := range []string{"Sol Ring", "COALESCE", "LIKE", "LOWER(", "mtgnissa_card_printing", "card_translation", "flavor_name"} {
+		if strings.Contains(query, fragment) {
+			t.Fatalf("code matching interpolated names or changed indexed equality matching: %s", query)
+		}
 	}
 }
 

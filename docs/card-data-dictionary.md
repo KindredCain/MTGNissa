@@ -109,7 +109,7 @@
 | commander_leader | BOOLEAN | 是否可作 Commander 指挥官。 | `cards[].leadershipSkills.commander` |
 | oathbreaker_leader | BOOLEAN | 是否可作 Oathbreaker 誓约破坏者。 | `cards[].leadershipSkills.oathbreaker` |
 
-索引：唯一索引 `(scryfall_id, face_index)`；普通索引分别为 `(oracle_id)`、`(set_code)`、`(name)`、`(flavor_name, oracle_id)`、`(released_at)`、`(cmc)`、`(power_numeric)`、`(toughness_numeric)`、`(loyalty_numeric)`、`(pt_numeric)`。风味名索引配合 `IS NOT NULL` 限定非空范围。数值索引用于与常量比较；字段间比较仍使用数值列，不保证由单列索引直接完成。
+索引：唯一索引 `(scryfall_id, face_index)`；普通索引分别为 `(oracle_id)`、`(set_code)`、`(name)`、`(face_name)`、`(flavor_name, oracle_id)`、`(released_at)`、`(cmc)`、`(power_numeric)`、`(toughness_numeric)`、`(loyalty_numeric)`、`(pt_numeric)`。风味名索引配合 `IS NOT NULL` 限定非空范围。数值索引用于与常量比较；字段间比较仍使用数值列，不保证由单列索引直接完成。
 
 ### `mtgnissa_token`
 

@@ -221,6 +221,92 @@ func TestCodeParsingMetadataSectionsAnnotationsAndLimits(t *testing.T) {
 	}
 }
 
+func TestCodeNamesResolveFullAndMainFaceNamesWithoutLosingCanonicalNames(t *testing.T) {
+	source := "Deck\n1 Fell the Profane // Fell Mire (MH3) 244 *F*\n2 Fell the Profane\nSideboard\n1 FIRE//ICE\n1 Sol Ring 123"
+	_, lines, issues := parseLines(source)
+	if len(issues) != 0 || len(lines) != 4 {
+		t.Fatalf("lines=%+v issues=%+v", lines, issues)
+	}
+	fell, fire, ring := "fell", "fire", "ring"
+	resolved := []model.DeckName{
+		{MatchedName: "Fell the Profane", Name: "Fell the Profane // Fell Mire", OracleID: &fell},
+		{MatchedName: "Fell the Profane", Name: "Fell the Profane // Fell Mire", OracleID: &fell},
+		{MatchedName: "Fire", Name: "Fire // Ice", OracleID: &fire},
+		{MatchedName: "Sol Ring", Name: "Sol Ring", OracleID: &ring},
+	}
+	entries, entryLines, issues := resolveCodeLines(lines, resolved)
+	if len(issues) != 0 || len(entries) != 4 || !reflect.DeepEqual(entryLines, lines) {
+		t.Fatalf("entries=%+v lines=%+v issues=%+v", entries, entryLines, issues)
+	}
+	if entries[0].OracleID != fell || entries[1].OracleID != fell || entries[0].Name != resolved[0].Name || entries[1].Quantity != 2 || entries[2].Name != "Fire // Ice" || entries[2].Section != "sideboard" || entries[3].OracleID != ring {
+		t.Fatalf("resolved names or section quantities changed: %+v", entries)
+	}
+	if lines[0].Name != "Fell the Profane // Fell Mire" || lines[3].FallbackName != "Sol Ring" {
+		t.Fatalf("original name or collector fallback was lost: %+v", lines)
+	}
+}
+
+func TestCodeNameFailuresKeepOriginalInputsAndOracleAmbiguity(t *testing.T) {
+	_, lines, issues := parseLines("1 Missing // Back\n1 Shared // Back\n1 Unsupported\n1 Card 123")
+	if len(issues) != 0 {
+		t.Fatal(issues)
+	}
+	first, second, numbered := "first", "second", "numbered"
+	resolved := []model.DeckName{
+		{MatchedName: "Shared", Name: "Shared // Back", OracleID: &first},
+		{MatchedName: "Shared", Name: "Shared // Other", OracleID: &second},
+		{MatchedName: "Unsupported", Name: "Unsupported"},
+		{MatchedName: "Card 123", Name: "Card 123", OracleID: &numbered},
+		{MatchedName: "Card", Name: "Card", OracleID: &first},
+	}
+	entries, entryLines, issues := resolveCodeLines(lines, resolved)
+	want := []apperror.Detail{
+		{Line: 1, Input: "Missing // Back", Reason: "card_not_found"},
+		{Line: 2, Input: "Shared // Back", Reason: "card_name_not_unique"},
+		{Line: 3, Input: "Unsupported", Reason: "deck_card_not_supported"},
+	}
+	if !reflect.DeepEqual(issues, want) || len(entries) != 1 || entries[0].OracleID != numbered || len(entryLines) != 1 || entryLines[0].Line != 4 {
+		t.Fatalf("entries=%+v lines=%+v issues=%+v", entries, entryLines, issues)
+	}
+	_, lines, issues = parseLines("1 // Back")
+	if len(lines) != 0 || len(issues) != 1 || issues[0].Reason != "card_not_found" {
+		t.Fatalf("empty main name accepted: lines=%+v issues=%+v", lines, issues)
+	}
+}
+
+func TestStandardCodeNameFormatsRoundTripThroughImport(t *testing.T) {
+	for _, test := range []struct {
+		Layout string
+		Name   string
+		Export string
+	}{
+		{"normal", "Sol Ring", "Sol Ring"},
+		{"split", "Fire // Ice", "Fire // Ice"},
+		{"modal_dfc", "Fell the Profane // Fell Mire", "Fell the Profane"},
+		{"transform", "Delver of Secrets // Insectile Aberration", "Delver of Secrets"},
+		{"adventure", "Brazen Borrower // Petty Theft", "Brazen Borrower"},
+		{"flip", "Bushi Tenderfoot // Kenzo the Hardhearted", "Bushi Tenderfoot"},
+	} {
+		t.Run(test.Layout, func(t *testing.T) {
+			oracle := "oracle"
+			deck := model.SavedDeck{Name: "Example", Cards: []model.SavedDeckCard{{Section: "mainboard", OracleID: oracle, Quantity: 2, Name: test.Name}}}
+			data := map[string]model.DeckCardData{oracle: {Card: model.CardSummary{Name: test.Name, Layout: test.Layout}}}
+			code := standardCode(deck, data)
+			if code != "About\nName Example\n\nDeck\n2 "+test.Export {
+				t.Fatalf("export=%q", code)
+			}
+			_, lines, issues := parseLines(code)
+			if len(issues) != 0 || len(lines) != 1 {
+				t.Fatalf("lines=%+v issues=%+v", lines, issues)
+			}
+			entries, _, issues := resolveCodeLines(lines, []model.DeckName{{MatchedName: codeMainName(test.Name), Name: test.Name, OracleID: &oracle}})
+			if len(issues) != 0 || !reflect.DeepEqual(entries, deck.Cards) || data[oracle].Card.Name != test.Name {
+				t.Fatalf("round trip changed logical identity or canonical name: entries=%+v issues=%+v", entries, issues)
+			}
+		})
+	}
+}
+
 func TestNoopDefinitionStandardCodeAndUnicodeCopyName(t *testing.T) {
 	oracle := "oracle"
 	typeLine := "Artifact"
