@@ -404,7 +404,7 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
       await expect(hint).toBeVisible();
       await expect(expanded).toHaveCount(0);
       await page.mouse.move(1, 1);
-      expect(await hint.count()).toBe(0);
+      await expect(hint).toHaveCount(0);
 
       await first.hover({ position: { x: 70, y: 12 } });
       await expect(expanded).toHaveCount(1);
@@ -433,7 +433,7 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
           }),
         ).toBeVisible();
         await page.mouse.move(1, 1);
-        expect(await hint.count()).toBe(0);
+        await expect(hint).toHaveCount(0);
         await expect(expanded).toHaveCount(1);
       }
     });
@@ -565,7 +565,7 @@ test("editor keeps one expanded card and clears the previous fixed selection", a
   await expect(expanded).toHaveCount(1);
   await expect(preview).toContainText("测试卡牌 2");
   await page.mouse.move(0, 0);
-  expect(await preview.count()).toBe(0);
+  await expect(preview).toHaveCount(0);
   await expect(expanded).toHaveCount(0);
   await first.click({ position: { x: 70, y: 12 } });
   await page.mouse.click(1, 1);

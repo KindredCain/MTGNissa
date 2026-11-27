@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import {
   card,
+  card_face,
   context,
   deck,
   detail,
@@ -20,6 +21,7 @@ export async function mock_api(page: Page) {
     fail_lists: false,
     delay_adjustment: 0,
     cards_requests: 0,
+    preview_requests: 0,
     adjustments: 0,
     save_body: undefined as DTO<"DeckSaveRequest"> | undefined,
     deck: deck(),
@@ -170,7 +172,32 @@ export async function mock_api(page: Page) {
         total: state.included ? 1 : 0,
         next_cursor: null,
       };
-    else if (endpoint.match(/^\/cards\/[^/]+$/))
+    else if (endpoint.match(/^\/cards\/[^/]+\/preview$/)) {
+      state.preview_requests++;
+      const index = Number(endpoint.split("/")[2].split("-").at(-1));
+      const {
+        face_index,
+        name,
+        display_name,
+        type_line,
+        display_type_line,
+        oracle_text,
+        display_oracle_text,
+      } = card_face(index);
+      data = {
+        faces: [
+          {
+            face_index,
+            name,
+            display_name,
+            type_line,
+            display_type_line,
+            oracle_text,
+            display_oracle_text,
+          },
+        ],
+      };
+    } else if (endpoint.match(/^\/cards\/[^/]+$/))
       data = {
         ...detail(),
         collection: {

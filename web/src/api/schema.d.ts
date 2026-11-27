@@ -413,6 +413,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/cards/{printing_uuid}/preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read lightweight card face text
+     * @description Returns one concrete language-printing detail with all faces, backend-resolved image URLs, collection/wishlist state, rulings, exact tag query strings and version/deck-usage metadata. Missing references return 404 card_not_found. Face switching reuses this response and does not change the printing identity. Submit oracle_tags[].query unchanged to global search. Language options include all actual dictionary languages, not only the first 11, sorted by language sort_order then code. Other versions exclude the current Set/collector-number group, aggregate its language quantities, and are ordered by release date descending. Rulings retain publication-date descending order, Oracle tags retain tag_id order, and deck usage retains deck updated_at descending order.
+     */
+    get: operations["get_cards_printing_uuid_preview"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1305,6 +1325,25 @@ export interface components {
         /** @enum {string} */
         code?: "request_timeout";
       };
+    };
+    CardPreviewFaceResponse: {
+      /** @enum {integer} */
+      face_index: -1 | 0 | 1 | 2 | 3 | 4;
+      name: string;
+      display_name: string;
+      type_line: string | null;
+      display_type_line: string | null;
+      oracle_text: string | null;
+      display_oracle_text: string | null;
+    };
+    CardPreviewResponse: {
+      faces: components["schemas"]["CardPreviewFaceResponse"][];
+    };
+    CardPreviewResponseEnvelope: components["schemas"]["Envelope"] & {
+      /** @constant */
+      status?: 200;
+      data?: components["schemas"]["CardPreviewResponse"];
+      error?: null;
     };
   };
   responses: {
@@ -2789,6 +2828,47 @@ export interface operations {
       };
       400: components["responses"]["Http400Error"];
       422: components["responses"]["Http422Error"];
+      500: components["responses"]["Http500Error"];
+      503: components["responses"]["Http503Error"];
+      504: components["responses"]["Http504Error"];
+      /** @description Other HTTP errors use the same client-safe error envelope; status equals the HTTP response status. X-Request-ID is always returned. The backend is authoritative for validation. */
+      default: {
+        headers: {
+          "X-Request-ID": components["headers"]["RequestID"];
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_cards_printing_uuid_preview: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Optional caller request ID. The backend trims it, replaces an empty value or a value exceeding its 128-byte limit, and returns the final ID in the response header and envelope. */
+        "X-Request-ID"?: components["parameters"]["RequestID"];
+      };
+      path: {
+        printing_uuid: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          "X-Request-ID": components["headers"]["RequestID"];
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CardPreviewResponseEnvelope"];
+        };
+      };
+      400: components["responses"]["Http400Error"];
+      404: components["responses"]["Http404Error"];
       500: components["responses"]["Http500Error"];
       503: components["responses"]["Http503Error"];
       504: components["responses"]["Http504Error"];

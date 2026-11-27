@@ -63,6 +63,17 @@ type CardFace struct {
 	ImageURL          *string
 }
 
+// CardPreviewFace contains the original and translated text used by a card tooltip.
+type CardPreviewFace struct {
+	FaceIndex         int
+	Name              string
+	DisplayName       string
+	TypeLine          *string
+	DisplayTypeLine   *string
+	OracleText        *string
+	DisplayOracleText *string
+}
+
 // CardList is the complete lightweight result for one ordinary series and language.
 type CardList struct {
 	Set      SetRef

@@ -3,9 +3,13 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/gin-gonic/gin"
 
 	"mtgnissa/internal/apperror"
 	"mtgnissa/internal/model"
@@ -95,5 +99,57 @@ func TestCardDTOsKeepArraysAndQuantitiesStable(t *testing.T) {
 	}
 	if newCardList(model.CardList{}).Items == nil {
 		t.Fatal("empty card list must not be null")
+	}
+}
+
+func TestCardPreviewDTOContainsOnlyFaceText(t *testing.T) {
+	text := "Rules\nSecond line"
+	faces := []model.CardPreviewFace{
+		{FaceIndex: 0, Name: "Front", DisplayName: "正面", OracleText: &text, DisplayOracleText: &text},
+		{FaceIndex: 1, Name: "Back", DisplayName: "背面"},
+	}
+	raw, err := json.Marshal(newCardPreview(faces))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded struct {
+		Faces []map[string]any `json:"faces"`
+	}
+	if err := json.Unmarshal(raw, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if len(decoded.Faces) != 2 || decoded.Faces[0]["display_oracle_text"] != text || decoded.Faces[1]["display_name"] != "背面" {
+		t.Fatalf("face identities or text were lost: %s", raw)
+	}
+	for _, face := range decoded.Faces {
+		if len(face) != 7 {
+			t.Fatalf("preview included fields beyond face text: %s", raw)
+		}
+		for _, key := range []string{"type_line", "display_type_line", "oracle_text", "display_oracle_text"} {
+			if _, ok := face[key]; !ok {
+				t.Fatalf("nullable field %q was omitted: %s", key, raw)
+			}
+		}
+	}
+	if newCardPreview(nil).Faces == nil {
+		t.Fatal("empty preview faces must be an array")
+	}
+}
+
+func TestCardPreviewRejectsInvalidIdentityAndQueryBeforeReading(t *testing.T) {
+	router := gin.New()
+	router.GET("/cards/:printing_uuid/preview", rejectUnknownQueryParameters(), getCardPreview(nil))
+	for _, test := range []struct {
+		path   string
+		status int
+	}{
+		{"/cards/invalid/preview", http.StatusNotFound},
+		{"/cards/00000000-0000-4000-8000-000000000001/preview?q=a", http.StatusBadRequest},
+	} {
+		response := httptest.NewRecorder()
+		router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, test.path, nil))
+		if response.Code != test.status {
+			t.Fatalf("path=%s status=%d body=%s", test.path, response.Code, response.Body.String())
+		}
 	}
 }

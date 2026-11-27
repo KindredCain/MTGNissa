@@ -2623,6 +2623,74 @@
         },
         "description": "Read-only snapshot detail for exactly one required operation_date/action_type. Fixed ten-item pages, ordered by occurred_at descending then operation ID descending. Timestamps remain UTC; date selection uses the application timezone/current offset. Rows use exactly the card or deck branch selected by the action. Collection card snapshots have finish and delta +/-1, wishlist snapshots have both fields null. Do not resolve current card/deck entities to overwrite historical text or turn deleted-resource snapshots into live navigation."
       }
+    },
+    "/api/v1/cards/{printing_uuid}/preview": {
+      "get": {
+        "operationId": "get_cards_printing_uuid_preview",
+        "parameters": [
+          {
+            "name": "printing_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/RequestID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardPreviewResponseEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestID"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Http400Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Http404Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Http500Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Http503Error"
+          },
+          "504": {
+            "$ref": "#/components/responses/Http504Error"
+          },
+          "default": {
+            "description": "Other HTTP errors use the same client-safe error envelope; status equals the HTTP response status. X-Request-ID is always returned. The backend is authoritative for validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestID"
+              }
+            }
+          }
+        },
+        "description": "Returns one concrete language-printing detail with all faces, backend-resolved image URLs, collection/wishlist state, rulings, exact tag query strings and version/deck-usage metadata. Missing references return 404 card_not_found. Face switching reuses this response and does not change the printing identity. Submit oracle_tags[].query unchanged to global search. Language options include all actual dictionary languages, not only the first 11, sorted by language sort_order then code. Other versions exclude the current Set/collector-number group, aggregate its language quantities, and are ordered by release date descending. Rulings retain publication-date descending order, Oracle tags retain tag_id order, and deck usage retains deck updated_at descending order.",
+        "summary": "Read lightweight card face text"
+      }
     }
   },
   "components": {
@@ -6351,6 +6419,115 @@
                     }
                   }
                 ]
+              }
+            }
+          }
+        ]
+      },
+      "CardPreviewFaceResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "face_index": {
+            "type": "integer",
+            "minimum": -1,
+            "enum": [
+              -1,
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "type_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "display_type_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "oracle_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "display_oracle_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "face_index",
+          "name",
+          "display_name",
+          "type_line",
+          "display_type_line",
+          "oracle_text",
+          "display_oracle_text"
+        ]
+      },
+      "CardPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "faces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CardPreviewFaceResponse"
+            }
+          }
+        },
+        "required": [
+          "faces"
+        ]
+      },
+      "CardPreviewResponseEnvelope": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "const": 200,
+                "type": "integer"
+              },
+              "data": {
+                "$ref": "#/components/schemas/CardPreviewResponse"
+              },
+              "error": {
+                "type": "null"
               }
             }
           }

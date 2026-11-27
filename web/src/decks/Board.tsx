@@ -1,11 +1,4 @@
-import {
-  Fragment,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -36,8 +29,8 @@ import type { EditorStore } from "./store";
 import { validation_error } from "../ui/feedback";
 import styles from "./decks.module.css";
 import { Icon } from "../ui/Icon";
-import { useVisualViewport } from "../ui/viewport";
-import { useAnchorRect, useHoverPreview } from "../ui/preview";
+import { useHoverPreview, usePreviewBounds } from "../ui/preview";
+import { CardFaceText, CardTextPreview } from "../cards/CardTextPreview";
 /* dnd-kit returns refs and render state in the same hook result. Its public
  * isDragging/listeners/setNodeRef fields are intentionally read during render. */
 /* eslint-disable react-hooks/refs */
@@ -48,6 +41,15 @@ type Preview = {
   section?: SectionType;
 };
 type Selection = { id: string; fixed: boolean };
+type PreviewBubbleProps = {
+  preview: Preview;
+  deck?: Deck;
+  variant?: "text" | "image";
+  back?: boolean;
+  in_modal?: boolean;
+  onPointerEnter?: () => void;
+  onPointerLeave?: () => void;
+};
 export function Board({
   deck,
   editor,
@@ -86,7 +88,6 @@ export function Board({
     show: setPreview,
     keep: keep_preview,
     leave: hide_preview,
-    hide: hide_bubble,
   } = useHoverPreview<Preview>(() => {
     const current = selection_ref.current;
     if (!current?.fixed) {
@@ -458,11 +459,7 @@ export function Board({
             }}
             onPointerLeave={() => {
               in_bubble.current = false;
-              hide_bubble();
-              if (!selection_ref.current?.fixed) {
-                select(null);
-                editor?.getState().remove_zero();
-              }
+              hide_preview();
             }}
             back={!!back_faces[`${preview.section}:${preview.card.oracle_id}`]}
           />,
@@ -476,7 +473,7 @@ export function Board({
             preview={{ ...exception_preview, card: exception_card }}
             deck={deck}
             onPointerEnter={keep_exception}
-            onPointerLeave={hide_exception}
+            onPointerLeave={leave_exception}
           />,
           document.body,
         )}
@@ -732,7 +729,31 @@ function DraggableCard({
     </div>
   );
 }
-export function PreviewBubble({
+export function PreviewBubble(props: PreviewBubbleProps) {
+  if (!props.preview.exception && props.variant !== "image") {
+    const card = props.preview.card;
+    return (
+      <CardTextPreview
+        anchor={props.preview.anchor}
+        data-deck-preview
+        onPointerEnter={props.onPointerEnter}
+        onPointerLeave={props.onPointerLeave}
+        onFocusCapture={props.onPointerEnter}
+        onBlurCapture={props.onPointerLeave}
+      >
+        <CardFaceText
+          faces={card.faces}
+          back={props.back}
+          distinct_back={card.card.images.has_distinct_back}
+          fallback_name={card.card.display_name}
+        />
+      </CardTextPreview>
+    );
+  }
+  return <ContextPreviewBubble {...props} />;
+}
+
+function ContextPreviewBubble({
   preview,
   deck,
   variant = "text",
@@ -740,20 +761,11 @@ export function PreviewBubble({
   in_modal = false,
   onPointerEnter,
   onPointerLeave,
-}: {
-  preview: Preview;
-  deck?: Deck;
-  variant?: "text" | "image";
-  back?: boolean;
-  in_modal?: boolean;
-  onPointerEnter?: () => void;
-  onPointerLeave?: () => void;
-}) {
-  const viewport = useVisualViewport(),
+}: PreviewBubbleProps) {
+  const { rect, bounds, viewport } = usePreviewBounds(preview.anchor),
     element = useRef<HTMLDivElement>(null),
     [height, setHeight] = useState(340);
   const { card, exception } = preview;
-  const rect = useAnchorRect(preview.anchor);
   useEffect(() => {
     const node = element.current;
     if (!node) return;
@@ -762,17 +774,18 @@ export function PreviewBubble({
     return () => observer.disconnect();
   }, [variant, exception]);
   if (!rect) return null;
-  const max_height = Math.min(480, viewport.height - 16);
+  const max_height = Math.min(480, bounds.bottom - bounds.top);
+  if (max_height < 48) return null;
   const width = exception ? 232 : 440,
     left =
-      rect.right + 12 + width < viewport.left + viewport.width
+      rect.right + 12 + width < bounds.right
         ? rect.right + 12
-        : Math.max(viewport.left + 8, rect.left - width - 12);
+        : Math.max(bounds.left, rect.left - width - 12);
   const top = Math.max(
-    viewport.top + 8,
+    bounds.top,
     Math.min(
       rect.top,
-      viewport.top + viewport.height - (exception ? 100 : height) - 8,
+      bounds.bottom - Math.min(exception ? 92 : height, max_height),
     ),
   );
   const current =
@@ -782,16 +795,18 @@ export function PreviewBubble({
       .filter((item) => item.oracle_id === card.oracle_id)
       .reduce((sum, item) => sum + item.quantity, 0) ?? card.quantity;
   if (exception) {
-    const opens_right =
-      rect.right + 4 + 232 <= viewport.left + viewport.width - 8;
+    const opens_right = rect.right + 4 + 232 <= bounds.right;
     const hint_left = opens_right ? rect.right + 4 : rect.left - 4 - 232;
     const hint_top = Math.max(
-      viewport.top + 8,
-      Math.min(rect.top - 5, viewport.top + viewport.height - 92 - 8),
+      bounds.top,
+      Math.min(rect.top - 5, bounds.bottom - Math.min(92, max_height)),
     );
     const arrow_top = Math.max(
       6,
-      Math.min(74, rect.top + rect.height / 2 - hint_top - 6),
+      Math.min(
+        Math.min(92, max_height) - 18,
+        rect.top + rect.height / 2 - hint_top - 6,
+      ),
     );
     const usage = card.exception?.type === "deck_usage";
     return (
@@ -801,9 +816,9 @@ export function PreviewBubble({
         data-exception-side={opens_right ? "right" : "left"}
         style={
           {
-            left: Math.max(viewport.left + 8, hint_left),
+            left: Math.max(bounds.left, hint_left),
             top: hint_top,
-            maxHeight: viewport.height - 16,
+            maxHeight: max_height,
             "--exception-arrow-top": `${arrow_top}px`,
           } as CSSProperties
         }
@@ -880,16 +895,6 @@ export function PreviewBubble({
       </div>
     );
   }
-  if (variant === "text")
-    return (
-      <TextPreview
-        card={card}
-        rect={rect}
-        back={back}
-        onPointerEnter={onPointerEnter}
-        onPointerLeave={onPointerLeave}
-      />
-    );
   return (
     <div
       ref={element}
@@ -930,84 +935,12 @@ export function PreviewBubble({
 }
 
 function PreviewText({ card, back }: { card: DeckCard; back: boolean }) {
-  const active = card.faces[back ? 1 : 0] ?? card.faces[0],
-    faces = card.card.images.has_distinct_back
-      ? active
-        ? [active]
-        : []
-      : card.faces;
-  return faces.map((face) => (
-    <Fragment key={face.face_index}>
-      <h3>{face.display_name || face.name || card.card.display_name}</h3>
-      <div>
-        <small>类别</small>
-        <p>{face.display_type_line ?? face.type_line}</p>
-      </div>
-      <div>
-        <small>规则文字</small>
-        <p>{face.display_oracle_text ?? face.oracle_text}</p>
-      </div>
-    </Fragment>
-  ));
-}
-
-function TextPreview({
-  card,
-  rect,
-  back,
-  onPointerEnter,
-  onPointerLeave,
-}: {
-  card: DeckCard;
-  rect: DOMRect;
-  back: boolean;
-  onPointerEnter?: () => void;
-  onPointerLeave?: () => void;
-}) {
-  const viewport = useVisualViewport(),
-    element = useRef<HTMLDivElement>(null),
-    [height, setHeight] = useState(164);
-  useEffect(() => {
-    const node = element.current;
-    if (!node) return;
-    const observer = new ResizeObserver(() => setHeight(node.offsetHeight));
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  const on_left = rect.right + 6 + 300 > viewport.left + viewport.width - 8,
-    left = on_left
-      ? Math.max(viewport.left + 8, rect.left - 300 - 6)
-      : rect.right + 6,
-    top = Math.max(
-      viewport.top + 8,
-      Math.min(rect.top, viewport.top + viewport.height - height - 8),
-    );
   return (
-    <div
-      ref={element}
-      role="tooltip"
-      data-deck-preview
-      className={styles.textPreview}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      onFocusCapture={onPointerEnter}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget))
-          onPointerLeave?.();
-      }}
-      data-side={on_left ? "left" : "right"}
-      style={
-        {
-          left,
-          top,
-          "--preview-max-height": `${Math.min(360, viewport.height - 16)}px`,
-          "--arrow-top": `${Math.max(16, Math.min(height - 16, rect.top + 48 - top))}px`,
-        } as CSSProperties
-      }
-    >
-      <div className={styles.previewText} tabIndex={0} aria-label="卡牌说明">
-        <PreviewText card={card} back={back} />
-      </div>
-    </div>
+    <CardFaceText
+      faces={card.faces}
+      back={back}
+      distinct_back={card.card.images.has_distinct_back}
+      fallback_name={card.card.display_name}
+    />
   );
 }

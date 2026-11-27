@@ -58,7 +58,7 @@ function SetCards({
     <>
       <PageHeader title="全部卡牌" description="查看全部卡牌" tabs />
       <main className={pageStyles.content} data-card-grid-page>
-        <div className={pageStyles.breadcrumb}>
+        <div className={pageStyles.breadcrumb} data-preview-header>
           <Link to="/sets">卡牌中心</Link>
           <Icon name="chevron-right" size={13} />
           <Link to="/sets">全部卡牌</Link>

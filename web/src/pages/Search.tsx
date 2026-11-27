@@ -28,7 +28,10 @@ export function Component() {
         className={`${pageStyles.content} ${styles.resultsMain}`}
         data-card-grid-page
       >
-        <div className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}>
+        <div
+          className={`${pageStyles.breadcrumb} ${styles.resultBreadcrumb}`}
+          data-preview-header
+        >
           <Link to="/sets">卡牌中心</Link>
           <Icon name="chevron-right" size={13} />
           <Link to="/sets">全部卡牌</Link>
@@ -44,7 +47,7 @@ export function Component() {
             {list.data?.pages[0].executed_query ?? q}
           </span>
         </div>
-        <div className={styles.resultCount}>
+        <div className={styles.resultCount} data-preview-header>
           {list.data?.pages[0].total ?? 0} 张卡牌
         </div>
         {list.isPending && !!q ? (

@@ -1,0 +1,61 @@
+.bubble {
+  position: fixed;
+  z-index: 14;
+  max-height: var(--preview-max-height);
+  padding: 16px;
+  background: white;
+  color: #18201d;
+  border: 1px solid #d7dbd6;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px #0002;
+  pointer-events: auto;
+  overflow-wrap: anywhere;
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  top: var(--arrow-top);
+  left: -5px;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-left: 1px solid #d7dbd6;
+  border-bottom: 1px solid #d7dbd6;
+  transform: translateY(-50%) rotate(45deg);
+}
+.bubble[data-side="left"]::before {
+  left: auto;
+  right: -5px;
+  transform: translateY(-50%) rotate(225deg);
+}
+.content {
+  max-height: calc(var(--preview-max-height) - 34px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+.content h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.content h3:not(:first-child) {
+  margin-top: 16px;
+}
+.content small {
+  display: block;
+  color: #7a8580;
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+.content p {
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.content > div + div {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #edf0e9;
+}

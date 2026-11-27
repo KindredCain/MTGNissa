@@ -153,7 +153,11 @@ function Collection() {
     <>
       <PageHeader title="我的卡牌" description="管理拥有的卡牌收藏" tabs />
       <main className={pageStyles.content} data-card-grid-page>
-        <nav className={pageStyles.breadcrumb} aria-label="面包屑">
+        <nav
+          className={pageStyles.breadcrumb}
+          aria-label="面包屑"
+          data-preview-header
+        >
           <Link to="/sets">卡牌中心</Link>
           <Icon name="chevron-right" size={13} />
           <Link to="/collection" aria-current="page">
@@ -293,7 +297,11 @@ function Wishlist() {
     <>
       <PageHeader title="愿望单" description="管理我的愿望单" tabs />
       <main className={pageStyles.content} data-card-grid-page>
-        <nav className={pageStyles.breadcrumb} aria-label="面包屑">
+        <nav
+          className={pageStyles.breadcrumb}
+          aria-label="面包屑"
+          data-preview-header
+        >
           <Link to="/sets">卡牌中心</Link>
           <Icon name="chevron-right" size={13} />
           <Link to="/wishlist" aria-current="page">

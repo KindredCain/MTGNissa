@@ -67,6 +67,20 @@ type cardFaceResponse struct {
 	ImageURL          *string `json:"image_url"`
 }
 
+type cardPreviewFaceResponse struct {
+	FaceIndex         int     `json:"face_index"`
+	Name              string  `json:"name"`
+	DisplayName       string  `json:"display_name"`
+	TypeLine          *string `json:"type_line"`
+	DisplayTypeLine   *string `json:"display_type_line"`
+	OracleText        *string `json:"oracle_text"`
+	DisplayOracleText *string `json:"display_oracle_text"`
+}
+
+type cardPreviewResponse struct {
+	Faces []cardPreviewFaceResponse `json:"faces"`
+}
+
 type quantityResponse struct {
 	Normal uint64 `json:"normal_quantity"`
 	Foil   uint64 `json:"foil_quantity"`
@@ -162,6 +176,18 @@ type adjustmentRequest struct {
 
 type wishlistRequest struct {
 	Included *bool `json:"included"`
+}
+
+func newCardPreview(faces []model.CardPreviewFace) cardPreviewResponse {
+	r := cardPreviewResponse{Faces: make([]cardPreviewFaceResponse, 0, len(faces))}
+	for _, face := range faces {
+		r.Faces = append(r.Faces, cardPreviewFaceResponse{
+			FaceIndex: face.FaceIndex, Name: face.Name, DisplayName: face.DisplayName,
+			TypeLine: face.TypeLine, DisplayTypeLine: face.DisplayTypeLine,
+			OracleText: face.OracleText, DisplayOracleText: face.DisplayOracleText,
+		})
+	}
+	return r
 }
 
 func cardDate(value *time.Time) *string {

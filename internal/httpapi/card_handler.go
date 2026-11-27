@@ -18,6 +18,7 @@ import (
 type cardService interface {
 	List(context.Context, string, string, string) (model.CardList, error)
 	Detail(context.Context, string) (model.CardDetail, error)
+	Preview(context.Context, string) ([]model.CardPreviewFace, error)
 	Adjust(context.Context, string, string, int, string) (model.CollectionState, bool, error)
 	SetWishlist(context.Context, string, bool, string) (model.CardSummary, bool, bool, error)
 }
@@ -83,6 +84,22 @@ func getCard(service cardService) gin.HandlerFunc {
 			return
 		}
 		httpresponse.WriteJSON(c, http.StatusOK, newCardDetail(d))
+	}
+}
+
+func getCardPreview(service cardService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := printingID(c.Param("printing_uuid"))
+		if err != nil {
+			httpresponse.WriteAppError(c, err)
+			return
+		}
+		faces, err := service.Preview(c.Request.Context(), id)
+		if err != nil {
+			httpresponse.WriteAppError(c, err)
+			return
+		}
+		httpresponse.WriteJSON(c, http.StatusOK, newCardPreview(faces))
 	}
 }
 

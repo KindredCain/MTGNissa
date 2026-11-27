@@ -29,7 +29,7 @@ export function Component() {
     <main className={styles.dark}>
       {deck ? (
         <>
-          <header className={styles.header}>
+          <header className={styles.header} data-preview-header>
             <div className={styles.detailIdentity}>
               <h1 title={deck.name}>{deck.name}</h1>
               <p>

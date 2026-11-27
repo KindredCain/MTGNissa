@@ -53,6 +53,7 @@ func New(deps Dependencies) *gin.Engine {
 	api.GET("/tokens", rejectUnknownQueryParameters("set_code"), getTokens(deps.Tokens))
 	api.GET("/cards", rejectUnknownQueryParameters("set_code", "language", "q"), getCards(deps.Cards))
 	api.GET("/cards/:printing_uuid", rejectUnknownQueryParameters(), getCard(deps.Cards))
+	api.GET("/cards/:printing_uuid/preview", rejectUnknownQueryParameters(), getCardPreview(deps.Cards))
 	api.POST("/cards/:printing_uuid/collection_adjustments", requireJSONContentType(), rejectUnknownQueryParameters(), adjustCard(deps.Cards))
 	api.POST("/cards/:printing_uuid/wishlist_state", requireJSONContentType(), rejectUnknownQueryParameters(), setCardWishlist(deps.Cards))
 	api.GET("/collection/options", rejectUnknownQueryParameters(), getCollectionOptions(deps.Collection))

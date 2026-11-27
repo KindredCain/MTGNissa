@@ -33,6 +33,12 @@ func (s *Service) List(ctx context.Context, code, language, query string) (model
 	return list, safeError(err)
 }
 
+// Preview returns the face text needed by an ordinary card tooltip.
+func (s *Service) Preview(ctx context.Context, id string) ([]model.CardPreviewFace, error) {
+	faces, err := s.cards.Preview(ctx, id)
+	return faces, safeError(err)
+}
+
 // Detail returns all display, Oracle, version, and personal data for a printing.
 func (s *Service) Detail(ctx context.Context, id string) (model.CardDetail, error) {
 	data, err := s.cards.Detail(ctx, id)

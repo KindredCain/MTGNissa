@@ -976,7 +976,7 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     await expect(preview).toBeVisible();
     await expect(slot).toHaveClass(/expanded/);
     await page.mouse.move(1, 1);
-    expect(await preview.count()).toBe(0);
+    await expect(preview).toHaveCount(0);
     await expect(slot).not.toHaveClass(/expanded/);
     await target.hover({ position: { x: 70, y: 12 } });
     await expect(preview).toBeVisible();

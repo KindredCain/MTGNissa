@@ -5,6 +5,7 @@ import { SearchInput } from "../ui/controls";
 import styles from "./layout.module.css";
 import { BodyScrollRestoration } from "./BodyScrollRestoration";
 import { PageScrollbars } from "../ui/PageScrollbars";
+import { CardPreviewScope } from "../cards/CardPreview";
 export function Layout() {
   const navigate = useNavigate(),
     location = useLocation();
@@ -26,7 +27,7 @@ export function Layout() {
     <>
       <BodyScrollRestoration />
       <PageScrollbars />
-      <header className={styles.nav}>
+      <header className={styles.nav} data-preview-header>
         <NavLink to="/sets" className={styles.logo}>
           <img src="/assets/kQcrD.svg" alt="" width="24" height="24" /> MTG
           NISSA
@@ -73,7 +74,9 @@ export function Layout() {
           <span>{app.data?.display_name}</span>
         </div>
       </header>
-      <Outlet />
+      <CardPreviewScope>
+        <Outlet />
+      </CardPreviewScope>
     </>
   );
 }
@@ -92,7 +95,7 @@ export function PageHeader({
   const all_cards =
     location.pathname.startsWith("/sets") || location.pathname === "/search";
   return (
-    <section className={styles.pageHeader}>
+    <section className={styles.pageHeader} data-preview-header>
       <div>
         <h1>{title}</h1>
         {description && <p>{description}</p>}

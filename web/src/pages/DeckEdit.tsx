@@ -214,7 +214,7 @@ function Editor({ initial }: { initial: Deck }) {
         disabled={locked}
         style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
       >
-        <header className={styles.header}>
+        <header className={styles.header} data-preview-header>
           <div>
             <label className={styles.nameField}>
               <span className={styles.nameText}>

@@ -240,6 +240,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `GET` | `/api/v1/cards` | 当前 Set、语言的完整轻量卡牌列表 |
 | `GET` | `/api/v1/tokens` | 通过必填查询参数 `set_code` 获取当前 Token Set 的完整轻量印刷列表，不带语言、搜索、筛选或排序参数 |
 | `GET` | `/api/v1/cards/{printing_uuid}` | 卡牌详情 |
+| `GET` | `/api/v1/cards/{printing_uuid}/preview` | 单张卡牌的轻量说明 |
 | `POST` | `/api/v1/cards/{printing_uuid}/collection_adjustments` | 调整普通或闪卡数量 |
 | `POST` | `/api/v1/cards/{printing_uuid}/wishlist_state` | 设置愿望单状态 |
 | `GET` | `/api/v1/collection/options` | 我的卡牌筛选项 |
@@ -367,6 +368,12 @@ rarity: common | uncommon | rare | mythic | special | bonus
 后端按 `mtgnissa_card_printing -> mtgnissa_card -> 翻译` 读取当前 Set、语言和名称条件内的完整轻量结果；只返回普通卡牌，双面或多牌面按具体印刷及语言组织为一个 `CardSummaryDTO`，统一使用主牌面 `printing_uuid`。当前语言属于项目字典但该 Set 无记录时返回空结果，未知语言代码返回 `422 validation_failed`；Set 不存在返回 `404 set_not_found`。Token Set 不接受本接口，返回 `422 validation_failed` 并定位 `set_code`，客户端应使用 5.5。
 
 前端在完整结果上执行颜色、法术力、稀有度筛选和收藏编号／法术力／名称排序，再本地分批显示图片；主排序相同时按收藏编号自然升序、`printing_uuid ASC` 兜底。`total` 为本次名称条件内组织后的印刷列表项数，不是卡面数；前端再计算本地筛选后的计数。
+
+### 5.3.1 `GET /api/v1/cards/{printing_uuid}/preview`
+
+只读卡牌说明接口，不接受查询参数。按指定主牌面语言印刷 UUID 返回 `faces[]`，按 `face_index` 排序，每项包含 `face_index`、`name`、`display_name`、`type_line`、`display_type_line`、`oracle_text`、`display_oracle_text`。名称必填，类型和规则文字可为 `null`，中文沿用详情的翻译优先级和英文回退。
+
+只读取当前印刷的牌面和翻译，不读取 App DB、其他版本、标签或释疑；Token 不使用此接口。UUID 无效、印刷不存在或不是主牌面入口时返回 `404 card_not_found`。
 
 ### 5.4 `GET /api/v1/cards/{printing_uuid}`
 
