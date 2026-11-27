@@ -405,6 +405,19 @@
 .cardButton img {
   user-select: none;
 }
+.flip {
+  position: absolute;
+  right: 20px;
+  top: 42px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  background: #fffdf3e8;
+  color: var(--ink);
+}
 .quantity {
   position: absolute;
   left: 0;

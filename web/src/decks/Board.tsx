@@ -644,14 +644,7 @@ function DraggableCard({
       </button>
       {expanded && card.card.images.has_distinct_back && (
         <button
-          style={{
-            position: "absolute",
-            right: 20,
-            top: 42,
-            width: 24,
-            height: 24,
-            padding: 0,
-          }}
+          className={styles.flip}
           aria-label={`翻面：${card.card.display_name}`}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => {

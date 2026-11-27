@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { SearchInput } from "../ui/controls";
 import styles from "./layout.module.css";
@@ -8,12 +8,21 @@ import { PageScrollbars } from "../ui/PageScrollbars";
 import { CardPreviewScope } from "../cards/CardPreview";
 export function Layout() {
   const navigate = useNavigate(),
-    location = useLocation();
+    location = useLocation(),
+    client = useQueryClient();
   function search(value: string) {
     if (!value) return;
+    const repeated =
+      location.pathname === "/search" &&
+      new URLSearchParams(location.search).get("q") === value;
     navigate(`/search?q=${encodeURIComponent(value)}`, {
       state: { scroll: "top" },
     });
+    if (repeated)
+      void client.invalidateQueries({
+        queryKey: ["search", value],
+        exact: true,
+      });
   }
   const app = useQuery({
     queryKey: ["app"],

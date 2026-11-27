@@ -58,6 +58,8 @@
 }
 .flip {
   position: absolute;
+  display: grid;
+  place-items: center;
   right: 14px;
   top: 54px;
   border-radius: 50%;

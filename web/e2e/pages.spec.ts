@@ -39,6 +39,90 @@ test("global search navigates before loading from any page", async ({
   }
 });
 
+for (const confirmation of ["Enter", "button"] as const) {
+  test(`global search retries the same failed query with ${confirmation}`, async ({
+    page,
+  }) => {
+    await mock_api(page);
+    let failing = true,
+      requests = 0;
+    await page.route("**/api/v1/search?q=retry", async (route) => {
+      requests++;
+      if (!failing) return route.fallback();
+      await route.fulfill({
+        status: 503,
+        json: {
+          status: 503,
+          data: null,
+          error: { code: "dependency_unavailable", message: "Search failed" },
+          request_id: "retry",
+        },
+      });
+    });
+    await page.goto("/sets");
+    const input = page.getByRole("textbox", {
+      name: "搜索卡牌或输入语法…",
+    });
+    await input.fill("retry");
+    await input.press("Enter");
+    await expect(page.getByRole("dialog", { name: "操作失败" })).toBeVisible();
+    await page.getByRole("button", { name: "关闭", exact: true }).click();
+    const previous_requests = requests;
+    failing = false;
+    if (confirmation === "Enter") await input.press("Enter");
+    else await page.getByRole("button", { name: "搜索", exact: true }).click();
+    await expect(page).toHaveURL("/search?q=retry");
+    await expect.poll(() => requests).toBeGreaterThan(previous_requests);
+    await expect(
+      page.getByRole("link", { name: "查看测试卡牌 1", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "操作失败" })).toHaveCount(0);
+  });
+}
+
+test("ordinary card flip glyph is centered and changes the displayed face", async ({
+  page,
+}) => {
+  await mock_api(page);
+  const data = detail();
+  await page.route("**/api/v1/cards?**", (route) =>
+    route.fulfill({
+      json: {
+        status: 200,
+        error: null,
+        request_id: "flip",
+        data: {
+          set: data.card.set,
+          language: data.card.language,
+          items: [data.card],
+          total: 1,
+        },
+      },
+    }),
+  );
+  await page.goto("/sets/KLD/cards?language=en");
+  const flip = page.getByRole("button", {
+    name: `翻面：${data.card.display_name}`,
+    exact: true,
+  });
+  await expect(flip).toBeVisible();
+  const button = (await flip.boundingBox())!,
+    glyph = (await flip.locator("svg").boundingBox())!;
+  expect(
+    Math.abs(glyph.x + glyph.width / 2 - button.x - button.width / 2),
+  ).toBeLessThanOrEqual(0.5);
+  expect(
+    Math.abs(glyph.y + glyph.height / 2 - button.y - button.height / 2),
+  ).toBeLessThanOrEqual(0.5);
+  await flip.click();
+  await expect(
+    page
+      .getByRole("link", { name: `查看${data.card.display_name}`, exact: true })
+      .locator("img"),
+  ).toHaveAttribute("src", data.card.images.back_url!);
+  await expect(page).toHaveURL("/sets/KLD/cards?language=en");
+});
+
 for (const entry of ["language", "set"] as const) {
   for (const outcome of ["success", "failure", "leave"] as const) {
     test(`card ${entry} switch waits for data on ${outcome}`, async ({
@@ -880,6 +964,15 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     ).toBeVisible();
     await expect(preview).toContainText("Front face rules");
     await expect(preview).not.toContainText("Back face rules");
+    const button = (await flip.boundingBox())!,
+      glyph = (await flip.locator("svg").boundingBox())!;
+    expect(
+      Math.abs(glyph.x + glyph.width / 2 - button.x - button.width / 2),
+    ).toBeLessThanOrEqual(0.5);
+    expect(
+      Math.abs(glyph.y + glyph.height / 2 - button.y - button.height / 2),
+    ).toBeLessThanOrEqual(0.5);
+    await expect(flip.locator("svg")).toHaveCSS("color", "rgb(24, 32, 29)");
     await flip.click();
     await expect(target.locator("img")).toHaveAttribute(
       "src",
