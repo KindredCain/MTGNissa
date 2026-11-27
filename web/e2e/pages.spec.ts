@@ -211,6 +211,87 @@ for (const origin of ["/decks", "/decks/1"]) {
   });
 }
 
+for (const scenario of ["list", "detail", "return"] as const) {
+  test(`deleting with an in-flight list request handles ${scenario}`, async ({
+    page,
+  }) => {
+    await mock_api(page);
+    await page.goto("/decks");
+    const card = page.getByRole("link", { name: "查看测试卡组", exact: true });
+    await expect(card).toBeVisible();
+    if (scenario !== "list") await card.click();
+    let deleted = false,
+      delete_started = false,
+      old_started = false,
+      release!: () => void,
+      release_delete!: () => void;
+    const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+      deleting = new Promise<void>((resolve) => {
+        release_delete = resolve;
+      });
+    await page.route("**/api/v1/decks**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === "/api/v1/decks/1/delete") {
+        delete_started = true;
+        if (scenario === "return") await deleting;
+        deleted = true;
+        return route.fallback();
+      }
+      if (path !== "/api/v1/decks" || route.request().method() !== "GET")
+        return route.fallback();
+      if (!deleted) {
+        old_started = true;
+        await pending;
+        return route.fallback();
+      }
+      return route.fulfill({
+        json: {
+          status: 200,
+          data: { items: [], total: 0, next_cursor: null },
+          error: null,
+          request_id: "after-delete",
+        },
+      });
+    });
+    await page.evaluate(async () => {
+      const path = "/src/api/query.ts";
+      const { query_client } = await import(/* @vite-ignore */ path);
+      void query_client.refetchQueries({ queryKey: ["decks", "list"] });
+    });
+    try {
+      await expect.poll(() => old_started).toBe(true);
+      if (scenario === "list")
+        await page
+          .getByRole("button", { name: "更多卡组操作", exact: true })
+          .click();
+      await page.getByRole("button", { name: "删除卡组", exact: true }).click();
+      await page
+        .getByRole("dialog", { name: "删除卡组？", exact: true })
+        .getByRole("button", { name: "删除卡组", exact: true })
+        .click();
+      if (scenario === "return") {
+        await expect.poll(() => delete_started).toBe(true);
+        await page.goBack();
+        await expect(page).toHaveURL("/decks");
+        release_delete();
+      }
+      await expect(page).toHaveURL("/decks");
+      await expect(
+        page.getByText("共 0 个卡组", { exact: true }),
+      ).toBeVisible();
+      await expect(page.locator("article")).toHaveCount(0);
+      await expect(page.getByRole("dialog", { name: "操作失败" })).toHaveCount(
+        0,
+      );
+    } finally {
+      release();
+      release_delete();
+    }
+  });
+}
+
 for (const origin of ["/decks", "/decks/1"]) {
   for (const outcome of [
     "query-error",
@@ -487,6 +568,67 @@ for (const owned of [0, 6]) {
     );
   });
 }
+for (const flavor of ["Alternate Front", "Miku, the Complete Performer"]) {
+  test(`card detail displays ${flavor} below its name and clears it on an unnamed back`, async ({
+    page,
+  }) => {
+    await mock_api(page);
+    const data = detail();
+    data.faces[0].flavor_name = flavor;
+    let requests = 0;
+    await page.route(`**/api/v1/cards/${uuid(1)}`, (route) => {
+      requests++;
+      return route.fulfill({
+        json: { status: 200, data, error: null, request_id: "flavor" },
+      });
+    });
+    await page.goto(`/cards/${uuid(1)}`);
+    const title = page.getByText("Front", { exact: true });
+    const name = page.getByText(flavor, { exact: true });
+    await expect(name).toBeVisible();
+    await expect(name).toHaveCSS("font-style", "italic");
+    await expect(name).toHaveCSS("font-synthesis", "style");
+    expect((await name.boundingBox())!.y).toBeGreaterThanOrEqual(
+      (await title.boundingBox())!.y + (await title.boundingBox())!.height,
+    );
+    const requests_before_flip = requests;
+    const metadata = page.locator('[class*="metadata"]');
+    const metadata_before = (await metadata.boundingBox())!.y;
+    await page.getByRole("button", { name: "查看反面", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "卡牌背面", exact: true }),
+    ).toBeVisible();
+    await expect(name).toHaveCount(0);
+    expect((await metadata.boundingBox())!.y).toBeCloseTo(metadata_before, 0);
+    expect(requests).toBe(requests_before_flip);
+  });
+}
+
+test("card detail wraps long flavor names and reserves one line when absent", async ({
+  page,
+}) => {
+  await mock_api(page);
+  const data = detail();
+  const flavor = "A long alternate card name ".repeat(8).trim();
+  data.faces[0].flavor_name = flavor;
+  await page.route(`**/api/v1/cards/${uuid(1)}`, (route) =>
+    route.fulfill({
+      json: { status: 200, data, error: null, request_id: "long-flavor" },
+    }),
+  );
+  await page.goto(`/cards/${uuid(1)}`);
+  const name = page.locator('[class*="flavorName"]').first();
+  await expect(name).toHaveText(flavor);
+  const height = (await name.boundingBox())!.height;
+  expect(height).toBeGreaterThan(22);
+  expect(await name.evaluate((node) => node.scrollHeight)).toBeLessThanOrEqual(
+    height,
+  );
+  await page.getByRole("button", { name: "查看反面", exact: true }).click();
+  await expect(name).toBeEmpty();
+  expect((await name.boundingBox())!.height).toBe(22);
+});
+
 for (const layout of ["adventure", "split", "flip"]) {
   test(`shared-image ${layout} details display every face without a flip button`, async ({
     page,
@@ -501,6 +643,7 @@ for (const layout of ["adventure", "split", "flip"]) {
       face.display_oracle_text = `Rules for face ${index}`;
     });
     data.faces[1]!.display_flavor_text = "Second face flavor";
+    data.faces[1]!.flavor_name = "Alternate Back";
     await page.route(`**/api/v1/cards/${uuid(1)}`, (route) =>
       route.fulfill({
         json: { status: 200, data, error: null, request_id: "test" },
@@ -522,6 +665,9 @@ for (const layout of ["adventure", "split", "flip"]) {
       .locator("article")
       .filter({ hasText: "Rules for face 1" });
     await expect(second_face.getByText("Back", { exact: true })).toBeVisible();
+    await expect(
+      second_face.getByText("Alternate Back", { exact: true }),
+    ).toBeVisible();
     await expect(
       second_face.getByRole("img", { name: "{R}", exact: true }),
     ).toBeVisible();

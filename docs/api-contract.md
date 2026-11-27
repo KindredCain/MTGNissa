@@ -407,6 +407,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
       "display_oracle_text": "...",
       "flavor_text": null,
       "display_flavor_text": null,
+      "flavor_name": null,
       "power": null,
       "toughness": null,
       "loyalty": "5",
@@ -468,6 +469,7 @@ rarity: common | uncommon | rare | mythic | special | bonus
 | `type_line`、`display_type_line` | string | 是 | 数据源缺失时为 `null` |
 | `oracle_text`、`display_oracle_text` | string | 是 | 没有规则叙述时为 `null` |
 | `flavor_text`、`display_flavor_text` | string | 是 | 没有背景叙述时为 `null` |
+| `flavor_name` | string | 是 | 当前牌面 `mtgnissa_card.flavor_name` 原值，不查翻译；没有风味名时为 `null` |
 | `power`、`toughness`、`loyalty` | string | 是 | 不适用或缺失时为 `null`，保留原始符号文本 |
 | `image_url` | string | 是 | 当前牌面没有独立图片时为 `null` |
 
@@ -809,7 +811,7 @@ counted_total
             "layout": "normal",
             "images": {"front_url":"https://...","back_url":null,"has_distinct_back":false}
           },
-          "faces": [{"face_index": -1, "name": "Nissa, Vital Force", "display_name": "生机妮莎", "mana_cost": "{3}{G}{G}", "type_line": "Legendary Planeswalker — Nissa", "display_type_line": "传奇鹏洛客～妮莎", "oracle_text": "...", "display_oracle_text": "...", "flavor_text": null, "display_flavor_text": null, "power": null, "toughness": null, "loyalty": "5", "image_url": "https://..."}],
+          "faces": [{"face_index": -1, "name": "Nissa, Vital Force", "display_name": "生机妮莎", "mana_cost": "{3}{G}{G}", "type_line": "Legendary Planeswalker — Nissa", "display_type_line": "传奇鹏洛客～妮莎", "oracle_text": "...", "display_oracle_text": "...", "flavor_name": null, "flavor_text": null, "display_flavor_text": null, "power": null, "toughness": null, "loyalty": "5", "image_url": "https://..."}],
           "owned_quantity": 0,
           "other_decks_quantity": 1,
           "other_decks_count": 1,
@@ -1070,7 +1072,7 @@ counted_total
         "images": {"front_url": "https://cards.scryfall.io/normal/front/...jpg", "back_url": null, "has_distinct_back": false}
       },
       "type_group": "artifact",
-      "faces": [{"face_index": -1, "name": "Sol Ring", "display_name": "阳光戒", "mana_cost": "{1}", "type_line": "Artifact", "display_type_line": "神器", "oracle_text": "...", "display_oracle_text": "...", "flavor_text": null, "display_flavor_text": null, "power": null, "toughness": null, "loyalty": null, "image_url": "https://cards.scryfall.io/normal/front/...jpg"}],
+      "faces": [{"face_index": -1, "name": "Sol Ring", "display_name": "阳光戒", "mana_cost": "{1}", "type_line": "Artifact", "display_type_line": "神器", "oracle_text": "...", "display_oracle_text": "...", "flavor_name": null, "flavor_text": null, "display_flavor_text": null, "power": null, "toughness": null, "loyalty": null, "image_url": "https://cards.scryfall.io/normal/front/...jpg"}],
       "owned_quantity": 1,
       "other_decks_quantity": 2,
       "other_decks_count": 2,

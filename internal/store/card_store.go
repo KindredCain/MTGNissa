@@ -30,6 +30,7 @@ type faceRow struct {
 	Name            string     `db:"name"`
 	FaceName        string     `db:"face_name"`
 	DisplayName     string     `db:"display_name"`
+	FlavorName      *string    `db:"flavor_name"`
 	CMC             float64    `db:"cmc"`
 	ManaCost        *string    `db:"mana_cost"`
 	Colors          uint64     `db:"colors_mask"`
@@ -107,6 +108,7 @@ const printingFrom = `
 const summaryQuery = `SELECT ` + printingSummaryColumns + printingFrom
 
 const printingQuery = `SELECT ` + printingSummaryColumns + `,
+ NULLIF(c.flavor_name, '') AS flavor_name,
  c.type_line, COALESCE(NULLIF(ct.type_line, ''),
   (SELECT MIN(NULLIF(t.translated_type, '')) FROM card_oracle_translation_mapping m
    JOIN oracle_translation t ON t.face_oracle_id=m.face_oracle_id WHERE m.card_uuid=c.uuid), c.type_line) AS display_type_line,
@@ -322,7 +324,8 @@ func summarize(rows []faceRow) (model.CardSummary, []model.CardFace) {
 			}
 		}
 		faces = append(faces, model.CardFace{FaceIndex: row.Index, Name: row.FaceName, DisplayName: row.DisplayName,
-			ManaCost: row.ManaCost, TypeLine: row.TypeLine, DisplayTypeLine: row.DisplayTypeLine,
+			FlavorName: row.FlavorName,
+			ManaCost:   row.ManaCost, TypeLine: row.TypeLine, DisplayTypeLine: row.DisplayTypeLine,
 			OracleText: row.Text, DisplayOracleText: row.DisplayText, FlavorText: row.Flavor,
 			DisplayFlavorText: row.DisplayFlavor, Power: row.Power, Toughness: row.Toughness, Loyalty: row.Loyalty, ImageURL: image})
 	}

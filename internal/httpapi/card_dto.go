@@ -53,6 +53,7 @@ type cardFaceResponse struct {
 	FaceIndex         int     `json:"face_index"`
 	Name              string  `json:"name"`
 	DisplayName       string  `json:"display_name"`
+	FlavorName        *string `json:"flavor_name"`
 	ManaCost          *string `json:"mana_cost"`
 	TypeLine          *string `json:"type_line"`
 	DisplayTypeLine   *string `json:"display_type_line"`
@@ -213,7 +214,8 @@ func newCardLanguages(options []model.CardLanguageOption) []cardLanguageOptionRe
 func newCardFaces(faces []model.CardFace) []cardFaceResponse {
 	r := make([]cardFaceResponse, 0, len(faces))
 	for _, f := range faces {
-		r = append(r, cardFaceResponse{FaceIndex: f.FaceIndex, Name: f.Name, DisplayName: f.DisplayName, ManaCost: f.ManaCost,
+		r = append(r, cardFaceResponse{FaceIndex: f.FaceIndex, Name: f.Name, DisplayName: f.DisplayName,
+			FlavorName: f.FlavorName, ManaCost: f.ManaCost,
 			TypeLine: f.TypeLine, DisplayTypeLine: f.DisplayTypeLine, OracleText: f.OracleText, DisplayOracleText: f.DisplayOracleText,
 			FlavorText: f.FlavorText, DisplayFlavorText: f.DisplayFlavorText, Power: f.Power, Toughness: f.Toughness, Loyalty: f.Loyalty, ImageURL: f.ImageURL})
 	}

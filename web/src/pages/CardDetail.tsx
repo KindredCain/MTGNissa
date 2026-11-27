@@ -114,6 +114,12 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
             <Mana cost={face?.mana_cost ?? null} />
           </div>
           <p className={styles.english}>{face?.name ?? card.name}</p>
+          <p
+            className={styles.flavorName}
+            title={face?.flavor_name ?? undefined}
+          >
+            {face?.flavor_name}
+          </p>
           <div className={styles.metadata}>
             <span>
               <small>系列</small>
@@ -158,6 +164,12 @@ function Detail({ printing_uuid }: { printing_uuid: string }) {
                         <Mana cost={text_face.mana_cost} />
                       </div>
                       <p className={styles.english}>{text_face.name}</p>
+                      <p
+                        className={styles.flavorName}
+                        title={text_face.flavor_name ?? undefined}
+                      >
+                        {text_face.flavor_name}
+                      </p>
                     </>
                   )}
                   <h3>类别</h3>

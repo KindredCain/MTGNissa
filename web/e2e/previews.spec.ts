@@ -22,6 +22,13 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
     const preview = page.getByRole("tooltip");
     await expect(preview).toBeVisible();
     const before = (await preview.boundingBox())!;
+    const anchor = (await target.boundingBox())!;
+    const opens_left = (await preview.getAttribute("data-side")) === "left";
+    const gap = opens_left
+      ? anchor.x - before.x - before.width
+      : before.x - anchor.x - anchor.width;
+    expect(gap).toBeGreaterThanOrEqual(4);
+    expect(gap).toBeLessThanOrEqual(7);
     await page.locator("body").evaluate((element) => {
       element.scrollTop += 40;
     });
@@ -125,6 +132,33 @@ for (const route of ["/decks/1", "/decks/1/edit"]) {
       .toBeCloseTo(before.y - 180, 0);
   });
 }
+
+test("multi-digit deck quantities fit inside the corner marker", async ({
+  page,
+}) => {
+  const state = await mock_api(page);
+  state.deck.sections[1].cards[0].quantity = 1234;
+  await page.goto("/decks/1");
+  const marker = page
+    .getByRole("button", { name: "测试卡牌 1，1234 张", exact: true })
+    .locator('[class*="quantity"]');
+  await expect(marker).toBeVisible();
+  const bounds = await marker.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const text = range.getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    return {
+      left: text.left - box.left,
+      top: text.top - box.top,
+      diagonal: text.right - box.left + text.bottom - box.top,
+      size: box.width,
+    };
+  });
+  expect(bounds.left).toBeGreaterThanOrEqual(0);
+  expect(bounds.top).toBeGreaterThanOrEqual(0);
+  expect(bounds.diagonal).toBeLessThanOrEqual(bounds.size);
+});
 
 test("add-card preview follows its focused name while results scroll", async ({
   page,

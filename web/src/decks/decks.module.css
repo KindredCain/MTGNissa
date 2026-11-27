@@ -409,16 +409,26 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 32px;
-  height: 32px;
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  background: #426b59;
+  width: var(--quantity-size);
+  height: var(--quantity-size);
+  isolation: isolate;
   color: #eff5f2;
   font-size: 10px;
   font-weight: 900;
   line-height: 14px;
   padding: 3px 0 0 6px;
+  text-align: left;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
+}
+.quantity::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  background: #426b59;
 }
 .cardButton.selected {
   outline: 3px solid var(--orange);

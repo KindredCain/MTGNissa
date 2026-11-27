@@ -3006,6 +3006,16 @@
               }
             ]
           },
+          "flavor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "flavor_text": {
             "anyOf": [
               {
@@ -3076,6 +3086,7 @@
           "display_type_line",
           "oracle_text",
           "display_oracle_text",
+          "flavor_name",
           "flavor_text",
           "display_flavor_text",
           "power",

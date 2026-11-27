@@ -123,9 +123,10 @@ func TestDeckDTOsKeepEmptyArraysNullsFixedKeysAndStringIDs(t *testing.T) {
 
 func TestDeckResponsesKeepEveryFaceWithoutFirstFaceSummaries(t *testing.T) {
 	frontText, backText := "front text", "back text"
+	flavorName := "Alternate Front"
 	frontImage, backImage := "https://example.com/front.jpg", "https://example.com/back.jpg"
 	faces := []model.CardFace{
-		{FaceIndex: 0, Name: "Front", OracleText: &frontText, ImageURL: &frontImage},
+		{FaceIndex: 0, Name: "Front", FlavorName: &flavorName, OracleText: &frontText, ImageURL: &frontImage},
 		{FaceIndex: 1, Name: "Back", OracleText: &backText, ImageURL: &backImage},
 	}
 	context := model.DeckEditCardContext{Faces: faces}
@@ -151,6 +152,9 @@ func TestDeckResponsesKeepEveryFaceWithoutFirstFaceSummaries(t *testing.T) {
 		}
 		if !reflect.DeepEqual(decoded.Faces, newCardDetail(model.CardDetail{Faces: faces}).Faces) {
 			t.Fatalf("face schema differs from card detail: %s", raw)
+		}
+		if decoded.Faces[0].FlavorName == nil || *decoded.Faces[0].FlavorName != flavorName || decoded.Faces[1].FlavorName != nil {
+			t.Fatalf("flavor names did not retain their face identities: %s", raw)
 		}
 		for _, field := range []string{`"translated_type_line"`, `"translated_oracle_text"`} {
 			if strings.Contains(string(raw), field) {

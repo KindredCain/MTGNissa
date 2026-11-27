@@ -502,6 +502,7 @@ export interface components {
       display_type_line: string | null;
       oracle_text: string | null;
       display_oracle_text: string | null;
+      flavor_name: string | null;
       flavor_text: string | null;
       display_flavor_text: string | null;
       power: string | null;

@@ -47,12 +47,18 @@ export function useDeckActions(deck_id: string) {
         await api.post("/api/v1/decks/{deck_id}/delete", undefined, {
           path: { deck_id },
         });
+        await client.cancelQueries({ queryKey: ["decks", "list"] });
         client.removeQueries({ queryKey: ["decks", "detail", deck_id] });
         void client.invalidateQueries({
           queryKey: ["decks"],
           refetchType: "none",
         });
         if (is_current_page()) navigate("/decks");
+        else
+          void client.refetchQueries({
+            queryKey: ["decks", "list"],
+            type: "active",
+          });
       }
       if (kind !== "code")
         void client.invalidateQueries({

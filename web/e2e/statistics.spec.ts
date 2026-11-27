@@ -1,6 +1,40 @@
 import { test, expect } from "@playwright/test";
 import { mock_api } from "./mock-api";
 
+test("probability stepper fields align inside one dark control", async ({
+  page,
+}) => {
+  await mock_api(page);
+  await page.goto("/decks/1");
+  await page.getByRole("button", { name: "卡组统计", exact: true }).click();
+  const drawer = page.getByRole("dialog", { name: "卡组统计", exact: true });
+  await expect(drawer).toHaveAttribute("data-motion", "open");
+  for (const label of ["至少张数", "抽牌张数"]) {
+    const field = drawer.getByRole("spinbutton", { name: label, exact: true });
+    await field.scrollIntoViewIfNeeded();
+    const group = field.locator("..");
+    const boxes = await group.evaluate((element) => {
+      const children = Array.from(element.children, (child) =>
+        child.getBoundingClientRect(),
+      );
+      return children.map((box) => ({
+        top: box.top,
+        height: box.height,
+        left: box.left,
+        right: box.right,
+      }));
+    });
+    expect(boxes).toHaveLength(3);
+    for (const box of boxes) {
+      expect(box.top).toBeCloseTo(boxes[0].top, 0);
+      expect(box.height).toBeCloseTo(boxes[0].height, 0);
+    }
+    expect(boxes[0].right).toBeCloseTo(boxes[1].left, 0);
+    expect(boxes[1].right).toBeCloseTo(boxes[2].left, 0);
+    await expect(field).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  }
+});
+
 for (const route of ["/decks/1", "/decks/1/edit"]) {
   for (const closing of ["bookmark", "backdrop"] as const) {
     test(`statistics slides with its bookmark and restores the trigger after ${closing} closes ${route}`, async ({

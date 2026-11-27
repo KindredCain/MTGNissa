@@ -24,6 +24,16 @@
   color: var(--muted);
   font-size: 14px;
 }
+.flavorName,
+.rules .flavorName {
+  min-height: 22px;
+  line-height: 22px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-style: italic;
+  font-synthesis: style;
+}
 .mana {
   display: flex;
   gap: 3px;

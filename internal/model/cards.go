@@ -49,6 +49,7 @@ type CardFace struct {
 	FaceIndex         int
 	Name              string
 	DisplayName       string
+	FlavorName        *string
 	ManaCost          *string
 	TypeLine          *string
 	DisplayTypeLine   *string

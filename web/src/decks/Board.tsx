@@ -109,9 +109,13 @@ export function Board({
   }
   function enter(card: DeckCard, section: SectionType, anchor: HTMLElement) {
     if (dragging.current || suppress_click.current || in_bubble.current) return;
+    const image = anchor.querySelector<HTMLButtonElement>(
+      "[data-deck-card-image]",
+    );
+    if (!image) return;
     const id = `${section}:${card.oracle_id}`,
       previous = selection_ref.current,
-      next = { card, section, anchor };
+      next = { card, section, anchor: image };
     select({ id, fixed: previous?.id === id && previous.fixed });
     hide_exception();
     setPreview(next);
@@ -607,6 +611,7 @@ function DraggableCard({
     >
       <button
         ref={draggable.setNodeRef}
+        data-deck-card-image
         {...draggable.attributes}
         aria-disabled={undefined}
         {...draggable.listeners}
@@ -629,7 +634,16 @@ function DraggableCard({
           name={card.card.display_name}
           back={back}
         />
-        <span className={styles.quantity}>{card.quantity}</span>
+        <span
+          className={styles.quantity}
+          style={
+            {
+              "--quantity-size": `${Math.max(32, String(card.quantity).length * 7 + 22)}px`,
+            } as CSSProperties
+          }
+        >
+          {card.quantity}
+        </span>
       </button>
       {expanded && card.card.images.has_distinct_back && (
         <button
@@ -960,10 +974,10 @@ function TextPreview({
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  const on_left = rect.right + 12 + 300 > viewport.left + viewport.width - 8,
+  const on_left = rect.right + 6 + 300 > viewport.left + viewport.width - 8,
     left = on_left
-      ? Math.max(viewport.left + 8, rect.left - 300 - 12)
-      : rect.right + 12,
+      ? Math.max(viewport.left + 8, rect.left - 300 - 6)
+      : rect.right + 6,
     top = Math.max(
       viewport.top + 8,
       Math.min(rect.top, viewport.top + viewport.height - height - 8),
@@ -987,7 +1001,7 @@ function TextPreview({
           left,
           top,
           "--preview-max-height": `${Math.min(360, viewport.height - 16)}px`,
-          "--arrow-top": `${Math.max(16, Math.min(height - 16, rect.top + 24 - top))}px`,
+          "--arrow-top": `${Math.max(16, Math.min(height - 16, rect.top + 48 - top))}px`,
         } as CSSProperties
       }
     >

@@ -115,6 +115,20 @@ func TestPrintingIdentityIsIndependentOfImageFallback(t *testing.T) {
 	}
 }
 
+func TestPrintingFacesRetainTheirOwnFlavorNames(t *testing.T) {
+	flavor := "Alternate Front"
+	_, faces := summarize([]faceRow{
+		{Index: 1, Name: "Front // Back", FaceName: "Back"},
+		{Index: 0, Name: "Front // Back", FaceName: "Front", FlavorName: &flavor},
+	})
+	if len(faces) != 2 || faces[0].FlavorName == nil || *faces[0].FlavorName != flavor {
+		t.Fatalf("main face flavor names were lost: %+v", faces)
+	}
+	if faces[1].FlavorName != nil {
+		t.Fatalf("main flavor name leaked into another face: %+v", faces[1])
+	}
+}
+
 func TestLanguagePrintingSQLRetainsFacesWithoutLanguageEntries(t *testing.T) {
 	for _, query := range []string{summaryQuery, printingQuery} {
 		query = strings.Join(strings.Fields(query), " ")

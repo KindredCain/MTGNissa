@@ -51,6 +51,7 @@ Set 名称（语言） > 卡牌名
 - 中间区域统一使用翻译后语言显示卡牌名称、类别、规则文字等说明，不跟随当前卡牌原语言变化。当前翻译后语言为简体中文，缺失时回退对应英文内容。
 - 中文名称、类别及规则文字先通过当前卡面 `mtgnissa_card.uuid = card_translation.card_id` 取得基础翻译，并通过 `mtgnissa_card.uuid -> card_oracle_translation_mapping.card_uuid -> oracle_translation.face_oracle_id` 取得 Oracle 卡面翻译；风味翻译通过 `card_flavor_translation_mapping` 取得。逐字段沿用系统已有翻译优先级，中文缺失时回退当前基础卡面的英文内容。`mtgnissa_card` 没有 `face_oracle_id` 字段，不得仅按 `oracle_id` 混合多卡面的翻译；释疑单独按下节 Oracle 级链路读取。
 - 保留现有名称、法术力费用、系列、收藏编号、稀有度、规则文本和释疑布局。
+- 英文规范牌名 `name` 下方斜体显示当前牌面 `flavor_name` 原值，不查翻译；没有时保留一行占位。
 - 卡牌名称右上角的法术力费用不显示 `{3}{G}{G}` 一类纯文本。前端按当前选中 `faces[]` 项的 `mana_cost` 中花括号符号原始顺序逐个解析，并使用 Scryfall `/symbology` 的 `svg_uri` 显示图标；基础符号可按 `https://svgs.scryfall.io/card-symbols/{symbol}.svg` 拼接。详情初始选择主牌面；点击“查看反面”后直接改用反面 `faces[]` 项的 `mana_cost`，点击“查看正面”后恢复主牌面值，不使用顶层 `card.mana_cost`，也不重新请求详情。
 - 不显示“卡牌原语言”或“翻译后语言”元数据块及回退说明；卡牌原语言在 UI 中只以“语言”表达，并体现在面包屑、卡图和语言选项中。
 
